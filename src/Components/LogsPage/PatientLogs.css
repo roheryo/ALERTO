@@ -1,0 +1,49 @@
+.patient-log-container {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.back-btn {
+  margin-bottom: 15px;
+  padding: 8px 14px;
+  border: 1px solid #333;
+  background: #fff;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.upload-box {
+  border: 2px dashed #4a90e2;
+  padding: 20px;
+  text-align: center;
+  border-radius: 10px;
+  background: #f9fbff;
+  margin-bottom: 20px;
+}
+
+.file-info {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #5098f7;
+  color: white;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  font-size: 14px;
+}
