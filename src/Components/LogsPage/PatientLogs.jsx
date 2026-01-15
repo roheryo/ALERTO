@@ -45,12 +45,12 @@ const PatientLogs = () => {
         setRows(sheetData.slice(1));
       } catch (err) {
         console.error("File parsing error:", err);
-        setError("❌ Failed to read the file. Please check the file format.");
+        setError(" Failed to read the file. Please check the file format.");
       }
     };
 
     reader.onerror = () => {
-      setError("❌ File reading failed.");
+      setError(" File reading failed.");
     };
 
     reader.readAsArrayBuffer(file);
