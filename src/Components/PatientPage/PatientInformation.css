@@ -1,0 +1,84 @@
+.patient-container {
+  padding: 40px;
+  background: #f8f9fb;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+/* BACK BUTTON */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #000;
+}
+
+.back-btn:hover {
+  color: #6a5acd;
+}
+
+.patient-container h1 {
+  margin-bottom: 30px;
+}
+
+.patient-form {
+  max-width: 800px;
+  background: #ffffff;
+  padding: 30px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+}
+
+.form-section {
+  margin-bottom: 30px;
+}
+
+.form-section h2 {
+  margin-bottom: 15px;
+  font-size: 18px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 5px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.form-row label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.form-row input,
+.form-row select {
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.form-actions {
+  text-align: right;
+}
+
+.form-actions button {
+  padding: 10px 20px;
+  background: #6a5acd;
+  border: none;
+  color: #ffffff;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.form-actions button:hover {
+  background: #5848c2;
+}
