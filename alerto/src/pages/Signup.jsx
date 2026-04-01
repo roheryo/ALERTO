@@ -5,18 +5,20 @@ import logo from "../assets/images/ddoLOGO.JPG";
 import bgImage from "../assets/images/ddoBG.jpg";
 import { useNavigate } from "react-router-dom";
 
-function Login() {
+function Signup() {
 
   const navigate = useNavigate();
-  const [isSignup, setIsSignup] = useState(false);
+  const [isSignup, setIsSignup] = useState(true);
 
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
+
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [municipality, setMunicipality] = useState("");
   const [barangay, setBarangay] = useState("");
-
-  
 
   /* Municipality → Barangay Mapping */
   const barangayData = {
@@ -51,18 +53,25 @@ function Login() {
 
   };
 
-  const handleLogin = (e) => {
+  const handleSignup = (e) => {
 
     e.preventDefault();
 
+    if (password !== confirmPassword) {
+      alert("Passwords do not match!");
+      return;
+    }
+
     console.log({
+      fullName,
+      email,
       username,
       password,
       municipality,
       barangay
     });
 
-    alert("Login button clicked");
+    alert("Signup Successful!");
 
   };
 
@@ -99,52 +108,70 @@ function Login() {
 
         {/* Tabs */}
         <div
-          className={`tab-container ${
-            isSignup ? "signup-active" : ""
-          }`}
-        >
+  className={`tab-container ${
+    isSignup ? "signup-active" : ""
+  }`}
+>
 
-          {/* Login Tab */}
-          <button
-            className="tab"
-            onClick={() => {
+  {/* Login Tab */}
+    <button
+        className="tab"
+        onClick={() => {
 
-              setIsSignup(false);
+        setIsSignup(false);
 
-            }}
-          >
-            LOGIN
-          </button>
+        setTimeout(() => {
 
-          {/* Signup Tab */}
-          <button
-            className="tab"
-            onClick={() => {
+            navigate("/");
 
-              setIsSignup(true);
+        }, 300);
 
-              setTimeout(() => {
+        }}
+    >
+        LOGIN
+    </button>
 
-                navigate("/signup");
+    {/* Signup Tab */}
+    <button
+        className="tab"
+    >
+        SIGN UP
+    </button>
 
-              }, 150); // wait for slide animation
-
-            }}
-          >
-            SIGN UP
-          </button>
-
-        </div>
+    </div>
 
         <p className="subtitle">
-          Sign in to your account
+          Create your account
         </p>
 
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleSignup}>
+
+          {/* Full Name */}
+          <label>Full Name</label>
+          <input
+            type="text"
+            placeholder="Enter Full Name"
+            value={fullName}
+            onChange={(e) =>
+              setFullName(e.target.value)
+            }
+            required
+          />
+
+          {/* Email */}
+          <label>Email</label>
+          <input
+            type="email"
+            placeholder="Enter Email Address"
+            value={email}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
+            required
+          />
 
           {/* Username */}
           <label>Username</label>
-
           <input
             type="text"
             placeholder="Enter Username"
@@ -157,7 +184,6 @@ function Login() {
 
           {/* Password */}
           <label>Password</label>
-
           <input
             type="password"
             placeholder="Enter Password"
@@ -168,11 +194,21 @@ function Login() {
             required
           />
 
-          {/* Municipality + Barangay Side-by-Side */}
+          {/* Confirm Password */}
+          <label>Confirm Password</label>
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) =>
+              setConfirmPassword(e.target.value)
+            }
+            required
+          />
 
+          {/* Municipality + Barangay */}
           <div className="location-row">
 
-            {/* Municipality */}
             <div className="location-group">
 
               <label>Municipality</label>
@@ -188,6 +224,7 @@ function Login() {
                 className="dropdown"
                 required
               >
+
                 <option value="">
                   Select Municipality
                 </option>
@@ -204,10 +241,11 @@ function Login() {
                 ))}
 
               </select>
+
             </div>
 
-            {/* Barangay */}
             <div className="location-group">
+
               <label>Barangay</label>
 
               <select
@@ -218,54 +256,68 @@ function Login() {
                 className="dropdown"
                 required
               >
+
                 <option value="">
                   Select Barangay
                 </option>
 
-                {municipality &&
-                  barangayData[municipality].map((brgy) => (
+               {municipality &&
+                barangayData[municipality].map((brgy) => (
 
                     <option
-                      key={brgy}
-                      value={brgy}
+                    key={brgy}
+                    value={brgy}
                     >
-                      {brgy}
+                    {brgy}
                     </option>
-                  ))}
+
+                ))
+                }
               </select>
+
             </div>
+
           </div>
 
-          {/* Button */}
-        <button
+          {/* Signup Button */}
+          <button
             type="submit"
             className="login-button"
-            >
-            SIGN IN
-            </button>
-            {/* Sign Up Section */}
-            <div className="signup-section">
+          >
+            CREATE ACCOUNT
+          </button>
+
+          {/* Back to Login */}
+          <div className="signup-section">
 
             <span>
-                Don't have an account?
+              Already have an account?
             </span>
 
             <button
-                type="button"
-                className="signup-link"
-                onClick={() => window.location.href = "/signup"}
+              type="button"
+              className="signup-link"
+              onClick={() =>
+                window.location.href = "/"
+              }
             >
-                Sign Up
+              Login
             </button>
-            </div>  
+
+          </div>
+
         </form>
 
         <p className="footer-text">
           Secure authentication for ALERTO Disease Surveillance
         </p>
+
       </div>
+
     </div>
+
   );
+
 }
 
-export default Login;
+export default Signup;

@@ -55,6 +55,9 @@ body {
   position: relative;
   z-index: 1;
   backdrop-filter: blur(12px);
+
+  /* ⭐ FIX: Allow dropdown to expand */
+  overflow: visible;
 }
 
 /* Logo */
@@ -84,28 +87,49 @@ body {
 
 /* Tabs */
 .tab-container {
+  position: relative;
   display: flex;
   margin-bottom: 15px;
+  background: grey;
+  border-radius: 5px;
+  overflow: hidden;
 }
 
+/* Sliding Indicator */
+.tab-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  background: #adbd1c;
+  transition: transform 0.35s ease;
+  z-index: 0;
+}
+
+.tab-container.signup-active::before {
+  transform: translateX(100%);
+}
+
+/* Tabs */
 .tab {
   flex: 1;
   padding: 10px;
   border: none;
-  background: grey;
+  background: transparent;
   font-weight: bold;
   cursor: pointer;
   color: white;
-}
-
-.tab.active {
-  background: #adbd1c;
+  position: relative;
+  z-index: 1;
 }
 
 /* Subtitle */
 .subtitle {
   font-size: 13px;
   margin-bottom: 15px;
+  color: white;
 }
 
 /* Labels */
@@ -114,6 +138,7 @@ form label {
   font-weight: bold;
   margin-top: 14px;
   margin-bottom: 4px;
+  color: white;
 }
 
 /* Inputs */
@@ -125,6 +150,7 @@ form input {
   border: 2px solid rgba(0,0,0,0.15);
   background: rgba(255,255,255,0.6);
   transition: 0.25s;
+  color: black;
 }
 
 /* Dropdown */
@@ -136,6 +162,16 @@ form input {
   background: rgba(255,255,255,0.6);
   cursor: pointer;
   transition: 0.25s;
+
+  
+  position: relative;
+  z-index: 10;
+}
+
+
+.dropdown option {
+  color: black;
+  background: white;
 }
 
 /* Hover */
@@ -164,6 +200,7 @@ form input:focus,
   flex: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 /* Button */
@@ -195,7 +232,6 @@ form input:focus,
 
   .location-row {
     flex-direction: column;
-
   }
 
 }
@@ -211,7 +247,7 @@ form input:focus,
   color: black;
 }
 
-/* Sign Up Link Style */
+/* Sign Up Link */
 .signup-link {
   background: none;
   border: none;
@@ -222,7 +258,6 @@ form input:focus,
   transition: 0.2s;
 }
 
-/* Hover Effect */
 .signup-link:hover {
   text-decoration: underline;
   color: #8c990f;
