@@ -12,6 +12,10 @@ function Signup() {
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+
+  /* ✅ NEW: Contact Number State */
+  const [contactNumber, setContactNumber] = useState("");
+
   const [username, setUsername] = useState("");
 
   const [password, setPassword] = useState("");
@@ -62,9 +66,15 @@ function Signup() {
       return;
     }
 
+    if (contactNumber.length !== 11) {
+      alert("Contact Number must be 11 digits!");
+      return;
+    }
+
     console.log({
       fullName,
       email,
+      contactNumber,
       username,
       password,
       municipality,
@@ -108,37 +118,35 @@ function Signup() {
 
         {/* Tabs */}
         <div
-  className={`tab-container ${
-    isSignup ? "signup-active" : ""
-  }`}
->
+          className={`tab-container ${
+            isSignup ? "signup-active" : ""
+          }`}
+        >
 
-  {/* Login Tab */}
-    <button
-        className="tab"
-        onClick={() => {
+          {/* LOGIN */}
+          <button
+            className="tab"
+            onClick={() => {
 
-        setIsSignup(false);
+              setIsSignup(false);
 
-        setTimeout(() => {
+              setTimeout(() => {
 
-            navigate("/");
+                navigate("/");
 
-        }, 300);
+              }, 300);
 
-        }}
-    >
-        LOGIN
-    </button>
+            }}
+          >
+            LOGIN
+          </button>
 
-    {/* Signup Tab */}
-    <button
-        className="tab"
-    >
-        SIGN UP
-    </button>
+          {/* SIGNUP */}
+          <button className="tab">
+            SIGN UP
+          </button>
 
-    </div>
+        </div>
 
         <p className="subtitle">
           Create your account
@@ -167,6 +175,29 @@ function Signup() {
             onChange={(e) =>
               setEmail(e.target.value)
             }
+            required
+          />
+
+          {/* ✅ FIXED Contact Number */}
+          <label>Contact Number</label>
+          <input
+            type="tel"
+            placeholder="Enter Contact Number"
+            value={contactNumber}
+            maxLength="11"
+
+            onChange={(e) => {
+
+              /* Allow numbers only */
+              const value =
+                e.target.value.replace(/\D/g, "");
+
+              if (value.length <= 11) {
+                setContactNumber(value);
+              }
+
+            }}
+
             required
           />
 
@@ -209,6 +240,7 @@ function Signup() {
           {/* Municipality + Barangay */}
           <div className="location-row">
 
+            {/* Municipality */}
             <div className="location-group">
 
               <label>Municipality</label>
@@ -244,6 +276,7 @@ function Signup() {
 
             </div>
 
+            {/* Barangay */}
             <div className="location-group">
 
               <label>Barangay</label>
@@ -261,18 +294,18 @@ function Signup() {
                   Select Barangay
                 </option>
 
-               {municipality &&
-                barangayData[municipality].map((brgy) => (
+                {municipality &&
+                  barangayData[municipality].map((brgy) => (
 
                     <option
-                    key={brgy}
-                    value={brgy}
+                      key={brgy}
+                      value={brgy}
                     >
-                    {brgy}
+                      {brgy}
                     </option>
 
-                ))
-                }
+                  ))}
+
               </select>
 
             </div>
@@ -298,7 +331,7 @@ function Signup() {
               type="button"
               className="signup-link"
               onClick={() =>
-                window.location.href = "/"
+                navigate("/")
               }
             >
               Login
