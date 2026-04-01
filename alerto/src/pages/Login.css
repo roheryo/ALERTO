@@ -34,242 +34,159 @@ body {
 
 /* Dark Overlay */
 .login-container::before {
-
   content: "";
-
   position: absolute;
-
   inset: 0;
-
   background: rgba(0,0,0,0.35);
-
   z-index: 0;
 }
 
 /* Glass Card */
 .login-card {
-
   width: 380px;
-
   padding: 25px 30px;
-
   background: rgba(255,255,255,0.15);
-
   border-radius: 20px;
-
   border: 2px solid rgba(255,255,255,0.4);
-
   box-shadow:
     0 8px 32px rgba(0,0,0,0.3),
     inset 0 0 10px rgba(255,255,255,0.2);
-
   text-align: center;
-
   position: relative;
-
   z-index: 1;
-
   backdrop-filter: blur(12px);
 }
 
 /* Logo */
 .logo-placeholder {
-
   display: flex;
-
   justify-content: center;
-
   margin-top: -60px;
-
   margin-bottom: 10px;
 }
 
 .logo-image {
-
   width: 85px;
-
   height: 85px;
-
   object-fit: contain;
-
   border-radius: 50%;
-
   border: 5px solid #adbd1c;
-
   background-color: white;
 }
 
 /* Title */
 .system-title {
-
   font-size: 16px;
-
   font-weight: bold;
-
   margin-bottom: 15px;
-
-  color: black;
+  color: white;
 }
 
 /* Tabs */
 .tab-container {
-
   display: flex;
-
   margin-bottom: 15px;
 }
 
 .tab {
-
   flex: 1;
-
   padding: 10px;
-
   border: none;
-
   background: grey;
-
   font-weight: bold;
-
   cursor: pointer;
-
   color: white;
 }
 
 .tab.active {
-
   background: #adbd1c;
 }
 
 /* Subtitle */
 .subtitle {
-
   font-size: 13px;
-
   margin-bottom: 15px;
 }
 
 /* Labels */
 form label {
-
   font-size: 13px;
-
   font-weight: bold;
-
   margin-top: 14px;
-
   margin-bottom: 4px;
 }
 
 /* Inputs */
 form input {
-
   width: 100%;
-
   padding: 12px 16px;
-
   margin-bottom: 12px;
-
   border-radius: 30px;
-
   border: 2px solid rgba(0,0,0,0.15);
-
   background: rgba(255,255,255,0.6);
-
   transition: 0.25s;
 }
 
 /* Dropdown */
 .dropdown {
-
   width: 100%;
-
   padding: 10px 12px;
-
   border-radius: 30px;
-
   border: 2px solid rgba(255,255,255,0.4);
-
   background: rgba(255,255,255,0.6);
-
   cursor: pointer;
-
   transition: 0.25s;
 }
 
 /* Hover */
 form input:hover,
 .dropdown:hover {
-
   border-color: #adbd1c;
 }
 
 /* Focus */
 form input:focus,
 .dropdown:focus {
-
   outline: none;
-
   border-color: #adbd1c;
-
   box-shadow: 0 0 6px rgba(173,189,28,0.6);
 }
 
 /* Side-by-side layout */
 .location-row {
-
   display: flex;
-
   gap: 12px;
-
   margin-top: -5px;   
-
   margin-bottom: 12px;
 }
 
 .location-group {
-
   flex: 1;
-
   display: flex;
-
   flex-direction: column;
 }
 
 /* Button */
 .login-button {
-
   width: 100%;
-
   padding: 12px;
-
   background-color: #adbd1c;
-
   color: white;
-
   border: none;
-
   border-radius: 25px;
-
   font-weight: bold;
-
   cursor: pointer;
-
   transition: 0.3s;
 }
 
 .login-button:hover {
-
   background-color: #8c990f;
-
   transform: scale(1.02);
 }
 
 /* Footer */
 .footer-text {
-
   font-size: 11px;
-
   margin-top: 12px;
 }
 
@@ -277,7 +194,6 @@ form input:focus,
 @media (max-width: 500px) {
 
   .location-row {
-
     flex-direction: column;
 
   }
@@ -286,44 +202,28 @@ form input:focus,
 
 /* Sign Up Section */
 .signup-section {
-
   margin-top: 10px;
-
   font-size: 12px;
-
   display: flex;
-
   justify-content: center;
-
   gap: 5px;
-
   align-items: center;
-
   color: black;
 }
 
 /* Sign Up Link Style */
 .signup-link {
-
   background: none;
-
   border: none;
-
   color: #adbd1c;
-
   font-weight: bold;
-
   cursor: pointer;
-
   font-size: 12px;
-
   transition: 0.2s;
 }
 
 /* Hover Effect */
 .signup-link:hover {
-
   text-decoration: underline;
-
   color: #8c990f;
 }
