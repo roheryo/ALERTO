@@ -1,5 +1,7 @@
 import "./Dashboard.css";
 
+import { useState } from "react";
+
 import logo from "../assets/images/ddoLOGO.jpg";
 import bgImage from "../assets/images/ddoBG.jpg";
 
@@ -15,12 +17,20 @@ import {
 
 function Dashboard() {
 
+  /* Sidebar Toggle */
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   /* Weather Placeholder */
 
   const temperature = "29°C";
   const condition = "Partly Cloudy";
 
-  /* Top 3 Municipality Data */
+  /* Data */
 
   const awdData = [
     { municipality: "Nabunturan", cases: 120 },
@@ -49,35 +59,73 @@ function Dashboard() {
       }}
     >
 
+      {/* SIDEBAR */}
+
+      <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
+
+        <h3 className="sidebar-title">
+          MENU
+        </h3>
+
+        <ul>
+
+          <li>Dashboard</li>
+          <li>Reports</li>
+          <li>Disease Trends</li>
+          <li>Municipality Data</li>
+          <li>Alerts</li>
+          <li>Settings</li>
+
+        </ul>
+
+      </div>
+
+      {/* OVERLAY */}
+
+      {sidebarOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={toggleSidebar}
+        />
+      )}
+
       {/* HEADER */}
 
       <div className="dashboard-header">
 
-        <h2 className="header-title">
-          Disease Surveillance
-        </h2>
+        <div className="header-left">
 
-        <div className="header-right">
+            <span
+            className="menu-icon"
+            onClick={toggleSidebar}
+            >
+            ☰
+            </span>
 
-          <div className="header-text">
-
-            <h3>Davao de Oro</h3>
-
-            <p>
-              Provincial Health Office
-            </p>
-
-          </div>
-
-          <img
-            src={logo}
-            alt="Davao de Oro Logo"
-            className="header-logo"
-          />
+            <h2 className="header-title">
+            Disease Surveillance
+            </h2>
 
         </div>
 
-      </div>
+        <div className="header-right">
+
+            <div className="header-text">
+
+            <h3>Davao de Oro</h3>
+            <p>Provincial Health Office</p>
+
+            </div>
+
+            <img
+            src={logo}
+            alt="Davao de Oro Logo"
+            className="header-logo"
+            />
+
+        </div>
+
+        </div>
 
       {/* WEATHER */}
 
@@ -125,8 +173,6 @@ function Dashboard() {
 
       <div className="chart-container">
 
-        {/* AWD */}
-
         <div className="chart-card">
 
           <h3>
@@ -138,11 +184,8 @@ function Dashboard() {
             <BarChart data={awdData}>
 
               <CartesianGrid strokeDasharray="3 3" />
-
               <XAxis dataKey="municipality" />
-
               <YAxis />
-
               <Tooltip />
 
               <Bar
@@ -156,8 +199,6 @@ function Dashboard() {
 
         </div>
 
-        {/* ILI */}
-
         <div className="chart-card">
 
           <h3>
@@ -169,11 +210,8 @@ function Dashboard() {
             <BarChart data={iliData}>
 
               <CartesianGrid strokeDasharray="3 3" />
-
               <XAxis dataKey="municipality" />
-
               <YAxis />
-
               <Tooltip />
 
               <Bar
@@ -187,8 +225,6 @@ function Dashboard() {
 
         </div>
 
-        {/* Dengue */}
-
         <div className="chart-card">
 
           <h3>
@@ -200,11 +236,8 @@ function Dashboard() {
             <BarChart data={dengueData}>
 
               <CartesianGrid strokeDasharray="3 3" />
-
               <XAxis dataKey="municipality" />
-
               <YAxis />
-
               <Tooltip />
 
               <Bar

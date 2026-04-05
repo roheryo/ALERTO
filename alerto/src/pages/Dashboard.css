@@ -4,7 +4,7 @@ body {
   margin: 0;
 }
 
-/* Main Dashboard */
+/* ================= DASHBOARD ================= */
 
 .dashboard {
 
@@ -66,6 +66,9 @@ body {
   align-items: center;
   justify-content: space-between;
 
+  position: relative;
+  z-index: 1000;
+
 }
 
 /* Left Side */
@@ -82,7 +85,7 @@ body {
 
 .menu-icon {
 
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
 
 }
@@ -112,8 +115,8 @@ body {
 
 .header-logo {
 
-  width: 50px;
-  height: 50px;
+  width: 45px;
+  height: 45px;
 
   object-fit: cover;
 
@@ -162,14 +165,14 @@ body {
 
 .weather-card {
 
-  background: white;
+  background: rgba(255,255,255,0.9);
 
   padding: 15px 25px;
 
-  border-radius: 10px;
+  border-radius: 12px;
 
   box-shadow:
-    0 2px 6px rgba(0,0,0,0.1);
+    0 4px 10px rgba(0,0,0,0.2);
 
   display: flex;
   align-items: center;
@@ -198,6 +201,7 @@ body {
 
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+
   gap: 15px;
 
   margin-top: 15px;
@@ -207,41 +211,148 @@ body {
 
 .summary-card {
 
-  padding: 15px;
-  border-radius: 8px;
+  padding: 18px;
+
+  border-radius: 12px;
+
   color: white;
 
+  text-align: center;
+
+  box-shadow:
+    0 4px 10px rgba(0,0,0,0.25);
+
 }
+
+
 
 .summary-card h2 {
-  margin-top: 5px;
+
+  margin-top: 6px;
+
 }
-
-/* Card Colors */
-
 
 /* ================= CHARTS ================= */
 
 .chart-container {
 
   display: grid;
+
   grid-template-columns: repeat(3, 1fr);
+
   gap: 15px;
 
 }
 
 .chart-card {
 
-  background: white;
+  background: rgba(255,255,255,0.95);
+
   padding: 15px;
-  border-radius: 8px;
+
+  border-radius: 12px;
 
   box-shadow:
-    0 2px 6px rgba(0,0,0,0.1);
+    0 4px 10px rgba(0,0,0,0.2);
 
 }
 
-/* Responsive */
+/* ================= SIDEBAR ================= */
+
+.sidebar {
+
+  position: fixed;
+
+  top: 0;
+  left: -260px;
+
+  width: 260px;
+  height: 100vh;
+
+  background: rgba(255,255,255,0.97);
+
+  backdrop-filter: blur(12px);
+
+  box-shadow:
+    3px 0 12px rgba(0,0,0,0.35);
+
+  padding: 20px;
+
+  transition: left 0.3s ease;
+
+  z-index: 2000;
+
+}
+
+.sidebar.open {
+
+  left: 0;
+
+}
+
+/* Sidebar Title */
+
+.sidebar-title {
+
+  font-size: 18px;
+
+  font-weight: bold;
+
+  margin-bottom: 20px;
+
+}
+
+/* Sidebar Menu */
+
+.sidebar ul {
+
+  list-style: none;
+
+  padding: 0;
+
+  margin: 0;
+
+}
+
+.sidebar li {
+
+  padding: 12px 15px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+
+  font-size: 15px;
+
+}
+
+.sidebar li:hover {
+
+  background: rgba(59,134,180,0.2);
+
+}
+
+/* Overlay */
+
+.sidebar-overlay {
+
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0,0,0,0.45);
+
+  z-index: 1500;
+
+}
+
+/* ================= RESPONSIVE ================= */
 
 @media (max-width: 900px) {
 
