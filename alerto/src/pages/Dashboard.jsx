@@ -70,9 +70,9 @@ function Dashboard() {
         <ul>
 
           <li>Dashboard</li>
+          <li>Notifications</li>
           <li>Reports</li>
-          <li>Disease Trends</li>
-          <li>Municipality Data</li>
+          <li>Cases Logs</li>
           <li>Alerts</li>
           <li>Settings</li>
 
@@ -176,7 +176,7 @@ function Dashboard() {
         <div className="chart-card">
 
           <h3>
-            Top 3 AWD Cases per Municipality
+            Highest Municipalities with AWD Cases 
           </h3>
 
           <ResponsiveContainer width="100%" height={250}>
@@ -202,7 +202,7 @@ function Dashboard() {
         <div className="chart-card">
 
           <h3>
-            Top 3 ILI Cases per Municipality
+            Highest Municipalities with ILI Cases 
           </h3>
 
           <ResponsiveContainer width="100%" height={250}>
@@ -228,7 +228,7 @@ function Dashboard() {
         <div className="chart-card">
 
           <h3>
-            Top 3 Dengue Cases per Municipality
+            Highest Municipalities with Dengue Cases 
           </h3>
 
           <ResponsiveContainer width="100%" height={250}>
