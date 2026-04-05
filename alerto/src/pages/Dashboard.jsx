@@ -1,6 +1,7 @@
 import "./Dashboard.css";
 
 import logo from "../assets/images/ddoLOGO.jpg";
+import bgImage from "../assets/images/ddoBG.jpg";
 
 import {
   BarChart,
@@ -41,33 +42,26 @@ function Dashboard() {
 
   return (
 
-    <div className="dashboard">
+    <div
+      className="dashboard"
+      style={{
+        backgroundImage: `url(${bgImage})`
+      }}
+    >
 
-      {/* ================= HEADER ================= */}
+      {/* HEADER */}
 
       <div className="dashboard-header">
 
-        {/* Left Side */}
-        <div className="header-left">
+        <h2 className="header-title">
+          Disease Surveillance
+        </h2>
 
-          <span className="menu-icon">
-            ☰
-          </span>
-
-          <h2 className="header-title">
-            Disease Surveillance
-          </h2>
-
-        </div>
-
-        {/* Right Side */}
         <div className="header-right">
 
           <div className="header-text">
 
-            <h3>
-              Davao de Oro
-            </h3>
+            <h3>Davao de Oro</h3>
 
             <p>
               Provincial Health Office
@@ -85,7 +79,7 @@ function Dashboard() {
 
       </div>
 
-      {/* ================= WEATHER ================= */}
+      {/* WEATHER */}
 
       <div className="weather-container">
 
@@ -103,7 +97,7 @@ function Dashboard() {
 
       </div>
 
-      {/* ================= SUMMARY CARDS ================= */}
+      {/* SUMMARY */}
 
       <div className="card-container">
 
@@ -127,11 +121,12 @@ function Dashboard() {
 
       </div>
 
-      {/* ================= CHARTS ================= */}
+      {/* CHARTS */}
 
       <div className="chart-container">
 
         {/* AWD */}
+
         <div className="chart-card">
 
           <h3>
@@ -162,6 +157,7 @@ function Dashboard() {
         </div>
 
         {/* ILI */}
+
         <div className="chart-card">
 
           <h3>
@@ -192,6 +188,7 @@ function Dashboard() {
         </div>
 
         {/* Dengue */}
+
         <div className="chart-card">
 
           <h3>

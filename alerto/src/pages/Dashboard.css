@@ -9,8 +9,44 @@ body {
 .dashboard {
 
   padding: 0 20px 20px 20px;
-  background: #f5f7fa;
+
   min-height: 100vh;
+
+  background-size: cover;
+  background-position: center;
+
+  position: relative;
+
+}
+
+/* Background overlay */
+
+.dashboard::before {
+
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  background: rgba(0,0,0,0.35);
+
+  backdrop-filter: blur(5px);
+
+  z-index: 0;
+
+}
+
+/* Keep content above overlay */
+
+.dashboard > * {
+
+  position: relative;
+
+  z-index: 1;
 
 }
 
@@ -183,17 +219,6 @@ body {
 
 /* Card Colors */
 
-.blue {
-  background: #2f80ed;
-}
-
-.red {
-  background: #eb5757;
-}
-
-.orange {
-  background: #f2994a;
-}
 
 /* ================= CHARTS ================= */
 
