@@ -1,8 +1,10 @@
 import "./Dashboard.css";
 
+import logo from "../assets/images/ddoLOGO.jpg";
+
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,57 +14,109 @@ import {
 
 function Dashboard() {
 
-  /* Sample Data */
-  const tbData = [
-    { year: 2018, cases: 120 },
-    { year: 2019, cases: 150 },
-    { year: 2020, cases: 130 },
-    { year: 2021, cases: 180 },
-    { year: 2022, cases: 200 }
+  /* Weather Placeholder */
+
+  const temperature = "29°C";
+  const condition = "Partly Cloudy";
+
+  /* Top 3 Municipality Data */
+
+  const awdData = [
+    { municipality: "Nabunturan", cases: 120 },
+    { municipality: "Monkayo", cases: 95 },
+    { municipality: "Compostela", cases: 80 }
   ];
 
-  const hivData = [
-    { year: 2018, cases: 90 },
-    { year: 2019, cases: 120 },
-    { year: 2020, cases: 110 },
-    { year: 2021, cases: 140 },
-    { year: 2022, cases: 170 }
+  const iliData = [
+    { municipality: "Monkayo", cases: 140 },
+    { municipality: "Nabunturan", cases: 120 },
+    { municipality: "Mawab", cases: 100 }
   ];
 
-  const malariaData = [
-    { year: 2018, cases: 60 },
-    { year: 2019, cases: 75 },
-    { year: 2020, cases: 65 },
-    { year: 2021, cases: 90 },
-    { year: 2022, cases: 100 }
+  const dengueData = [
+    { municipality: "Nabunturan", cases: 200 },
+    { municipality: "Compostela", cases: 150 },
+    { municipality: "Monkayo", cases: 120 }
   ];
 
   return (
 
     <div className="dashboard">
 
-      {/* Header */}
+      {/* ================= HEADER ================= */}
+
       <div className="dashboard-header">
 
-        <h2>
+        {/* Left Side */}
+        <div className="header-left">
+
+          <span className="menu-icon">
+            ☰
+          </span>
+
+          <h2 className="header-title">
             Disease Surveillance
-        </h2>
+          </h2>
+
+        </div>
+
+        {/* Right Side */}
+        <div className="header-right">
+
+          <div className="header-text">
+
+            <h3>
+              Davao de Oro
+            </h3>
+
+            <p>
+              Provincial Health Office
+            </p>
+
+          </div>
+
+          <img
+            src={logo}
+            alt="Davao de Oro Logo"
+            className="header-logo"
+          />
+
+        </div>
 
       </div>
 
-      {/* Summary Cards */}
+      {/* ================= WEATHER ================= */}
+
+      <div className="weather-container">
+
+        <div className="weather-card">
+
+          <div className="weather-temp">
+            {temperature}
+          </div>
+
+          <div className="weather-condition">
+            {condition}
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* ================= SUMMARY CARDS ================= */}
+
       <div className="card-container">
 
         <div className="summary-card blue">
-          <h4>Accute Waterry Diarrhea</h4>
+          <h4>Acute Watery Diarrhea</h4>
           <h2>4,814,900</h2>
           <p>New infections</p>
         </div>
 
         <div className="summary-card red">
-          <h4>Influencia-Like-Illness</h4>
+          <h4>Influenza-Like-Illness</h4>
           <h2>3,900,000</h2>
-          <p>People living with HIV</p>
+          <p>Total Cases</p>
         </div>
 
         <div className="summary-card orange">
@@ -73,91 +127,95 @@ function Dashboard() {
 
       </div>
 
-      {/* Charts */}
+      {/* ================= CHARTS ================= */}
+
       <div className="chart-container">
 
-        {/* TB Chart */}
+        {/* AWD */}
         <div className="chart-card">
 
-          <h3>TB Incidence</h3>
+          <h3>
+            Top 3 AWD Cases per Municipality
+          </h3>
 
           <ResponsiveContainer width="100%" height={250}>
 
-            <LineChart data={tbData}>
+            <BarChart data={awdData}>
 
               <CartesianGrid strokeDasharray="3 3" />
 
-              <XAxis dataKey="year" />
+              <XAxis dataKey="municipality" />
 
               <YAxis />
 
               <Tooltip />
 
-              <Line
-                type="monotone"
+              <Bar
                 dataKey="cases"
-                stroke="#007bff"
+                fill="#2f80ed"
               />
 
-            </LineChart>
+            </BarChart>
 
           </ResponsiveContainer>
 
         </div>
 
-        {/* HIV Chart */}
+        {/* ILI */}
         <div className="chart-card">
 
-          <h3>HIV Incidence</h3>
+          <h3>
+            Top 3 ILI Cases per Municipality
+          </h3>
 
           <ResponsiveContainer width="100%" height={250}>
 
-            <LineChart data={hivData}>
+            <BarChart data={iliData}>
 
               <CartesianGrid strokeDasharray="3 3" />
 
-              <XAxis dataKey="year" />
+              <XAxis dataKey="municipality" />
 
               <YAxis />
 
               <Tooltip />
 
-              <Line
-                type="monotone"
+              <Bar
                 dataKey="cases"
-                stroke="#dc3545"
+                fill="#eb5757"
               />
 
-            </LineChart>
+            </BarChart>
 
           </ResponsiveContainer>
 
         </div>
 
-        {/* Malaria Chart */}
+        {/* Dengue */}
         <div className="chart-card">
 
-          <h3>Malaria Incidence</h3>
+          <h3>
+            Top 3 Dengue Cases per Municipality
+          </h3>
 
           <ResponsiveContainer width="100%" height={250}>
 
-            <LineChart data={malariaData}>
+            <BarChart data={dengueData}>
 
               <CartesianGrid strokeDasharray="3 3" />
 
-              <XAxis dataKey="year" />
+              <XAxis dataKey="municipality" />
 
               <YAxis />
 
               <Tooltip />
 
-              <Line
-                type="monotone"
+              <Bar
                 dataKey="cases"
-                stroke="#28a745"
+                fill="#f2994a"
               />
 
-            </LineChart>
+            </BarChart>
 
           </ResponsiveContainer>
 

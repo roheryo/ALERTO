@@ -1,37 +1,187 @@
+/* Remove default margin */
+
+body {
+  margin: 0;
+}
+
+/* Main Dashboard */
+
 .dashboard {
-  padding: 20px;
+
+  padding: 0 20px 20px 20px;
   background: #f5f7fa;
   min-height: 100vh;
+
 }
 
-/* Header */
+/* ================= HEADER ================= */
 
 .dashboard-header {
+
   background: #3b86b4;
   color: white;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+
+  padding: 12px 20px;
+
+  margin-left: -20px;
+  margin-right: -20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
 }
 
-/* Cards */
+/* Left Side */
+
+.header-left {
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+}
+
+/* Menu Icon */
+
+.menu-icon {
+
+  font-size: 20px;
+  cursor: pointer;
+
+}
+
+/* Title */
+
+.header-title {
+
+  margin: 0;
+
+  font-size: 16px;
+  font-weight: 500;
+
+}
+
+/* Right Side */
+
+.header-right {
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+}
+
+/* Logo */
+
+.header-logo {
+
+  width: 50px;
+  height: 50px;
+
+  object-fit: cover;
+
+  border-radius: 50%;
+
+  background: white;
+
+  padding: 3px;
+
+}
+
+.header-text {
+
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+
+}
+
+.header-text h3 {
+
+  margin: 0;
+  font-size: 14px;
+  font-weight: bold;
+
+}
+
+.header-text p {
+
+  margin: 0;
+  font-size: 11px;
+
+}
+
+/* ================= WEATHER ================= */
+
+.weather-container {
+
+  margin-top: 20px;
+  margin-bottom: 10px;
+
+  display: flex;
+  justify-content: center;
+
+}
+
+.weather-card {
+
+  background: white;
+
+  padding: 15px 25px;
+
+  border-radius: 10px;
+
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.1);
+
+  display: flex;
+  align-items: center;
+  gap: 20px;
+
+}
+
+.weather-temp {
+
+  font-size: 32px;
+  font-weight: bold;
+  color: #2f80ed;
+
+}
+
+.weather-condition {
+
+  font-size: 16px;
+  color: #555;
+
+}
+
+/* ================= SUMMARY ================= */
 
 .card-container {
+
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 15px;
+
+  margin-top: 15px;
   margin-bottom: 20px;
+
 }
 
 .summary-card {
+
   padding: 15px;
   border-radius: 8px;
   color: white;
+
 }
 
 .summary-card h2 {
   margin-top: 5px;
 }
+
+/* Card Colors */
 
 .blue {
   background: #2f80ed;
@@ -41,27 +191,29 @@
   background: #eb5757;
 }
 
-.green {
-  background: #27ae60;
-}
-
 .orange {
   background: #f2994a;
 }
 
-/* Charts */
+/* ================= CHARTS ================= */
 
 .chart-container {
+
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 15px;
+
 }
 
 .chart-card {
+
   background: white;
   padding: 15px;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.1);
+
 }
 
 /* Responsive */
@@ -69,7 +221,7 @@
 @media (max-width: 900px) {
 
   .card-container {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
   }
 
   .chart-container {
