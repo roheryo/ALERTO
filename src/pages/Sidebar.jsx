@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import "./Sidebar.css";
 
-import profileIcon from "../assets/images/ddoLOGO.jpg";
+import profileIcon from "../assets/images/account.png";
 
 function Sidebar() {
 
