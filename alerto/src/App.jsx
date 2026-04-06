@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
+import CasesLogs from "./pages/CasesLogs";
+import Reports from "./pages/Reports";
+import Notification from "./pages/Notification";
 
 function App() {
 
@@ -26,6 +29,13 @@ function App() {
          /*Dashboard PAGE */
          <Route path="/dashboard" element={<Dashboard />} />
 
+        <Route index element={<Dashboard />} />
+
+        <Route path="cases" element={<CasesLogs />} />
+
+        <Route path="reports" element={<Reports />} />
+
+        <Route path="notification" element={<Notification />} />
       </Routes>
 
     </Router>

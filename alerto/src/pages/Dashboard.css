@@ -1,52 +1,85 @@
-/* Remove default margin */
+/* ================= GLOBAL ================= */
 
 body {
   margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f9;
 }
 
-/* ================= DASHBOARD ================= */
+/* ================= SIDEBAR ================= */
 
-.dashboard {
+.sidebar {
 
-  padding: 0 20px 20px 20px;
+  width: 240px;
+  height: 100vh;
 
-  min-height: 100vh;
-
-  background-size: cover;
-  background-position: center;
-
-  position: relative;
-
-}
-
-/* Background overlay */
-
-.dashboard::before {
-
-  content: "";
-
-  position: absolute;
+  position: fixed;
 
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
 
-  background: rgba(0,0,0,0.35);
+  background: #2f4050;
 
-  backdrop-filter: blur(5px);
+  color: white;
 
-  z-index: 0;
+  padding-top: 20px;
 
 }
 
-/* Keep content above overlay */
+/* Sidebar Title */
 
-.dashboard > * {
+.sidebar-title {
 
-  position: relative;
+  font-size: 18px;
 
-  z-index: 1;
+  font-weight: bold;
+
+  text-align: center;
+
+  margin-bottom: 30px;
+
+}
+
+/* Sidebar Menu */
+
+.sidebar ul {
+
+  list-style: none;
+  padding: 0;
+
+}
+
+.sidebar li {
+
+  padding: 14px 20px;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+
+}
+
+.sidebar li:hover {
+
+  background: #1c2b36;
+
+}
+
+/* Active */
+
+.sidebar li.active {
+
+  background: #1ab394;
+
+}
+
+/* ================= MAIN ================= */
+
+.main-content {
+
+  margin-left: 240px;
+
+  min-height: 100vh;
 
 }
 
@@ -55,38 +88,16 @@ body {
 .dashboard-header {
 
   background: #3b86b4;
+
   color: white;
 
-  padding: 12px 20px;
-
-  margin-left: -20px;
-  margin-right: -20px;
+  padding: 14px 20px;
 
   display: flex;
-  align-items: center;
+
   justify-content: space-between;
 
-  position: relative;
-  z-index: 1000;
-
-}
-
-/* Left Side */
-
-.header-left {
-
-  display: flex;
   align-items: center;
-  gap: 12px;
-
-}
-
-/* Menu Icon */
-
-.menu-icon {
-
-  font-size: 22px;
-  cursor: pointer;
 
 }
 
@@ -94,14 +105,12 @@ body {
 
 .header-title {
 
+  font-size: 18px;
   margin: 0;
-
-  font-size: 16px;
-  font-weight: 500;
 
 }
 
-/* Right Side */
+/* Right */
 
 .header-right {
 
@@ -115,10 +124,8 @@ body {
 
 .header-logo {
 
-  width: 45px;
-  height: 45px;
-
-  object-fit: cover;
+  width: 36px;
+  height: 36px;
 
   border-radius: 50%;
 
@@ -128,11 +135,11 @@ body {
 
 }
 
+/* Text */
+
 .header-text {
 
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
+  text-align: right;
 
 }
 
@@ -140,7 +147,6 @@ body {
 
   margin: 0;
   font-size: 14px;
-  font-weight: bold;
 
 }
 
@@ -151,47 +157,58 @@ body {
 
 }
 
+/* ================= CONTENT ================= */
+
+.content-area {
+
+  padding: 25px;
+
+}
+
+/* White Container */
+
+.content-wrapper {
+
+  background: white;
+
+  padding: 25px;
+
+  border-radius: 10px;
+
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+}
+
 /* ================= WEATHER ================= */
 
 .weather-container {
 
-  margin-top: 20px;
-  margin-bottom: 10px;
-
   display: flex;
+
   justify-content: center;
+
+  margin-bottom: 20px;
 
 }
 
 .weather-card {
 
-  background: rgba(255,255,255,0.9);
+  background: #f0f3f5;
 
-  padding: 15px 25px;
+  padding: 12px 20px;
 
-  border-radius: 12px;
-
-  box-shadow:
-    0 4px 10px rgba(0,0,0,0.2);
+  border-radius: 10px;
 
   display: flex;
-  align-items: center;
-  gap: 20px;
+
+  gap: 10px;
 
 }
 
 .weather-temp {
 
-  font-size: 32px;
   font-weight: bold;
-  color: #2f80ed;
-
-}
-
-.weather-condition {
-
-  font-size: 16px;
-  color: #555;
+  font-size: 20px;
 
 }
 
@@ -200,12 +217,12 @@ body {
 .card-container {
 
   display: grid;
+
   grid-template-columns: repeat(3, 1fr);
 
   gap: 15px;
 
-  margin-top: 15px;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 
 }
 
@@ -213,23 +230,24 @@ body {
 
   padding: 18px;
 
-  border-radius: 12px;
+  border-radius: 10px;
 
   color: white;
 
   text-align: center;
 
-  box-shadow:
-    0 4px 10px rgba(0,0,0,0.25);
-
 }
 
+.blue {
+  background: #2f80ed;
+}
 
+.red {
+  background: #eb5757;
+}
 
-.summary-card h2 {
-
-  margin-top: 6px;
-
+.orange {
+  background: #f2994a;
 }
 
 /* ================= CHARTS ================= */
@@ -246,109 +264,13 @@ body {
 
 .chart-card {
 
-  background: rgba(255,255,255,0.95);
+  background: #ffffff;
 
   padding: 15px;
 
-  border-radius: 12px;
+  border-radius: 10px;
 
-  box-shadow:
-    0 4px 10px rgba(0,0,0,0.2);
-
-}
-
-/* ================= SIDEBAR ================= */
-
-.sidebar {
-
-  position: fixed;
-
-  top: 0;
-  left: -260px;
-
-  width: 260px;
-  height: 100vh;
-
-  background: rgba(255,255,255,0.97);
-
-  backdrop-filter: blur(12px);
-
-  box-shadow:
-    3px 0 12px rgba(0,0,0,0.35);
-
-  padding: 20px;
-
-  transition: left 0.3s ease;
-
-  z-index: 2000;
-
-}
-
-.sidebar.open {
-
-  left: 0;
-
-}
-
-/* Sidebar Title */
-
-.sidebar-title {
-
-  font-size: 18px;
-
-  font-weight: bold;
-
-  margin-bottom: 20px;
-
-}
-
-/* Sidebar Menu */
-
-.sidebar ul {
-
-  list-style: none;
-
-  padding: 0;
-
-  margin: 0;
-
-}
-
-.sidebar li {
-
-  padding: 12px 15px;
-
-  border-radius: 8px;
-
-  cursor: pointer;
-
-  transition: 0.2s;
-
-  font-size: 15px;
-
-}
-
-.sidebar li:hover {
-
-  background: rgba(59,134,180,0.2);
-
-}
-
-/* Overlay */
-
-.sidebar-overlay {
-
-  position: fixed;
-
-  top: 0;
-  left: 0;
-
-  width: 100%;
-  height: 100%;
-
-  background: rgba(0,0,0,0.45);
-
-  z-index: 1500;
+  border: 1px solid #e0e0e0;
 
 }
 
@@ -356,12 +278,11 @@ body {
 
 @media (max-width: 900px) {
 
-  .card-container {
-    grid-template-columns: 1fr;
-  }
-
+  .card-container,
   .chart-container {
+
     grid-template-columns: 1fr;
+
   }
 
 }
