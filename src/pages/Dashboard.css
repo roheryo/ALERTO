@@ -1,0 +1,223 @@
+/* ================= GLOBAL ================= */
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f6f9;
+}
+
+/* ================= SIDEBAR ================= */
+
+.sidebar {
+  width: 240px;
+  height: 100vh;
+
+  position: fixed;
+
+  top: 0;
+  left: 0;
+
+  background: #2f4050;
+
+  color: white;
+
+  padding-top: 20px;
+}
+
+/* Sidebar Title */
+
+.sidebar-title {
+  font-size: 18px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+/* Sidebar Menu */
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.sidebar li:hover {
+  background: #1c2b36;
+}
+
+.sidebar li.active {
+  background: #1ab394;
+}
+
+/* ================= MAIN ================= */
+
+.main-content {
+  margin-left: 240px;
+  min-height: 100vh;
+}
+
+/* ================= HEADER ================= */
+
+.dashboard-header {
+  background: #3b86b4;
+  color: white;
+
+  padding: 14px 20px;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+}
+
+.header-title {
+  font-size: 18px;
+  margin: 0;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-logo {
+  width: 36px;
+  height: 36px;
+
+  border-radius: 50%;
+
+  background: white;
+
+  padding: 3px;
+}
+
+.header-text {
+  text-align: right;
+}
+
+.header-text h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.header-text p {
+  margin: 0;
+  font-size: 11px;
+}
+
+/* ================= CONTENT ================= */
+
+.content-area {
+  padding: 25px;
+}
+
+.content-wrapper {
+  background: white;
+
+  padding: 25px;
+
+  border-radius: 10px;
+
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* ================= WEATHER ================= */
+
+.weather-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.weather-card {
+  background: #f0f3f5;
+
+  padding: 12px 20px;
+
+  border-radius: 10px;
+
+  display: flex;
+
+  gap: 10px;
+}
+
+.weather-temp {
+  font-weight: bold;
+  font-size: 20px;
+}
+
+/* ================= SUMMARY CARDS ================= */
+
+.card-container {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 20px;
+
+  margin-top: 20px;
+}
+
+.summary-card {
+  padding: 18px;
+
+  border-radius: 10px;
+
+  color: white;
+
+  text-align: center;
+}
+
+.blue {
+  background: #2f80ed;
+}
+
+.red {
+  background: #eb5757;
+}
+
+.orange {
+  background: #f2994a;
+}
+
+/* ================= CHARTS ================= */
+
+.chart-container {
+  display: grid;
+
+  grid-template-columns: repeat(3, 1fr);
+
+  gap: 20px;
+
+  margin-top: 25px;
+}
+
+.chart-card {
+  background: #ffffff;
+
+  padding: 15px;
+
+  border-radius: 10px;
+
+  border: 1px solid #e0e0e0;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 900px) {
+
+  .card-container,
+  .chart-container {
+
+    grid-template-columns: 1fr;
+
+  }
+
+}

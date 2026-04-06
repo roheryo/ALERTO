@@ -1,0 +1,52 @@
+/* ===== SIDEBAR FIXED ===== */
+
+.sidebar {
+  position: fixed;   /* makes sidebar fixed */
+  top: 0;
+  left: 0;
+
+  width: 240px;
+  height: 100vh;
+
+  background-color: #1e293b;
+  color: white;
+
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Title */
+.sidebar-title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 25px;
+}
+
+/* Remove bullets */
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+/* Menu items */
+.sidebar li {
+  margin-bottom: 15px;
+}
+
+/* Links */
+.sidebar a {
+  text-decoration: none;
+  color: white;
+  font-size: 15px;
+}
+
+.sidebar a:hover {
+  color: #38bdf8;
+}
+
+/* ===== MAIN CONTENT ===== */
+
+.main-content {
+  margin-left: 240px; /* important */
+  padding: 20px;
+}
