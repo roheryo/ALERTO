@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
 import "./Sidebar.css";
 
-import profileIcon from "../assets/images/account.png"; 
-// you can change this to a user photo later
+import profileIcon from "../assets/images/ddoLOGO.jpg";
 
 function Sidebar() {
 
@@ -30,23 +29,36 @@ function Sidebar() {
 
       </div>
 
-      {/* Menu */}
+      {/* Sidebar Menu */}
       <ul>
 
         <li>
           <Link to="/">Dashboard</Link>
         </li>
 
+        {/* NEW ITEM */}
         <li>
-          <Link to="/cases">Cases Logs</Link>
+          <Link to="/add-patient">
+            Add New Patient
+          </Link>
         </li>
 
         <li>
-          <Link to="/reports">Reports</Link>
+          <Link to="/cases">
+            Cases Logs
+          </Link>
         </li>
 
         <li>
-          <Link to="/notification">Notification</Link>
+          <Link to="/reports">
+            Reports
+          </Link>
+        </li>
+
+        <li>
+          <Link to="/notification">
+            Notification
+          </Link>
         </li>
 
       </ul>

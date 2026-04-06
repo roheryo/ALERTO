@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import CasesLogs from "./pages/CasesLogs";
 import Reports from "./pages/Reports";
 import Notification from "./pages/Notification";
+import AddPatient from "./pages/AddPatient";
 
 function App() {
   return (
@@ -21,16 +22,17 @@ function App() {
         <Route path="/signup" element={<Signup />} />
 
         {/* Dashboard Layout */}
-        <Route path="/" element={<DashboardLayout />}>
+       <Route path="/" element={<DashboardLayout />}>
 
-          {/* Default page */}
-          <Route index element={<Dashboard />} />
+        <Route index element={<Dashboard />} />
 
-          <Route path="cases" element={<CasesLogs />} />
+        <Route path="add-patient" element={<AddPatient />} />
 
-          <Route path="reports" element={<Reports />} />
+        <Route path="cases" element={<CasesLogs />} />
 
-          <Route path="notification" element={<Notification />} />
+        <Route path="reports" element={<Reports />} />
+
+        <Route path="notification" element={<Notification />} />
 
         </Route>
 
