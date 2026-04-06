@@ -1,16 +1,36 @@
 import { Link } from "react-router-dom";
 import "./Sidebar.css";
 
+import profileIcon from "../assets/images/account.png"; 
+// you can change this to a user photo later
+
 function Sidebar() {
 
   return (
 
     <div className="sidebar">
 
+      {/* Title */}
       <h3 className="sidebar-title">
         Disease Surveillance
       </h3>
 
+      {/* Profile Section */}
+      <div className="profile-section">
+
+        <img
+          src={profileIcon}
+          alt="Profile"
+          className="profile-icon"
+        />
+
+        <h4 className="profile-name">
+          Roger Madulara
+        </h4>
+
+      </div>
+
+      {/* Menu */}
       <ul>
 
         <li>
