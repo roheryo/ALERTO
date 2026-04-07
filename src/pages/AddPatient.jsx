@@ -100,7 +100,7 @@ function AddPatient() {
               Personal Details
             </li>
 
-            <li className={step === 3 ? "active" : ""}>
+            <li className={step === 2 ? "active" : ""}>
               Medical Details
             </li>
 
@@ -246,7 +246,7 @@ function AddPatient() {
           </button>
         )}
 
-        {step < 3 && (
+        {step < 2 && (
           <button
             className="continue-btn"
             onClick={nextStep}
@@ -255,7 +255,7 @@ function AddPatient() {
           </button>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <button
             className="continue-btn"
             onClick={handleSubmit}
