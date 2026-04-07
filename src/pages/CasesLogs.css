@@ -119,34 +119,27 @@
 
 .cases-table th {
   background: #f5f7fa;
-
-  padding: 14px 16px; /* SAME as td */
-
+  padding: 14px 16px;
   text-align: left;
   vertical-align: middle;
-
   font-size: 14px;
-  font-weight: 600;
-
+  font-weight: 700; 
+  color: #000000;   
   white-space: nowrap;
 }
 
-/* DATA CELLS */
+
 
 .cases-table td {
-  padding: 14px 16px; /* SAME as th */
-
+  padding: 14px 16px;
   text-align: left;
   vertical-align: middle;
-
   font-size: 14px;
-
+  color: #000000; 
   border-bottom: 1px solid #eee;
-
   white-space: nowrap;
 }
 
-/* HOVER */
 
 .cases-table tr:hover {
   background: #f9fbfd;
