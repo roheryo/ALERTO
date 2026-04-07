@@ -36,7 +36,7 @@ function Sidebar() {
         />
 
         <h4 className="profile-name">
-          Roger Metadata
+          Roger Madulara
         </h4>
 
       </div>

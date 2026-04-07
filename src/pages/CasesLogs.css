@@ -1,0 +1,138 @@
+.caseslogs-container {
+  width: 100%;
+}
+
+/* HEADER */
+
+.dashboard-header {
+  background: #3b86b4;
+  color: white;
+
+  padding: 14px 20px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* CONTENT */
+
+.caseslogs-content {
+  padding: 20px;
+}
+
+/* CONTROLS */
+
+.caseslogs-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.search-input {
+  width: 280px;
+  padding: 8px 12px;
+
+  border-radius: 6px;
+  border: 1px solid #ccc;
+
+  font-size: 14px;
+}
+
+.filter-select {
+  padding: 8px 12px;
+
+  border-radius: 6px;
+  border: 1px solid #ccc;
+
+  font-size: 14px;
+}
+
+/* TABLE */
+
+.table-container {
+  background: white;
+  border-radius: 10px;
+
+  padding: 15px;
+
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.cases-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cases-table th {
+  background: #f5f7fa;
+  padding: 12px;
+
+  text-align: left;
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cases-table td {
+  padding: 12px;
+  font-size: 14px;
+
+  border-bottom: 1px solid #eee;
+}
+
+.cases-table tr:hover {
+  background: #f9fbfd;
+}
+
+/* ACTION BUTTONS */
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.view-btn {
+  background: #3b86b4;
+  color: white;
+
+  border: none;
+  padding: 6px 10px;
+
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.edit-btn {
+  background: #f0ad4e;
+  color: white;
+
+  border: none;
+  padding: 6px 10px;
+
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.delete-btn {
+  background: #d9534f;
+  color: white;
+
+  border: none;
+  padding: 6px 10px;
+
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* BUTTON HOVER */
+
+.view-btn:hover {
+  background: #2f6f97;
+}
+
+.edit-btn:hover {
+  background: #d99536;
+}
+
+.delete-btn:hover {
+  background: #c9302c;
+}

@@ -1,4 +1,3 @@
-/* ================= MAIN ================= */
 
 .add-patient-container {
   width: 100%;
@@ -17,43 +16,41 @@
   padding: 14px 20px;
 }
 
+/* HEADER TITLE FONT SIZE */
+
+.dashboard-header h2 {
+  font-size: 18px;   
+  font-weight: 600;  
+  margin: 0;         
+}
+
 .header-logo {
   width: 45px;
   height: 45px;
   border-radius: 50%;
 }
 
-/* ================= CONTENT ================= */
 
 .patient-content {
-
   display: flex;
-
   gap: 25px;
-
   padding: 25px;
-
   background: #f3f4f6;
-
   align-items: stretch;
 }
 
-/* ================= SIDEBAR ================= */
+
 
 .step-panel {
 
   width: 220px;
-
   background: white;
-
   padding: 20px;
-
   border-radius: 10px;
-
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-/* Remove bullets */
+
 
 .step-panel ul {
   list-style: none;
@@ -61,44 +58,33 @@
   margin: 0;
 }
 
-/* Sidebar Title */
+
 
 .step-panel h4 {
-
   color: black;
-
-  margin-bottom: 20px; /* ⭐ space under Add Patient */
-
+  margin-bottom: 20px; 
   font-size: 18px;
 }
 
-/* Sidebar Items */
+
 
 .step-panel li {
-
   padding: 12px;
-
   margin-bottom: 10px;
-
   border-radius: 6px;
-
-  color: black; /* text black */
-
+  color: black; 
   cursor: pointer;
 }
 
-/* Active Step */
+
 
 .step-panel li.active {
-
   background: #d1fae5;
-
   color: #059669;
-
   font-weight: bold;
 }
 
-/* ================= FORM BOX ================= */
+
 
 .form-box {
   text-align: left; 
@@ -111,7 +97,7 @@
   flex-direction: column;
 }
 
-/* ================= FORM TITLES ================= */
+
 
 .form-box h3 {
   text-align: left; 
@@ -120,45 +106,31 @@
   font-size: 20px;
 }
 
-/* ================= LABEL ================= */
+
 
 .form-box label {
-
   display: block;
-
   font-weight: 600;
-
   margin-top: 12px;
-
   margin-bottom: 6px;
-
-  color: black; /* LABEL BLACK */
+  color: black; 
 }
-
-/* ================= INPUT ================= */
 
 .form-box input,
 .form-box select {
 
   width: 100%;
-
   padding: 10px;
-
   border-radius: 6px;
-
   border: 1px solid #ccc;
-
   margin-bottom: 15px;
-
-  background-color: white; /* WHITE INPUT */
-
-  color: black; /* TEXT BLACK */
+  background-color: white; 
+  color: black; 
 }
 
-/* Placeholder */
+
 
 .form-box input::placeholder {
-
   color: #9ca3af;
 }
 
