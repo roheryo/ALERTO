@@ -45,7 +45,7 @@ function AddPatient() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log(patientData);
+    console.log("Patient Data:", patientData);
     alert("Patient Saved Successfully!");
   };
 
@@ -92,21 +92,21 @@ function AddPatient() {
               className={step === 1 ? "active" : ""}
               onClick={() => setStep(1)}
             >
-               Patient Personal Details
+              Patient Personal Details
             </li>
 
             <li
               className={step === 2 ? "active" : ""}
               onClick={() => setStep(2)}
             >
-               Address Details
+              Address Details
             </li>
 
             <li
               className={step === 3 ? "active" : ""}
               onClick={() => setStep(3)}
             >
-               Medical Details
+              Medical Details
             </li>
 
           </ul>
@@ -124,6 +124,7 @@ function AddPatient() {
 
           {step === 1 && (
             <>
+
               <h3>Patient Personal Details</h3>
 
               <label>Name</label>
@@ -177,14 +178,38 @@ function AddPatient() {
                 onChange={handleChange}
               />
 
+             
+
               <label>Civil Status</label>
 
-              <input
-                type="text"
+              <select
                 name="civilStatus"
                 value={patientData.civilStatus}
                 onChange={handleChange}
-              />
+              >
+
+                <option value="">
+                  Select Civil Status
+                </option>
+
+                <option value="Single">
+                  Single
+                </option>
+
+                <option value="Married">
+                  Married
+                </option>
+
+                <option value="Widowed">
+                  Widowed
+                </option>
+
+                <option value="Separated">
+                  Separated
+                </option>
+
+
+              </select>
 
             </>
           )}
@@ -193,6 +218,7 @@ function AddPatient() {
 
           {step === 2 && (
             <>
+
               <h3>Address Details</h3>
 
               <label>Province</label>
@@ -242,6 +268,7 @@ function AddPatient() {
 
           {step === 3 && (
             <>
+
               <h3>Medical Details</h3>
 
               <label>Disease Type</label>
@@ -251,10 +278,23 @@ function AddPatient() {
                 value={patientData.diseaseType}
                 onChange={handleChange}
               >
-                <option value="">Select Disease</option>
-                <option value="ILI">ILI</option>
-                <option value="Dengue">Dengue</option>
-                <option value="AWD">AWD</option>
+
+                <option value="">
+                  Select Disease
+                </option>
+
+                <option value="ILI">
+                  ILI
+                </option>
+
+                <option value="Dengue">
+                  Dengue
+                </option>
+
+                <option value="AWD">
+                  AWD
+                </option>
+
               </select>
 
               <label>
