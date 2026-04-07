@@ -57,27 +57,46 @@
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
+/* TABLE */
+
 .cases-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed; /* important for alignment */
 }
+
+/* HEADER */
 
 .cases-table th {
   background: #f5f7fa;
-  padding: 12px;
+
+  padding: 14px 16px; /* SAME as td */
 
   text-align: left;
+  vertical-align: middle;
 
   font-size: 14px;
   font-weight: 600;
+
+  white-space: nowrap;
 }
 
+/* DATA CELLS */
+
 .cases-table td {
-  padding: 12px;
+  padding: 14px 16px; /* SAME as th */
+
+  text-align: left;
+  vertical-align: middle;
+
   font-size: 14px;
 
   border-bottom: 1px solid #eee;
+
+  white-space: nowrap;
 }
+
+/* HOVER */
 
 .cases-table tr:hover {
   background: #f9fbfd;
