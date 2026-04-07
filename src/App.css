@@ -211,19 +211,23 @@
 
 /* Right content section */
 .main-section {
+
   margin-left: 240px;
 
-  width: calc(100% - 240px); /* THIS MAKES FULL WIDTH */
+  width: calc(100% - 240px);
 
-  min-height: 100vh;
 }
 
-/* Main content */
-.main-content {
-  width: 100%;
-  padding: 20px;
+/* CONTENT AREA */
 
-  box-sizing: border-box;
+.main-content {
+
+  width: 100%;
+
+  padding: 0;
+
+  margin: 0;
+
 }
 
 /* Dashboard container stretch */
