@@ -4,10 +4,8 @@ import logo from "../assets/images/ddoLOGO.jpg";
 
 function AddPatient() {
 
-  // STEP STATE
   const [step, setStep] = useState(1);
 
-  // FORM DATA
   const [patientData, setPatientData] = useState({
     name: "",
     age: "",
@@ -25,28 +23,54 @@ function AddPatient() {
     dateStarted: ""
   });
 
+  // HANDLE INPUT CHANGE
+
   const handleChange = (e) => {
+
     const { name, value } = e.target;
 
     setPatientData({
       ...patientData,
       [name]: value
     });
+
   };
+
+  // NEXT STEP
 
   const nextStep = () => {
-    if (step < 3) setStep(step + 1);
+
+    if (step < 3) {
+      setStep(step + 1);
+    }
+
   };
+
+  // PREVIOUS STEP
 
   const prevStep = () => {
-    if (step > 1) setStep(step - 1);
+
+    if (step > 1) {
+      setStep(step - 1);
+    }
+
   };
 
+  // HANDLE SUBMIT (ONLY STEP 3)
+
   const handleSubmit = (e) => {
+
+    if (step !== 3) {
+      e.preventDefault();
+      return;
+    }
+
     e.preventDefault();
 
     console.log("Patient Data:", patientData);
+
     alert("Patient Saved Successfully!");
+
   };
 
   return (
@@ -116,6 +140,7 @@ function AddPatient() {
         {/* FORM PANEL */}
 
         <form
+          id="patientForm"
           className="form-panel"
           onSubmit={handleSubmit}
         >
@@ -123,6 +148,7 @@ function AddPatient() {
           {/* STEP 1 */}
 
           {step === 1 && (
+
             <>
 
               <h3>Patient Personal Details</h3>
@@ -178,8 +204,6 @@ function AddPatient() {
                 onChange={handleChange}
               />
 
-             
-
               <label>Civil Status</label>
 
               <select
@@ -188,35 +212,22 @@ function AddPatient() {
                 onChange={handleChange}
               >
 
-                <option value="">
-                  Select Civil Status
-                </option>
-
-                <option value="Single">
-                  Single
-                </option>
-
-                <option value="Married">
-                  Married
-                </option>
-
-                <option value="Widowed">
-                  Widowed
-                </option>
-
-                <option value="Separated">
-                  Separated
-                </option>
-
+                <option value="">Select Civil Status</option>
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Widowed">Widowed</option>
+                <option value="Separated">Separated</option>
 
               </select>
 
             </>
+
           )}
 
           {/* STEP 2 */}
 
           {step === 2 && (
+
             <>
 
               <h3>Address Details</h3>
@@ -262,11 +273,13 @@ function AddPatient() {
               />
 
             </>
+
           )}
 
           {/* STEP 3 */}
 
           {step === 3 && (
+
             <>
 
               <h3>Medical Details</h3>
@@ -279,21 +292,10 @@ function AddPatient() {
                 onChange={handleChange}
               >
 
-                <option value="">
-                  Select Disease
-                </option>
-
-                <option value="ILI">
-                  ILI
-                </option>
-
-                <option value="Dengue">
-                  Dengue
-                </option>
-
-                <option value="AWD">
-                  AWD
-                </option>
+                <option value="">Select Disease</option>
+                <option value="ILI">ILI</option>
+                <option value="Dengue">Dengue</option>
+                <option value="AWD">AWD</option>
 
               </select>
 
@@ -309,46 +311,52 @@ function AddPatient() {
               />
 
             </>
+
           )}
 
-          {/* BUTTONS */}
-
-          <div className="form-buttons">
-
-            {step > 1 && (
-              <button
-                type="button"
-                className="back-btn"
-                onClick={prevStep}
-              >
-                ← Back
-              </button>
-            )}
-
-            {step < 3 ? (
-
-              <button
-                type="button"
-                className="continue-btn"
-                onClick={nextStep}
-              >
-                Continue →
-              </button>
-
-            ) : (
-
-              <button
-                type="submit"
-                className="continue-btn"
-              >
-                Save Patient
-              </button>
-
-            )}
-
-          </div>
-
         </form>
+
+      </div>
+
+      {/* BUTTONS CLOSE TO FORM */}
+
+      <div className="bottom-buttons">
+
+        {step > 1 && (
+
+          <button
+            type="button"
+            className="back-btn"
+            onClick={prevStep}
+          >
+            ← Back
+          </button>
+
+        )}
+
+        {step < 3 && (
+
+          <button
+            type="button"
+            className="continue-btn"
+            onClick={nextStep}
+          >
+            Continue →
+          </button>
+
+        )}
+
+        {step === 3 && (
+
+          <button
+            type="submit"
+            form="patientForm"
+            className="continue-btn"
+          >
+            Save Patient
+          </button>
+
+        )}
 
       </div>
 

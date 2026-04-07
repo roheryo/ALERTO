@@ -256,3 +256,27 @@
 .continue-btn:hover {
   background: #059669;
 }
+
+
+
+/* ================= BUTTON CLOSE TO FORM ================= */
+
+.bottom-buttons {
+
+  display: flex;
+
+  justify-content: flex-end;
+
+  gap: 12px; 
+
+  margin-top: 10px;
+
+  padding-right: 25px;
+
+}
+
+/* Prevent overlap */
+
+.form-panel {
+  padding-bottom: 80px;
+}
