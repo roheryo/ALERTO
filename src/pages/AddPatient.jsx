@@ -23,8 +23,6 @@ function AddPatient() {
     dateStarted: ""
   });
 
-  // HANDLE INPUT CHANGE
-
   const handleChange = (e) => {
 
     const { name, value } = e.target;
@@ -36,27 +34,13 @@ function AddPatient() {
 
   };
 
-  // NEXT STEP
-
   const nextStep = () => {
-
-    if (step < 3) {
-      setStep(step + 1);
-    }
-
+    if (step < 3) setStep(step + 1);
   };
-
-  // PREVIOUS STEP
 
   const prevStep = () => {
-
-    if (step > 1) {
-      setStep(step - 1);
-    }
-
+    if (step > 1) setStep(step - 1);
   };
-
-  // HANDLE SUBMIT (ONLY STEP 3)
 
   const handleSubmit = (e) => {
 
@@ -67,7 +51,7 @@ function AddPatient() {
 
     e.preventDefault();
 
-    console.log("Patient Data:", patientData);
+    console.log(patientData);
 
     alert("Patient Saved Successfully!");
 
@@ -100,11 +84,11 @@ function AddPatient() {
 
       </div>
 
-      {/* CONTENT */}
+      {/* MAIN CONTENT */}
 
       <div className="patient-content">
 
-        {/* STEP PANEL */}
+        {/* LEFT SIDEBAR */}
 
         <div className="step-panel">
 
@@ -112,24 +96,11 @@ function AddPatient() {
 
           <ul>
 
-            <li
-              className={step === 1 ? "active" : ""}
-              onClick={() => setStep(1)}
-            >
-              Patient Personal Details
+            <li className={step === 1 ? "active" : ""}>
+              Personal Details
             </li>
 
-            <li
-              className={step === 2 ? "active" : ""}
-              onClick={() => setStep(2)}
-            >
-              Address Details
-            </li>
-
-            <li
-              className={step === 3 ? "active" : ""}
-              onClick={() => setStep(3)}
-            >
+            <li className={step === 3 ? "active" : ""}>
               Medical Details
             </li>
 
@@ -137,225 +108,160 @@ function AddPatient() {
 
         </div>
 
-        {/* FORM PANEL */}
+        {/* PERSONAL DETAILS CONTAINER */}
 
-        <form
-          id="patientForm"
-          className="form-panel"
-          onSubmit={handleSubmit}
-        >
+        <div className="form-box">
 
-          {/* STEP 1 */}
+          <h3>Personal Details</h3>
 
-          {step === 1 && (
+          <label>Full Name</label>
+          <input
+            type="text"
+            name="name"
+            value={patientData.name}
+            onChange={handleChange}
+          />
 
-            <>
+          <label>Age</label>
+          <input
+            type="number"
+            name="age"
+            value={patientData.age}
+            onChange={handleChange}
+          />
 
-              <h3>Patient Personal Details</h3>
+          <label>Sex</label>
 
-              <label>Name</label>
+          <div className="radio-group">
+
+            <label>
               <input
-                type="text"
-                name="name"
-                value={patientData.name}
+                type="radio"
+                name="sex"
+                value="Male"
                 onChange={handleChange}
               />
+              Male
+            </label>
 
-              <label>Age</label>
+            <label>
               <input
-                type="number"
-                name="age"
-                value={patientData.age}
+                type="radio"
+                name="sex"
+                value="Female"
                 onChange={handleChange}
               />
+              Female
+            </label>
 
-              <label>Sex</label>
+          </div>
 
-              <div className="radio-group">
+          <label>Birthdate</label>
 
-                <label>
-                  <input
-                    type="radio"
-                    name="sex"
-                    value="Male"
-                    onChange={handleChange}
-                  />
-                  Male
-                </label>
+          <input
+            type="date"
+            name="birthdate"
+            value={patientData.birthdate}
+            onChange={handleChange}
+          />
 
-                <label>
-                  <input
-                    type="radio"
-                    name="sex"
-                    value="Female"
-                    onChange={handleChange}
-                  />
-                  Female
-                </label>
+          <label>Civil Status</label>
 
-              </div>
+          <select
+            name="civilStatus"
+            value={patientData.civilStatus}
+            onChange={handleChange}
+          >
 
-              <label>Birthdate</label>
+            <option value="">Select Civil Status</option>
+            <option value="Single">Single</option>
+            <option value="Married">Married</option>
+            <option value="Widowed">Widowed</option>
+            <option value="Separated">Separated</option>
 
-              <input
-                type="date"
-                name="birthdate"
-                value={patientData.birthdate}
-                onChange={handleChange}
-              />
+          </select>
 
-              <label>Civil Status</label>
+        </div>
 
-              <select
-                name="civilStatus"
-                value={patientData.civilStatus}
-                onChange={handleChange}
-              >
+        {/* ADDRESS CONTAINER */}
 
-                <option value="">Select Civil Status</option>
-                <option value="Single">Single</option>
-                <option value="Married">Married</option>
-                <option value="Widowed">Widowed</option>
-                <option value="Separated">Separated</option>
+        <div className="form-box">
 
-              </select>
+          <h3>Address Details</h3>
 
-            </>
+          <label>Province</label>
+          <input
+            type="text"
+            name="province"
+            value={patientData.province}
+            onChange={handleChange}
+          />
 
-          )}
+          <label>Municipality</label>
+          <input
+            type="text"
+            name="municipality"
+            value={patientData.municipality}
+            onChange={handleChange}
+          />
 
-          {/* STEP 2 */}
+          <label>Barangay</label>
+          <input
+            type="text"
+            name="barangay"
+            value={patientData.barangay}
+            onChange={handleChange}
+          />
 
-          {step === 2 && (
+          <label>Purok</label>
+          <input
+            type="text"
+            name="purok"
+            value={patientData.purok}
+            onChange={handleChange}
+          />
 
-            <>
+          <label>Birthplace</label>
+          <input
+            type="text"
+            name="birthplace"
+            value={patientData.birthplace}
+            onChange={handleChange}
+          />
 
-              <h3>Address Details</h3>
-
-              <label>Province</label>
-              <input
-                type="text"
-                name="province"
-                value={patientData.province}
-                onChange={handleChange}
-              />
-
-              <label>Municipality</label>
-              <input
-                type="text"
-                name="municipality"
-                value={patientData.municipality}
-                onChange={handleChange}
-              />
-
-              <label>Barangay</label>
-              <input
-                type="text"
-                name="barangay"
-                value={patientData.barangay}
-                onChange={handleChange}
-              />
-
-              <label>Purok</label>
-              <input
-                type="text"
-                name="purok"
-                value={patientData.purok}
-                onChange={handleChange}
-              />
-
-              <label>Birthplace</label>
-              <input
-                type="text"
-                name="birthplace"
-                value={patientData.birthplace}
-                onChange={handleChange}
-              />
-
-            </>
-
-          )}
-
-          {/* STEP 3 */}
-
-          {step === 3 && (
-
-            <>
-
-              <h3>Medical Details</h3>
-
-              <label>Disease Type</label>
-
-              <select
-                name="diseaseType"
-                value={patientData.diseaseType}
-                onChange={handleChange}
-              >
-
-                <option value="">Select Disease</option>
-                <option value="ILI">ILI</option>
-                <option value="Dengue">Dengue</option>
-                <option value="AWD">AWD</option>
-
-              </select>
-
-              <label>
-                When did the signs start?
-              </label>
-
-              <input
-                type="date"
-                name="dateStarted"
-                value={patientData.dateStarted}
-                onChange={handleChange}
-              />
-
-            </>
-
-          )}
-
-        </form>
+        </div>
 
       </div>
 
-      {/* BUTTONS CLOSE TO FORM */}
+      {/* BUTTON */}
 
       <div className="bottom-buttons">
 
         {step > 1 && (
-
           <button
-            type="button"
             className="back-btn"
             onClick={prevStep}
           >
             ← Back
           </button>
-
         )}
 
         {step < 3 && (
-
           <button
-            type="button"
             className="continue-btn"
             onClick={nextStep}
           >
-            Continue →
+            Next →
           </button>
-
         )}
 
         {step === 3 && (
-
           <button
-            type="submit"
-            form="patientForm"
             className="continue-btn"
+            onClick={handleSubmit}
           >
             Save Patient
           </button>
-
         )}
 
       </div>
