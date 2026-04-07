@@ -35,19 +35,14 @@ function AddPatient() {
   };
 
   const nextStep = () => {
-    if (step < 3) setStep(step + 1);
+    setStep(2);
   };
 
   const prevStep = () => {
-    if (step > 1) setStep(step - 1);
+    setStep(1);
   };
 
   const handleSubmit = (e) => {
-
-    if (step !== 3) {
-      e.preventDefault();
-      return;
-    }
 
     e.preventDefault();
 
@@ -84,22 +79,18 @@ function AddPatient() {
 
       </div>
 
-      {/* MAIN CONTENT */}
+     
 
       <div className="patient-content">
 
-        {/* LEFT SIDEBAR */}
+       
 
         <div className="step-panel">
-
           <h4>Add Patient</h4>
-
           <ul>
-
             <li className={step === 1 ? "active" : ""}>
               Personal Details
             </li>
-
             <li className={step === 2 ? "active" : ""}>
               Medical Details
             </li>
@@ -108,27 +99,65 @@ function AddPatient() {
 
         </div>
 
-        {/* PERSONAL DETAILS CONTAINER */}
+
+        
+
+        {step === 1 && (
+        <>
 
         <div className="form-box">
 
           <h3>Personal Details</h3>
 
-          <label>Full Name</label>
-          <input
-            type="text"
-            name="name"
-            value={patientData.name}
-            onChange={handleChange}
-          />
+          
 
-          <label>Age</label>
-          <input
-            type="number"
-            name="age"
-            value={patientData.age}
-            onChange={handleChange}
-          />
+          <div className="input-group">
+
+            <label>Full Name</label>
+
+            <div className="input-with-icon">
+
+              <span className="input-icon">
+                {/* Put icon here later */}
+              </span>
+
+              <input
+                type="text"
+                name="name"
+                value={patientData.name}
+                onChange={handleChange}
+                placeholder="Enter full name"
+              />
+
+            </div>
+
+          </div>
+
+
+         
+
+          <div className="input-group">
+
+            <label>Age</label>
+
+            <div className="input-with-icon">
+
+              <span className="input-icon"></span>
+
+              <input
+                type="number"
+                name="age"
+                value={patientData.age}
+                onChange={handleChange}
+                placeholder="Enter age"
+              />
+
+            </div>
+
+          </div>
+
+
+          {/* Sex stays same */}
 
           <label>Sex</label>
 
@@ -156,88 +185,172 @@ function AddPatient() {
 
           </div>
 
-          <label>Birthdate</label>
 
-          <input
-            type="date"
-            name="birthdate"
-            value={patientData.birthdate}
-            onChange={handleChange}
-          />
+         
 
-          <label>Civil Status</label>
+          <div className="input-group">
+            <label>Birthdate</label>
+            <div className="input-with-icon">
+              <span className="input-icon"></span>
+              <input
+                type="date"
+                name="birthdate"
+                value={patientData.birthdate}
+                onChange={handleChange}
+              />
 
-          <select
-            name="civilStatus"
-            value={patientData.civilStatus}
-            onChange={handleChange}
-          >
+            </div>
 
-            <option value="">Select Civil Status</option>
-            <option value="Single">Single</option>
-            <option value="Married">Married</option>
-            <option value="Widowed">Widowed</option>
-            <option value="Separated">Separated</option>
+          </div>
 
-          </select>
-
+          <div className="input-group">
+            <label>Civil Status</label>
+            <div className="input-with-icon">
+              <span className="input-icon"></span>
+              <select
+                name="civilStatus"
+                value={patientData.civilStatus}
+                onChange={handleChange}
+              >
+                <option value="">Select Civil Status</option>
+                <option value="Single">Single</option>
+                <option value="Married">Married</option>
+                <option value="Widowed">Widowed</option>
+                <option value="Separated">Separated</option>
+              </select>
+            </div>
+          </div>
         </div>
-
-        {/* ADDRESS CONTAINER */}
 
         <div className="form-box">
-
+          
           <h3>Address Details</h3>
 
-          <label>Province</label>
-          <input
-            type="text"
-            name="province"
-            value={patientData.province}
-            onChange={handleChange}
-          />
+            {/* Province */}
+            <div className="input-group">
+              <label>Province</label>
+              <div className="input-with-icon">
+                <span className="input-icon">
+                  
+                </span>
+                <input
+                  type="text"
+                  name="province"
+                  value={patientData.province}
+                  onChange={handleChange}
+                  placeholder="Enter province"
+                />
+              </div>
+            </div>
+            {/* Municipality */}
+            <div className="input-group">
+              <label>Municipality</label>
+              <div className="input-with-icon">
+                <span className="input-icon"></span>
 
-          <label>Municipality</label>
-          <input
-            type="text"
-            name="municipality"
-            value={patientData.municipality}
-            onChange={handleChange}
-          />
+                <input
+                  type="text"
+                  name="municipality"
+                  value={patientData.municipality}
+                  onChange={handleChange}
+                  placeholder="Enter municipality"
+                />
+              </div>
+            </div>
+            {/* Barangay */}
+            <div className="input-group">
+              <label>Barangay</label>
+              <div className="input-with-icon">
+                <span className="input-icon"></span>
 
-          <label>Barangay</label>
-          <input
-            type="text"
-            name="barangay"
-            value={patientData.barangay}
-            onChange={handleChange}
-          />
+                <input
+                  type="text"
+                  name="barangay"
+                  value={patientData.barangay}
+                  onChange={handleChange}
+                  placeholder="Enter barangay"
+                />
+              </div>
+            </div>
+            {/* Purok */}
+            <div className="input-group">
 
-          <label>Purok</label>
-          <input
-            type="text"
-            name="purok"
-            value={patientData.purok}
-            onChange={handleChange}
-          />
+              <label>Purok</label>
+              <div className="input-with-icon">
+                <span className="input-icon"></span>
+                <input
+                  type="text"
+                  name="purok"
+                  value={patientData.purok}
+                  onChange={handleChange}
+                  placeholder="Enter purok"
+                />
 
-          <label>Birthplace</label>
-          <input
-            type="text"
-            name="birthplace"
-            value={patientData.birthplace}
-            onChange={handleChange}
-          />
+              </div>
 
+            </div>
+            {/* Birthplace */}
+            <div className="input-group">
+              <label>Birthplace</label>
+              <div className="input-with-icon">
+                <span className="input-icon"></span>
+                <input
+                  type="text"
+                  name="birthplace"
+                  value={patientData.birthplace}
+                  onChange={handleChange}
+                  placeholder="Enter birthplace"
+                />
+              </div>
+            </div>
         </div>
+        </>
+        )}
+
+
+
+        {step === 2 && (
+          <div className="form-box">
+
+           <h3>Medical Details</h3>
+              {/* Disease Type */}
+              <div className="input-group">
+                <label>Disease Type</label>
+                <div className="input-with-icon">
+                  <span className="input-icon"></span>
+
+                  <input
+                    type="text"
+                    name="diseaseType"
+                    value={patientData.diseaseType}
+                    onChange={handleChange}
+                    placeholder="Enter disease type"
+                  />
+                </div>
+              </div>
+              {/* Date Started */}
+              <div className="input-group">
+                <label>Date Started</label>
+                <div className="input-with-icon">
+                  <span className="input-icon"></span>
+
+                  <input
+                    type="date"
+                    name="dateStarted"
+                    value={patientData.dateStarted}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+          </div>
+
+        )}
 
       </div>
 
-      {/* BUTTON */}
-
       <div className="bottom-buttons">
 
-        {step > 1 && (
+        {step === 2 && (
           <button
             className="back-btn"
             onClick={prevStep}
@@ -246,7 +359,7 @@ function AddPatient() {
           </button>
         )}
 
-        {step < 2 && (
+        {step === 1 && (
           <button
             className="continue-btn"
             onClick={nextStep}
