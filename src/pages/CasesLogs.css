@@ -152,58 +152,66 @@
   background: #f9fbfd;
 }
 
-/* ACTION BUTTONS */
 
 .action-buttons {
   display: flex;
   gap: 8px;
 }
 
-.view-btn {
-  background: #3b86b4;
-  color: white;
 
-  border: none;
-  padding: 6px 10px;
+.view-btn {
+  background: #f1f3f5;
+  color: #333;
+
+  border: 1px solid #e0e0e0;
+
+  padding: 6px 12px;
 
   border-radius: 6px;
   cursor: pointer;
+
+  font-size: 13px;
 }
+
+/* EDIT BUTTON — Neutral */
 
 .edit-btn {
-  background: #f0ad4e;
-  color: white;
+  background: #f1f3f5; 
+  color: #333;
 
-  border: none;
-  padding: 6px 10px;
+  border: 1px solid #e0e0e0;
+
+  padding: 6px 12px;
 
   border-radius: 6px;
   cursor: pointer;
+
+  font-size: 13px;
 }
+
+
 
 .delete-btn {
-  background: #d9534f;
-  color: white;
+  background: #fdeaea; 
+  color: #c9302c;
 
-  border: none;
-  padding: 6px 10px;
+  border: 1px solid white; 
+
+  padding: 6px 12px;
 
   border-radius: 6px;
   cursor: pointer;
+  font-size: 13px;
 }
 
-/* BUTTON HOVER */
-
-.view-btn:hover {
-  background: #2f6f97;
-}
-
+.view-btn:hover,
 .edit-btn:hover {
-  background: #d99536;
+  background: #e9ecef;
 }
 
 .delete-btn:hover {
-  background: #c9302c;
+  background: #f8d7da;
+  border: 1px solid #ffffff;
 }
 
 .caseslogs-controls {
