@@ -1,7 +1,57 @@
 import "./CasesLogs.css";
 import logo from "../assets/images/ddoLOGO.JPG";
+import { useState } from "react";
 
 function CasesLogs() {
+
+  /* ================= MUNICIPALITY DATA ================= */
+
+  const municipalityData = {
+    Nabunturan: [
+      "Poblacion",
+      "Magsaysay",
+      "San Vicente"
+    ],
+
+    Monkayo: [
+      "Union",
+      "Casoon",
+      "Oro"
+    ],
+
+    Compostela: [
+      "Poblacion",
+      "Ngan",
+      "Mangayon"
+    ],
+
+    Mawab: [
+      "Salvacion",
+      "Nueva Visayas"
+    ]
+  };
+
+  /* ================= STATE ================= */
+
+  const [selectedMunicipality, setSelectedMunicipality] = useState("");
+  const [barangays, setBarangays] = useState([]);
+
+  /* ================= HANDLE MUNICIPALITY CHANGE ================= */
+
+  const handleMunicipalityChange = (e) => {
+
+    const municipality = e.target.value;
+
+    setSelectedMunicipality(municipality);
+
+    if (municipalityData[municipality]) {
+      setBarangays(municipalityData[municipality]);
+    } else {
+      setBarangays([]);
+    }
+
+  };
+
   return (
     <div className="caseslogs-container">
 
@@ -32,26 +82,78 @@ function CasesLogs() {
 
       <div className="caseslogs-content">
 
-        {/* Top Controls */}
+        {/* ================= CONTROLS ================= */}
 
         <div className="caseslogs-controls">
 
-          <input
-            type="text"
-            placeholder="Search patient name..."
-            className="search-input"
-          />
+            {/* LEFT — Search */}
+            <input
+              type="text"
+              placeholder="Search patient name..."
+              className="search-input"
+            />
 
-          <select className="filter-select">
-            <option>All Diseases</option>
-            <option>Acute Watery Diarrhea</option>
-            <option>Influenza-Like Illness</option>
-            <option>Dengue</option>
-          </select>
+            {/* RIGHT — Filters */}
+            <div className="filters-right">
 
-        </div>
+              {/* Municipality */}
+              <select
+                className="filter-select"
+                onChange={handleMunicipalityChange}
+              >
+                <option value="">
+                  All Municipalities
+                </option>
 
-        {/* Table */}
+                {Object.keys(municipalityData).map((municipality) => (
+
+                  <option
+                    key={municipality}
+                    value={municipality}
+                  >
+                    {municipality}
+                  </option>
+
+                ))}
+
+              </select>
+
+              {/* Barangay */}
+              <select
+                className="filter-select"
+                disabled={!selectedMunicipality}
+              >
+
+                <option>
+                  All Barangays
+                </option>
+
+                {barangays.map((barangay, index) => (
+
+                  <option
+                    key={index}
+                    value={barangay}
+                  >
+                    {barangay}
+                  </option>
+
+                ))}
+
+              </select>
+
+              {/* Disease */}
+              <select className="filter-select">
+                <option>All Diseases</option>
+                <option>Acute Watery Diarrhea</option>
+                <option>Influenza-Like Illness</option>
+                <option>Dengue</option>
+              </select>
+
+            </div>
+
+          </div>
+
+        {/* ================= TABLE ================= */}
 
         <div className="table-container">
 
@@ -71,8 +173,6 @@ function CasesLogs() {
             </thead>
 
             <tbody>
-
-              {/* Sample Row */}
 
               <tr>
                 <td>Juan Dela Cruz</td>
