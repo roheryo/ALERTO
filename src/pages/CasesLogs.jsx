@@ -1,18 +1,39 @@
 import "./CasesLogs.css";
+import logo from "../assets/images/ddoLOGO.JPG";
 
 function CasesLogs() {
   return (
     <div className="caseslogs-container">
 
-      {/* Page Header */}
+      {/* ================= HEADER ================= */}
+
       <div className="dashboard-header">
+
         <h2>Cases Logs</h2>
+
+        <div className="header-right">
+
+          <div className="header-text">
+            <span>Davao de Oro</span>
+            <small>Provincial Health Office</small>
+          </div>
+
+          <img
+            src={logo}
+            alt="DDO Logo"
+            className="header-logo"
+          />
+
+        </div>
+
       </div>
 
-      {/* Content */}
+      {/* ================= CONTENT ================= */}
+
       <div className="caseslogs-content">
 
         {/* Top Controls */}
+
         <div className="caseslogs-controls">
 
           <input
@@ -31,6 +52,7 @@ function CasesLogs() {
         </div>
 
         {/* Table */}
+
         <div className="table-container">
 
           <table className="cases-table">
@@ -51,6 +73,7 @@ function CasesLogs() {
             <tbody>
 
               {/* Sample Row */}
+
               <tr>
                 <td>Juan Dela Cruz</td>
                 <td>25</td>

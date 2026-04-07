@@ -13,6 +13,40 @@
   font-weight: 600;
 }
 
+/* HEADER RIGHT */
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* HEADER TEXT */
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  color: white;
+}
+
+.header-text span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.header-text small {
+  font-size: 11px;
+}
+
+/* LOGO */
+
+.header-logo {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+}
+
 /* CONTENT */
 
 .caseslogs-content {
@@ -24,26 +58,42 @@
 .caseslogs-controls {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 15px;
 }
 
+
 .search-input {
   width: 280px;
-  padding: 8px 12px;
-
+  padding: 10px 14px;
   border-radius: 6px;
   border: 1px solid #ccc;
-
+  background-color: #ffffff; 
+  color: #333; 
   font-size: 14px;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: #999;
 }
 
 .filter-select {
-  padding: 8px 12px;
-
+  padding: 10px 14px;
   border-radius: 6px;
   border: 1px solid #ccc;
-
+  background-color: #ffffff; 
+  color: #333;
   font-size: 14px;
+  outline: none;
+  cursor: pointer;
+}
+
+.search-input:focus,
+.filter-select:focus {
+  border-color: #3b86b4;
+
+  box-shadow: 0 0 0 2px rgba(59, 134, 180, 0.15);
 }
 
 /* TABLE */

@@ -12,16 +12,11 @@ body {
 .sidebar {
   width: 240px;
   height: 100vh;
-
   position: fixed;
-
   top: 0;
   left: 0;
-
   background: #2f4050;
-
   color: white;
-
   padding-top: 20px;
 }
 
