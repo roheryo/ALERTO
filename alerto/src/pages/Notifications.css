@@ -36,7 +36,7 @@
 
 .info-icon {
   font-size: 14px;
-  color: #999;
+  color: black;
   margin-left: 5px;
 }
 
@@ -246,10 +246,10 @@
 
 .notif-title {
 
-  font-weight: 700;
-
+  font-weight: bold;
+  
   font-size: 14px;
-
+  color: black;
 }
 
 /* MESSAGE */
@@ -258,7 +258,7 @@
 
   font-size: 14px;
 
-  color: #555;
+  color: black;
 
 }
 
@@ -268,7 +268,7 @@
 
   font-size: 13px;
 
-  color: #777;
+  color: black;
 
 }
 
@@ -297,21 +297,21 @@
   display: grid;
 
   grid-template-columns:
-    40px   /* bullet space */
-    200px  /* title */
-    1fr    /* message */
-    120px  /* time */
-    140px; /* action */
+    40px
+    200px
+    1fr
+    120px
+    140px;
 
   align-items: center;
 
   background: #f1f1f1;
 
-  font-weight: 700;
+  font-weight: bold;
 
   font-size: 14px;
 
-  color: #000;
+  color: #000; /* ensure black */
 
   padding: 14px 16px;
 
