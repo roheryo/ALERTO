@@ -1,96 +1,91 @@
-/* ===== SIDEBAR FIXED ===== */
 
 .sidebar {
-  position: fixed;   /* makes sidebar fixed */
+
+  position: fixed;
   top: 0;
   left: 0;
 
   width: 240px;
   height: 100vh;
 
-  background-color: #1e293b;
-  color: white;
+  background: linear-gradient(
+    to bottom,
+    #2c3e50,
+    #34495e
+  );
 
-  padding: 20px;
+  color: white;
+  padding-top: 20px;
   box-sizing: border-box;
 }
 
-/* Title */
 .sidebar-title {
-  font-size: 25px;
+  text-align: center;
+  font-size: 18px;
   font-weight: bold;
-  margin-bottom: 0px;
+  margin-bottom: 20px;
 }
-
-/* Remove bullets */
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-}
-
-/* Menu items */
-.sidebar li {
-  margin-bottom: 10px;
-}
-
-/* Links */
-.sidebar a {
-  text-decoration: none;
-  color: white;
-  font-size: 15px;
-}
-
-.sidebar a:hover {
-  color: #38bdf8;
-}
-
-/* ===== MAIN CONTENT ===== */
-
-.main-content {
-  margin-left: 240px; /* important */
-  padding: 20px;
-}
-
-/* ===== PROFILE SECTION ===== */
 
 .profile-section {
 
   display: flex;
-
   flex-direction: column;
-
   align-items: center;
-  
-  margin-bottom: 30%;
-
+  margin-bottom: 10px;
 }
-
-/* Profile image */
 
 .profile-icon {
-
   width: 40px;
-
   height: 40px;
-
   border-radius: 50%;
-
+  border: 3px solid #cfd8dc;
   object-fit: cover;
+  margin-bottom: 8px;
+}
 
-  margin-bottom: 10px;
+.profile-name {
+  font-size: 14px;
+  font-weight: 600;
+}
 
-  border: 3px solid white;
+.sidebar-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+  margin: 15px 20px;
+}
+
+
+
+
+.menu-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 
 }
 
-/* Profile name */
+.menu-list li {
+  margin: 4px 0;
+}
 
-.profile-name {
 
-  font-size: 14px;
+.menu-list li a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  color: #cfd8dc;
+  text-decoration: none;
+  font-size: 15px;
+  transition: 0.2s;
+}
 
-  font-weight: bold;
+.menu-icon {
+  font-size: 16px;
+}
 
-  color: white;
+.main-content {
+  margin-left: 240px;
+  padding: 20px;
 
 }

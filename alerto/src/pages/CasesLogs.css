@@ -1,0 +1,236 @@
+.caseslogs-container {
+  width: 100%;
+}
+
+/* HEADER */
+
+.dashboard-header {
+  background: #3b86b4;
+  color: white;
+
+  padding: 14px 20px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* HEADER RIGHT */
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* HEADER TEXT */
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  color: white;
+}
+
+.header-text span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.header-text small {
+  font-size: 11px;
+}
+
+/* LOGO */
+
+.header-logo {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+}
+
+/* CONTENT */
+
+.caseslogs-content {
+  padding: 20px;
+}
+
+/* CONTROLS */
+
+.caseslogs-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+
+.search-input {
+  width: 280px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #ffffff; 
+  color: #333; 
+  font-size: 14px;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.filter-select {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #ffffff; 
+  color: #333;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+}
+
+.search-input:focus,
+.filter-select:focus {
+  border-color: #3b86b4;
+
+  box-shadow: 0 0 0 2px rgba(59, 134, 180, 0.15);
+}
+
+/* TABLE */
+
+.table-container {
+  background: white;
+  border-radius: 10px;
+
+  padding: 15px;
+
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* TABLE */
+
+.cases-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* important for alignment */
+}
+
+/* HEADER */
+
+.cases-table th {
+  background: #f5f7fa;
+  padding: 14px 16px;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 14px;
+  font-weight: 700; 
+  color: #000000;   
+  white-space: nowrap;
+}
+
+
+
+.cases-table td {
+  padding: 14px 16px;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 14px;
+  color: #000000; 
+  border-bottom: 1px solid #eee;
+  white-space: nowrap;
+}
+
+
+.cases-table tr:hover {
+  background: #f9fbfd;
+}
+
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+
+.view-btn {
+  background: #f1f3f5;
+  color: #333;
+
+  border: 1px solid #e0e0e0;
+
+  padding: 6px 12px;
+
+  border-radius: 6px;
+  cursor: pointer;
+
+  font-size: 13px;
+}
+
+/* EDIT BUTTON — Neutral */
+
+.edit-btn {
+  background: #f1f3f5; 
+  color: #333;
+
+  border: 1px solid #e0e0e0;
+
+  padding: 6px 12px;
+
+  border-radius: 6px;
+  cursor: pointer;
+
+  font-size: 13px;
+}
+
+
+
+.delete-btn {
+  background: #fdeaea; 
+  color: #c9302c;
+
+  border: 1px solid white; 
+
+  padding: 6px 12px;
+
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.view-btn:hover,
+.edit-btn:hover {
+  background: #e9ecef;
+}
+
+.delete-btn:hover {
+  background: #f8d7da;
+  border: 1px solid #ffffff;
+}
+
+.caseslogs-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+/* CONTROLS LAYOUT */
+
+.caseslogs-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 15px;
+}
+
+/* RIGHT FILTER GROUP */
+
+.filters-right {
+  display: flex;
+  gap: 10px;
+
+  justify-content: flex-end;
+}

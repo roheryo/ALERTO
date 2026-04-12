@@ -17,13 +17,9 @@ function Dashboard() {
   const temperature = "29°C";
   const condition = "Partly Cloudy";
 
-  /* ================= TOTAL CASES ================= */
-
   const totalAWD = "4,814,900";
   const totalILI = "3,900,000";
   const totalDengue = "1,464";
-
-  /* ================= CHART DATA ================= */
 
   const awdData = [
     { municipality: "Nabunturan", cases: 120 },
@@ -45,252 +41,182 @@ function Dashboard() {
 
   return (
 
-    <div>
+    <div className="dashboard-container">
 
-      {/* ================= SIDEBAR ================= */}
+      {/* ================= HEADER ================= */}
 
-      <div className="sidebar">
+      <div className="dashboard-header">
 
-        <h3 className="sidebar-title">
-          Disease Surveillance
-        </h3>
+        <h2 className="header-title">
+          Dashboard
+        </h2>
 
-        <ul>
+        <div className="header-right">
 
-          <li className="active">
-            Dashboard
-          </li>
+          <div className="header-text">
 
-          <li>
-            Cases Logs
-          </li>
+            <h3>Davao de Oro</h3>
 
-          <li>
-            Reports
-          </li>
+            <p>Provincial Health Office</p>
 
-          <li>
-            Notification
-          </li>
+          </div>
 
-        </ul>
+          <img
+            src={logo}
+            alt="logo"
+            className="header-logo"
+          />
+
+        </div>
 
       </div>
 
-      {/* ================= MAIN ================= */}
+      {/* ================= CONTENT ================= */}
 
-      <div className="main-content">
+      <div className="content-area">
 
-        {/* ================= HEADER ================= */}
+        {/* ================= WEATHER ================= */}
 
-        <div className="dashboard-header">
+        <div className="weather-container">
 
-          <h2 className="header-title">
-            Dashboard
-          </h2>
+          <div className="weather-card">
 
-          <div className="header-right">
-
-            <div className="header-text">
-
-              <h3>Davao de Oro</h3>
-
-              <p>Provincial Health Office</p>
-
+            <div className="weather-temp">
+              {temperature}
             </div>
 
-            <img
-              src={logo}
-              alt="logo"
-              className="header-logo"
-            />
+            <div>
+              {condition}
+            </div>
 
           </div>
 
         </div>
 
-        {/* ================= CONTENT ================= */}
+        {/* ================= SUMMARY CARDS ================= */}
 
-        <div className="content-area">
+        <div className="card-container">
 
-          <div className="content-wrapper">
+          <div className="summary-card blue">
 
-            {/* ================= WEATHER ================= */}
+            <h4>Acute Watery Diarrhea</h4>
 
-            <div className="weather-container">
+            <h2>{totalAWD}</h2>
 
-              <div className="weather-card">
+            <p>New infections</p>
 
-                <div className="weather-temp">
-                  {temperature}
-                </div>
+          </div>
 
-                <div>
-                  {condition}
-                </div>
+          <div className="summary-card red">
 
-              </div>
+            <h4>Influenza-Like-Illness</h4>
 
-            </div>
+            <h2>{totalILI}</h2>
 
-            {/* ================= SUMMARY CARDS ================= */}
+            <p>Total Cases</p>
 
-            <div className="card-container">
+          </div>
 
-              {/* AWD */}
+          <div className="summary-card orange">
 
-              <div className="summary-card blue">
+            <h4>Dengue</h4>
 
-                <h4>
-                  Acute Watery Diarrhea
-                </h4>
+            <h2>{totalDengue}</h2>
 
-                <h2>
-                  {totalAWD}
-                </h2>
+            <p>Cases</p>
 
-                <p>
-                  New infections
-                </p>
+          </div>
 
-              </div>
+        </div>
 
-              {/* ILI */}
+        {/* ================= CHARTS ================= */}
 
-              <div className="summary-card red">
+        <div className="chart-container">
 
-                <h4>
-                  Influenza-Like-Illness
-                </h4>
+          <div className="chart-card">
 
-                <h2>
-                  {totalILI}
-                </h2>
+            <h3>
+              Highest Municipalities with AWD Cases
+            </h3>
 
-                <p>
-                  Total Cases
-                </p>
+            <ResponsiveContainer width="100%" height={250}>
 
-              </div>
+              <BarChart data={awdData}>
 
-              {/* Dengue */}
+                <CartesianGrid strokeDasharray="3 3" />
 
-              <div className="summary-card orange">
+                <XAxis dataKey="municipality" />
 
-                <h4>
-                  Dengue
-                </h4>
+                <YAxis />
 
-                <h2>
-                  {totalDengue}
-                </h2>
+                <Tooltip />
 
-                <p>
-                  Cases
-                </p>
+                <Bar
+                  dataKey="cases"
+                  fill="#2f80ed"
+                />
 
-              </div>
+              </BarChart>
 
-            </div>
+            </ResponsiveContainer>
 
-            {/* ================= CHARTS ================= */}
+          </div>
 
-            <div className="chart-container">
+          <div className="chart-card">
 
-              {/* AWD */}
+            <h3>
+              Highest Municipalities with ILI Cases
+            </h3>
 
-              <div className="chart-card">
+            <ResponsiveContainer width="100%" height={250}>
 
-                <h3>
-                  Highest Municipalities with AWD Cases
-                </h3>
+              <BarChart data={iliData}>
 
-                <ResponsiveContainer width="100%" height={250}>
+                <CartesianGrid strokeDasharray="3 3" />
 
-                  <BarChart data={awdData}>
+                <XAxis dataKey="municipality" />
 
-                    <CartesianGrid strokeDasharray="3 3" />
+                <YAxis />
 
-                    <XAxis dataKey="municipality" />
+                <Tooltip />
 
-                    <YAxis />
+                <Bar
+                  dataKey="cases"
+                  fill="#eb5757"
+                />
 
-                    <Tooltip />
+              </BarChart>
 
-                    <Bar
-                      dataKey="cases"
-                      fill="#2f80ed"
-                    />
+            </ResponsiveContainer>
 
-                  </BarChart>
+          </div>
 
-                </ResponsiveContainer>
+          <div className="chart-card">
 
-              </div>
+            <h3>
+              Highest Municipalities with Dengue Cases
+            </h3>
 
-              {/* ILI */}
+            <ResponsiveContainer width="100%" height={250}>
 
-              <div className="chart-card">
+              <BarChart data={dengueData}>
 
-                <h3>
-                  Highest Municipalities with ILI Cases
-                </h3>
+                <CartesianGrid strokeDasharray="3 3" />
 
-                <ResponsiveContainer width="100%" height={250}>
+                <XAxis dataKey="municipality" />
 
-                  <BarChart data={iliData}>
+                <YAxis />
 
-                    <CartesianGrid strokeDasharray="3 3" />
+                <Tooltip />
 
-                    <XAxis dataKey="municipality" />
+                <Bar
+                  dataKey="cases"
+                  fill="#f2994a"
+                />
 
-                    <YAxis />
+              </BarChart>
 
-                    <Tooltip />
-
-                    <Bar
-                      dataKey="cases"
-                      fill="#eb5757"
-                    />
-
-                  </BarChart>
-
-                </ResponsiveContainer>
-
-              </div>
-
-              {/* Dengue */}
-
-              <div className="chart-card">
-
-                <h3>
-                  Highest Municipalities with Dengue Cases
-                </h3>
-
-                <ResponsiveContainer width="100%" height={250}>
-
-                  <BarChart data={dengueData}>
-
-                    <CartesianGrid strokeDasharray="3 3" />
-
-                    <XAxis dataKey="municipality" />
-
-                    <YAxis />
-
-                    <Tooltip />
-
-                    <Bar
-                      dataKey="cases"
-                      fill="#f2994a"
-                    />
-
-                  </BarChart>
-
-                </ResponsiveContainer>
-
-              </div>
-
-            </div>
+            </ResponsiveContainer>
 
           </div>
 
