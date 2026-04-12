@@ -2,24 +2,33 @@ import Sidebar from "../pages/Sidebar";
 import { Outlet } from "react-router-dom";
 
 function DashboardLayout() {
+
   return (
+
     <div className="dashboard-layout">
 
-      {/* Sidebar stays */}
+      {/* SIDEBAR */}
+
       <Sidebar />
 
-      {/* Right side */}
+      {/* MAIN SECTION */}
+
       <div className="main-section">
 
-        {/* Only content changes here */}
+        {/* PAGE CONTENT */}
+
         <div className="main-content">
+
           <Outlet />
+
         </div>
 
       </div>
 
     </div>
+
   );
+
 }
 
 export default DashboardLayout;
