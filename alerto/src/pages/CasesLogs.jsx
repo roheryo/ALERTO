@@ -24,6 +24,7 @@ function CasesLogs() {
       disease: "Dengue",
       municipality: "Nabunturan",
       barangay: "Poblacion",
+      address: "Purok 1, Main Street", // NEW
       dateStarted: "08/04/2026"
     }
   ]);
@@ -56,14 +57,14 @@ function CasesLogs() {
 
   };
 
-  /* ================= OPEN VIEW ================= */
+  /* ================= VIEW ================= */
 
   const handleView = (patient) => {
     setSelectedPatient(patient);
     setShowViewModal(true);
   };
 
-  /* ================= OPEN EDIT ================= */
+  /* ================= EDIT ================= */
 
   const handleEdit = (patient) => {
     setSelectedPatient(patient);
@@ -125,8 +126,6 @@ function CasesLogs() {
 
           <div className="filters-right">
 
-            {/* Municipality */}
-
             <select
               className="filter-select"
               onChange={handleMunicipalityChange}
@@ -149,8 +148,6 @@ function CasesLogs() {
 
             </select>
 
-            {/* Barangay */}
-
             <select
               className="filter-select"
               disabled={!selectedMunicipality}
@@ -172,8 +169,6 @@ function CasesLogs() {
               ))}
 
             </select>
-
-            {/* Disease */}
 
             <select className="filter-select">
 
@@ -259,151 +254,76 @@ function CasesLogs() {
 
       {/* ================= VIEW MODAL ================= */}
 
-    {showViewModal && selectedPatient && (
-
-      <div className="modal-overlay">
-
-        <div className="modal-container">
-
-          <h3 className="modal-title">
-            Patient Details
-          </h3>
-
-          <div className="view-details">
-
-            <div className="detail-row">
-              <span className="detail-label">Name:</span>
-              <span className="detail-value">
-                {selectedPatient.name}
-              </span>
-            </div>
-
-            <div className="detail-row">
-              <span className="detail-label">Age:</span>
-              <span className="detail-value">
-                {selectedPatient.age}
-              </span>
-            </div>
-
-            <div className="detail-row">
-              <span className="detail-label">Sex:</span>
-              <span className="detail-value">
-                {selectedPatient.sex}
-              </span>
-            </div>
-
-            <div className="detail-row">
-              <span className="detail-label">Disease:</span>
-              <span className="detail-value">
-                {selectedPatient.disease}
-              </span>
-            </div>
-
-            <div className="detail-row">
-              <span className="detail-label">Municipality:</span>
-              <span className="detail-value">
-                {selectedPatient.municipality}
-              </span>
-            </div>
-
-            <div className="detail-row">
-              <span className="detail-label">Barangay:</span>
-              <span className="detail-value">
-                {selectedPatient.barangay}
-              </span>
-            </div>
-
-            <div className="detail-row">
-              <span className="detail-label">Date Started:</span>
-              <span className="detail-value">
-                {selectedPatient.dateStarted}
-              </span>
-            </div>
-
-          </div>
-
-          <div className="modal-actions">
-
-            <button
-              className="close-btn"
-              onClick={() => setShowViewModal(false)}
-            >
-              Close
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    )}
-
-      {/* ================= EDIT MODAL ================= */}
-
-      {showEditModal && selectedPatient && (
+      {showViewModal && selectedPatient && (
 
         <div className="modal-overlay">
 
           <div className="modal-container">
 
-            <h3>Edit Patient</h3>
+            <h3 className="modal-title">
+              Patient Details
+            </h3>
 
-            <div className="modal-content">
+            <div className="view-details">
 
-              <input
-                type="text"
-                value={selectedPatient.name}
-                onChange={(e) =>
-                  setSelectedPatient({
-                    ...selectedPatient,
-                    name: e.target.value
-                  })
-                }
-              />
+              <div className="detail-row">
+                <span className="detail-label">Name:</span>
+                <span className="detail-value">
+                  {selectedPatient.name}
+                </span>
+              </div>
 
-              <input
-                type="number"
-                value={selectedPatient.age}
-                onChange={(e) =>
-                  setSelectedPatient({
-                    ...selectedPatient,
-                    age: e.target.value
-                  })
-                }
-              />
+              <div className="detail-row">
+                <span className="detail-label">Age:</span>
+                <span className="detail-value">
+                  {selectedPatient.age}
+                </span>
+              </div>
 
-              <select
-                value={selectedPatient.sex}
-                onChange={(e) =>
-                  setSelectedPatient({
-                    ...selectedPatient,
-                    sex: e.target.value
-                  })
-                }
-              >
+              <div className="detail-row">
+                <span className="detail-label">Sex:</span>
+                <span className="detail-value">
+                  {selectedPatient.sex}
+                </span>
+              </div>
 
-                <option>Male</option>
-                <option>Female</option>
+              <div className="detail-row">
+                <span className="detail-label">Disease:</span>
+                <span className="detail-value">
+                  {selectedPatient.disease}
+                </span>
+              </div>
 
-              </select>
+              <div className="detail-row">
+                <span className="detail-label">Municipality:</span>
+                <span className="detail-value">
+                  {selectedPatient.municipality}
+                </span>
+              </div>
+
+              <div className="detail-row">
+                <span className="detail-label">Barangay:</span>
+                <span className="detail-value">
+                  {selectedPatient.barangay}
+                </span>
+              </div>
+
+              <div className="detail-row">
+                <span className="detail-label">Address:</span>
+                <span className="detail-value">
+                  {selectedPatient.address}
+                </span>
+              </div>
 
             </div>
 
             <div className="modal-actions">
 
               <button
-                className="save-btn"
-                onClick={handleSaveEdit}
-              >
-                Save
-              </button>
-
-              <button
                 className="close-btn"
-                onClick={() => setShowEditModal(false)}
+                onClick={() => setShowViewModal(false)}
               >
-                Cancel
+                Close
               </button>
 
             </div>
@@ -413,6 +333,171 @@ function CasesLogs() {
         </div>
 
       )}
+
+      {/* ================= EDIT MODAL ================= */}
+
+      {/* ================= EDIT MODAL ================= */}
+
+{showEditModal && selectedPatient && (
+
+  <div className="modal-overlay">
+
+    <div className="modal-container">
+
+      <h3 className="modal-title">
+        Edit Patient Address Details
+      </h3>
+
+      <div className="modal-content">
+
+        {/* FIRST NAME (READ ONLY) */}
+
+        <label>First Name</label>
+        <input
+          type="text"
+          value={selectedPatient.name.split(" ")[0]}
+          readOnly
+          className="readonly-input"
+        />
+
+        {/* LAST NAME (EDITABLE) */}
+
+        <label>Last Name</label>
+        <input
+          type="text"
+          value={selectedPatient.name.split(" ")[1] || ""}
+          onChange={(e) => {
+
+            const firstName = selectedPatient.name.split(" ")[0];
+
+            setSelectedPatient({
+              ...selectedPatient,
+              name: firstName + " " + e.target.value
+            });
+
+          }}
+        />
+
+        {/* AGE (READ ONLY) */}
+
+        <label>Age</label>
+        <input
+          type="number"
+          value={selectedPatient.age}
+          readOnly
+          className="readonly-input"
+        />
+
+        {/* SEX (READ ONLY) */}
+
+        <label>Sex</label>
+        <input
+          type="text"
+          value={selectedPatient.sex}
+          readOnly
+          className="readonly-input"
+        />
+
+        {/* DISEASE (READ ONLY) */}
+
+        <label>Disease</label>
+        <input
+          type="text"
+          value={selectedPatient.disease}
+          readOnly
+          className="readonly-input"
+        />
+
+        {/* MUNICIPALITY (EDITABLE) */}
+
+        <label>Municipality</label>
+        <select
+          value={selectedPatient.municipality}
+          onChange={(e) => {
+
+            const municipality = e.target.value;
+
+            setSelectedPatient({
+              ...selectedPatient,
+              municipality: municipality,
+              barangay: municipalityData[municipality][0]
+            });
+
+          }}
+        >
+
+          {Object.keys(municipalityData).map((m) => (
+
+            <option key={m} value={m}>
+              {m}
+            </option>
+
+          ))}
+
+        </select>
+
+        {/* BARANGAY (EDITABLE) */}
+
+        <label>Barangay</label>
+        <select
+          value={selectedPatient.barangay}
+          onChange={(e) =>
+            setSelectedPatient({
+              ...selectedPatient,
+              barangay: e.target.value
+            })
+          }
+        >
+
+          {municipalityData[selectedPatient.municipality]?.map((b, i) => (
+
+            <option key={i} value={b}>
+              {b}
+            </option>
+
+          ))}
+
+        </select>
+
+        {/* ADDRESS (EDITABLE) */}
+
+        <label>Full Address</label>
+        <input
+          type="text"
+          value={selectedPatient.address}
+          onChange={(e) =>
+            setSelectedPatient({
+              ...selectedPatient,
+              address: e.target.value
+            })
+          }
+        />
+
+      </div>
+
+      <div className="modal-actions">
+
+        <button
+          className="save-btn"
+          onClick={handleSaveEdit}
+        >
+          Save
+        </button>
+
+        <button
+          className="close-btn"
+          onClick={() => setShowEditModal(false)}
+        >
+          Cancel
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
 
     </div>
 
