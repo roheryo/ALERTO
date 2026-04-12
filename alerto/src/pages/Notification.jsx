@@ -129,7 +129,7 @@ function Notification() {
 
             <div>Title</div>
 
-            <div>Message</div>
+            <div>Description</div>
 
             <div>Time</div>
 

@@ -297,11 +297,11 @@
   display: grid;
 
   grid-template-columns:
-    40px
-    200px
-    1fr
-    120px
-    140px;
+    40px   /* bullet */
+    200px  /* title */
+    1fr    /* message */
+    120px  /* time */
+    140px; /* action */
 
   align-items: center;
 
@@ -311,10 +311,52 @@
 
   font-size: 14px;
 
-  color: #000; /* ensure black */
+  color: #000;
 
-  padding: 14px 16px;
+  padding: 16px;
 
   border-bottom: 1px solid #ddd;
+
+  gap: 10px; /* SAME AS ROW */
+
+}
+
+/* ================= DATA ROW ================= */
+
+.notification-row {
+
+  display: grid;
+
+  grid-template-columns:
+    40px
+    200px
+    1fr
+    120px
+    140px;
+
+  align-items: center;
+
+  padding: 16px;
+
+  border-bottom: 1px solid #eee;
+
+  gap: 10px; /* MUST MATCH HEADER */
+
+}
+
+
+.notifications-header div {
+
+  text-align: left;
+
+  justify-content: flex-start;
+
+}
+
+
+
+.notification-row div {
+
+  text-align: left;
 
 }
