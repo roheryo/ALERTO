@@ -1,10 +1,9 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import "./Login.css";
+import { useNavigate } from "react-router-dom";
 
 import logo from "../assets/images/ddoLOGO.JPG";
 import bgImage from "../assets/images/ddoBG.jpg";
-import { useNavigate } from "react-router-dom";
-
 function Login() {
 
   const navigate = useNavigate();
@@ -16,9 +15,6 @@ function Login() {
   const [municipality, setMunicipality] = useState("");
   const [barangay, setBarangay] = useState("");
 
-  
-
-  /* Municipality → Barangay Mapping */
   const barangayData = {
 
     Nabunturan: [
@@ -51,18 +47,38 @@ function Login() {
 
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
 
     e.preventDefault();
 
-    console.log({
-      username,
-      password,
-      municipality,
-      barangay
-    });
+    try {
+      const res = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username,
+          password
+        })
+      });
 
-    alert("Login button clicked");
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error);
+        return;
+      }
+
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      alert(data.message);
+
+      navigate("/dashboard");
+
+    } catch (err) {
+      console.error(err);
+    }
 
   };
 
@@ -77,7 +93,6 @@ function Login() {
 
       <div className="login-card">
 
-        {/* Logo */}
         <div className="logo-placeholder">
 
           <img
@@ -88,7 +103,6 @@ function Login() {
 
         </div>
 
-        {/* Title */}
         <h2 className="system-title">
           ALERTO: Davao de Oro
           <br />
@@ -97,38 +111,29 @@ function Login() {
           Dengue, ILI, AWD
         </h2>
 
-        {/* Tabs */}
         <div
           className={`tab-container ${
             isSignup ? "signup-active" : ""
           }`}
         >
 
-          {/* Login Tab */}
           <button
             className="tab"
             onClick={() => {
-
               setIsSignup(false);
-
             }}
           >
             LOGIN
           </button>
 
-          {/* Signup Tab */}
           <button
             className="tab"
             onClick={() => {
-
               setIsSignup(true);
 
               setTimeout(() => {
-
                 navigate("/signup");
-
-              }, 150); // wait for slide animation
-
+              }, 150);
             }}
           >
             SIGN UP
@@ -142,9 +147,7 @@ function Login() {
 
         <form onSubmit={handleLogin}>
 
-          {/* Username */}
           <label>Username</label>
-
           <input
             type="text"
             placeholder="Enter Username"
@@ -155,9 +158,7 @@ function Login() {
             required
           />
 
-          {/* Password */}
           <label>Password</label>
-
           <input
             type="password"
             placeholder="Enter Password"
@@ -168,11 +169,8 @@ function Login() {
             required
           />
 
-          {/* Municipality + Barangay Side-by-Side */}
-
           <div className="location-row">
 
-            {/* Municipality */}
             <div className="location-group">
 
               <label>Municipality</label>
@@ -180,10 +178,8 @@ function Login() {
               <select
                 value={municipality}
                 onChange={(e) => {
-
                   setMunicipality(e.target.value);
                   setBarangay("");
-
                 }}
                 className="dropdown"
                 required
@@ -206,7 +202,6 @@ function Login() {
               </select>
             </div>
 
-            {/* Barangay */}
             <div className="location-group">
               <label>Barangay</label>
 
@@ -236,28 +231,29 @@ function Login() {
             </div>
           </div>
 
-          {/* Button */}
-        <button
+          <button
             type="submit"
             className="login-button"
-            >
+          >
             SIGN IN
-            </button>
-            {/* Sign Up Section */}
-            <div className="signup-section">
+          </button>
+
+          <div className="signup-section">
 
             <span>
-                Don't have an account?
+              Don't have an account?
             </span>
 
             <button
-                type="button"
-                className="signup-link"
-                onClick={() => window.location.href = "/signup"}
+              type="button"
+              className="signup-link"
+              onClick={() => navigate("/signup")}
             >
-                Sign Up
+              Sign Up
             </button>
-            </div>  
+
+          </div>  
+
         </form>
 
         <p className="footer-text">

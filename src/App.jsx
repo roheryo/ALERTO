@@ -14,30 +14,22 @@ import AddPatient from "./pages/AddPatient";
 function App() {
   return (
     <Router>
-
       <Routes>
 
-        {/* Public Pages */}
+        <Route path="/" element={<Login />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* Dashboard Layout */}
-       <Route path="/" element={<DashboardLayout />}>
-
-        <Route index element={<Dashboard />} />
-
-        <Route path="add-patient" element={<AddPatient />} />
-
-        <Route path="cases" element={<CasesLogs />} />
-
-        <Route path="reports" element={<Reports />} />
-
-        <Route path="notification" element={<Notification />} />
-
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="add-patient" element={<AddPatient />} />
+          <Route path="cases" element={<CasesLogs />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="notification" element={<Notification />} />
         </Route>
 
       </Routes>
-
     </Router>
   );
 }

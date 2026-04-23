@@ -57,7 +57,7 @@ function Signup() {
 
   };
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
 
     e.preventDefault();
 
@@ -71,17 +71,33 @@ function Signup() {
       return;
     }
 
-    console.log({
-      fullName,
-      email,
-      contactNumber,
-      username,
-      password,
-      municipality,
-      barangay
-    });
+    try {
+      const res = await fetch("http://localhost:5000/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password
+        })
+      });
 
-    alert("Signup Successful!");
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Signup failed");
+        return;
+      }
+
+      alert(data.message);
+
+      navigate("/login");
+
+    } catch (err) {
+      console.error(err);
+    }
 
   };
 
@@ -96,7 +112,6 @@ function Signup() {
 
       <div className="login-card">
 
-        {/* Logo */}
         <div className="logo-placeholder">
 
           <img
@@ -107,7 +122,6 @@ function Signup() {
 
         </div>
 
-        {/* Title */}
         <h2 className="system-title">
           ALERTO: Davao de Oro
           <br />
@@ -116,14 +130,12 @@ function Signup() {
           Dengue, ILI, AWD
         </h2>
 
-        {/* Tabs */}
         <div
           className={`tab-container ${
             isSignup ? "signup-active" : ""
           }`}
         >
 
-          {/* LOGIN */}
           <button
             className="tab"
             onClick={() => {
@@ -131,9 +143,7 @@ function Signup() {
               setIsSignup(false);
 
               setTimeout(() => {
-
-                navigate("/");
-
+                navigate("/login");
               }, 300);
 
             }}
@@ -141,7 +151,6 @@ function Signup() {
             LOGIN
           </button>
 
-          {/* SIGNUP */}
           <button className="tab">
             SIGN UP
           </button>
@@ -154,7 +163,6 @@ function Signup() {
 
         <form onSubmit={handleSignup}>
 
-          {/* Full Name */}
           <label>Full Name</label>
           <input
             type="text"
@@ -166,7 +174,6 @@ function Signup() {
             required
           />
 
-          {/* Email */}
           <label>Email</label>
           <input
             type="email"
@@ -178,17 +185,15 @@ function Signup() {
             required
           />
 
-          {/* ✅ FIXED Contact Number */}
+          
           <label>Contact Number</label>
           <input
             type="tel"
             placeholder="Enter Contact Number"
             value={contactNumber}
             maxLength="11"
-
             onChange={(e) => {
 
-              /* Allow numbers only */
               const value =
                 e.target.value.replace(/\D/g, "");
 
@@ -197,11 +202,9 @@ function Signup() {
               }
 
             }}
-
             required
           />
 
-          {/* Username */}
           <label>Username</label>
           <input
             type="text"
@@ -213,7 +216,6 @@ function Signup() {
             required
           />
 
-          {/* Password */}
           <label>Password</label>
           <input
             type="password"
@@ -225,7 +227,6 @@ function Signup() {
             required
           />
 
-          {/* Confirm Password */}
           <label>Confirm Password</label>
           <input
             type="password"
@@ -237,10 +238,8 @@ function Signup() {
             required
           />
 
-          {/* Municipality + Barangay */}
           <div className="location-row">
 
-            {/* Municipality */}
             <div className="location-group">
 
               <label>Municipality</label>
@@ -276,7 +275,6 @@ function Signup() {
 
             </div>
 
-            {/* Barangay */}
             <div className="location-group">
 
               <label>Barangay</label>
@@ -312,7 +310,6 @@ function Signup() {
 
           </div>
 
-          {/* Signup Button */}
           <button
             type="submit"
             className="login-button"
@@ -320,7 +317,6 @@ function Signup() {
             CREATE ACCOUNT
           </button>
 
-          {/* Back to Login */}
           <div className="signup-section">
 
             <span>
@@ -331,7 +327,7 @@ function Signup() {
               type="button"
               className="signup-link"
               onClick={() =>
-                navigate("/")
+                navigate("/login")
               }
             >
               Login

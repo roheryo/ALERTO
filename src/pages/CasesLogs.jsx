@@ -1,6 +1,6 @@
 import "./CasesLogs.css";
 import logo from "../assets/images/ddoLOGO.JPG";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function CasesLogs() {
 
@@ -35,6 +35,15 @@ function CasesLogs() {
 
   const [selectedMunicipality, setSelectedMunicipality] = useState("");
   const [barangays, setBarangays] = useState([]);
+
+  const [patients, setPatients] = useState([]);
+
+useEffect(() => {
+  fetch("http://localhost:5000/patients")
+    .then(res => res.json())
+    .then(data => setPatients(data))
+    .catch(err => console.error(err));
+}, []);
 
   /* ================= HANDLE MUNICIPALITY CHANGE ================= */
 
@@ -172,7 +181,7 @@ function CasesLogs() {
               </tr>
             </thead>
 
-            <tbody>
+            {/* <tbody>
 
               <tr>
                 <td>Juan Dela Cruz</td>
@@ -201,7 +210,26 @@ function CasesLogs() {
 
               </tr>
 
-            </tbody>
+            </tbody> */}
+            <tbody>
+  {patients.map((p) => (
+    <tr key={p.id}>
+      <td>{p.name}</td>
+      <td>{p.age}</td>
+      <td>{p.sex}</td>
+      <td>{p.diseaseType}</td>
+      <td>{p.municipality}</td>
+      <td>{p.barangay}</td>
+      <td>{p.dateStarted}</td>
+
+      <td className="action-buttons">
+        <button className="view-btn">View</button>
+        <button className="edit-btn">Edit</button>
+        <button className="delete-btn">Delete</button>
+      </td>
+    </tr>
+  ))}
+</tbody>
 
           </table>
 

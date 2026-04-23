@@ -42,15 +42,28 @@ function AddPatient() {
     setStep(1);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    e.preventDefault();
+  try {
+    const res = await fetch("http://localhost:5000/add-patient", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(patientData)
+    });
 
-    console.log(patientData);
+    const data = await res.json();
+    console.log(data);
 
     alert("Patient Saved Successfully!");
 
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Error saving patient");
+  }
+};
 
   return (
 
