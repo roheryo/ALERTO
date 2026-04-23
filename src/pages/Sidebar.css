@@ -108,3 +108,10 @@
 .logout-btn:hover {
   background: #d9363e;
 }
+
+.profile-role {
+  font-size: 12px;
+  color: #adbd1c;
+  margin-top: 3px;
+  text-transform: capitalize;
+}

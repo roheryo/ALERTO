@@ -14,39 +14,40 @@ function Login() {
   const [password, setPassword] = useState("");
 
   const handleLogin = async (e) => {
+  e.preventDefault();
 
-    e.preventDefault();
+  try {
+    const res = await fetch("http://localhost:5000/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username,
+        password
+      })
+    });
 
-    try {
-      const res = await fetch("http://localhost:5000/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          username,
-          password
-        })
-      });
+    const data = await res.json();
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        alert(data.error);
-        return;
-      }
-
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      alert(data.message);
-
-      navigate("/dashboard");
-
-    } catch (err) {
-      console.error(err);
+    if (!res.ok) {
+      alert(data.error);
+      return;
     }
 
-  };
+    // 🔥 SAVE FULL USER (IMPORTANT)
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    console.log("SAVED USER:", data.user);
+
+    alert(data.message);
+
+    navigate("/dashboard");
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   return (
 

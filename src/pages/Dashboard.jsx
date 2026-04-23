@@ -1,6 +1,7 @@
 import "./Dashboard.css"; 
 
 import logo from "../assets/images/ddoLOGO.jpg";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   BarChart,
@@ -17,27 +18,76 @@ function Dashboard() {
   const temperature = "29°C";
   const condition = "Partly Cloudy";
 
-  const totalAWD = "4,814,900";
-  const totalILI = "3,900,000";
-  const totalDengue = "1,464";
+  const [patients, setPatients] = useState([]);
 
-  const awdData = [
-    { municipality: "Nabunturan", cases: 120 },
-    { municipality: "Monkayo", cases: 95 },
-    { municipality: "Compostela", cases: 80 }
-  ];
+  useEffect(() => {
+    let cancelled = false;
 
-  const iliData = [
-    { municipality: "Monkayo", cases: 140 },
-    { municipality: "Nabunturan", cases: 120 },
-    { municipality: "Mawab", cases: 100 }
-  ];
+    fetch("http://localhost:5000/patients")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        setPatients(Array.isArray(data) ? data : []);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPatients([]);
+      });
 
-  const dengueData = [
-    { municipality: "Nabunturan", cases: 200 },
-    { municipality: "Compostela", cases: 150 },
-    { municipality: "Monkayo", cases: 120 }
-  ];
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const normalizeDisease = (raw) => {
+    const v = String(raw ?? "").trim().toLowerCase();
+    if (!v) return "";
+    if (v.includes("awd") || (v.includes("acute") && v.includes("watery") && v.includes("diarr"))) {
+      return "AWD";
+    }
+    if (v.includes("ili") || (v.includes("influenza") && v.includes("like"))) {
+      return "ILI";
+    }
+    if (v.includes("dengue")) {
+      return "DENGUE";
+    }
+    return v.toUpperCase();
+  };
+
+  const { totalAWD, totalILI, totalDengue, awdData, iliData, dengueData } = useMemo(() => {
+    const countsByDisease = { AWD: 0, ILI: 0, DENGUE: 0 };
+    const byDiseaseByMunicipality = {
+      AWD: new Map(),
+      ILI: new Map(),
+      DENGUE: new Map()
+    };
+
+    for (const p of patients) {
+      const disease = normalizeDisease(p?.diseaseType);
+      if (disease !== "AWD" && disease !== "ILI" && disease !== "DENGUE") continue;
+
+      countsByDisease[disease] += 1;
+
+      const muni = String(p?.municipality ?? "Unknown").trim() || "Unknown";
+      const map = byDiseaseByMunicipality[disease];
+      map.set(muni, (map.get(muni) ?? 0) + 1);
+    }
+
+    const toTopList = (map, topN = 3) =>
+      Array.from(map.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, topN)
+        .map(([municipality, cases]) => ({ municipality, cases }));
+
+    return {
+      totalAWD: countsByDisease.AWD.toLocaleString(),
+      totalILI: countsByDisease.ILI.toLocaleString(),
+      totalDengue: countsByDisease.DENGUE.toLocaleString(),
+      awdData: toTopList(byDiseaseByMunicipality.AWD),
+      iliData: toTopList(byDiseaseByMunicipality.ILI),
+      dengueData: toTopList(byDiseaseByMunicipality.DENGUE)
+    };
+  }, [patients]);
 
   return (
 

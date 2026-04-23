@@ -22,11 +22,19 @@ function Signup() {
   const [barangay, setBarangay] = useState("");
   const [role, setRole] = useState("");
 
+  // 🔥 COMPLETE DATA (DAVAO DE ORO)
   const barangayData = {
-    Nabunturan: ["Basak","Bayabas","Bukal","Cabidianan","Katipunan"],
-    Monkayo: ["Awao","Babag","Banlag","Haguimitan"],
-    Compostela: ["Bagongon","Gabi","Lagab","Mangayon"],
-    Mawab: ["Andap","Concepcion","Nuevo Iloco"]
+    Nabunturan: ["Basak","Bayabas","Bukal","Cabidianan","Katipunan","Magsaysay","San Isidro","San Vicente"],
+    Monkayo: ["Awao","Babag","Banlag","Haguimitan","Union","Oro","Poblacion"],
+    Compostela: ["Bagongon","Gabi","Lagab","Mangayon","Osmena","Poblacion"],
+    Mawab: ["Andap","Concepcion","Nuevo Iloco","Poblacion","Salvacion"],
+    Maco: ["Anibongan","Anislagan","Bucana","Calabcab","Concepcion","Dumlan","Hijo","Lapu-lapu","Poblacion","San Juan","Taglawig"],
+    Maragusan: ["Bagong Silang","Coronobe","Katipunan","Mahayahay","New Albay","Poblacion"],
+    Montevista: ["Banagbanag","Banglasan","Camansi","Canidkid","Concepcion","Poblacion"],
+    Pantukan: ["Kingking","Magnaga","Napnapan","Poblacion","Tagdanua"],
+    NewBataan: ["Andap","Cabinuangan","Camanlangan","Poblacion","San Roque"],
+    Laak: ["Amorcruz","Anitap","Datu Ampunan","Longanapan","Poblacion"],
+    Mabini: ["Cadunan","Golden Valley","Pindasan","San Antonio","Tagnanan"]
   };
 
   const handleSignup = async (e) => {
@@ -95,7 +103,6 @@ function Signup() {
           Dengue, ILI, AWD
         </h2>
 
-        {/* 🔥 LOGIN / SIGNUP TAB */}
         <div className={`tab-container ${isSignup ? "signup-active" : ""}`}>
           <button className="tab" onClick={() => navigate("/login")}>
             LOGIN
@@ -128,7 +135,7 @@ function Signup() {
                 required
               />
 
-              {/* 🔥 TOP ROW ONLY */}
+              {/* 🔥 DROPDOWNS */}
               <div className="top-row">
 
                 <div>
@@ -143,7 +150,14 @@ function Signup() {
 
                 <div>
                   <label>Municipality</label>
-                  <select value={municipality} onChange={(e)=>{setMunicipality(e.target.value); setBarangay("");}} required>
+                  <select
+                    value={municipality}
+                    onChange={(e)=>{
+                      setMunicipality(e.target.value);
+                      setBarangay("");
+                    }}
+                    required
+                  >
                     <option value="">Select Municipality</option>
                     {Object.keys(barangayData).map((m)=>(
                       <option key={m}>{m}</option>
@@ -153,11 +167,16 @@ function Signup() {
 
                 <div>
                   <label>Barangay</label>
-                  <select value={barangay} onChange={(e)=>setBarangay(e.target.value)} required>
+                  <select
+                    value={barangay}
+                    onChange={(e)=>setBarangay(e.target.value)}
+                    required
+                  >
                     <option value="">Select Barangay</option>
-                    {municipality && barangayData[municipality].map((b)=>(
-                      <option key={b}>{b}</option>
-                    ))}
+                    {municipality &&
+                      barangayData[municipality]?.map((b)=>(
+                        <option key={b}>{b}</option>
+                      ))}
                   </select>
                 </div>
 

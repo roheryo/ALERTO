@@ -3,7 +3,6 @@ import "./Sidebar.css";
 
 import profileIcon from "../assets/images/account.png";
 
-/* ICONS */
 import {
   FaHome,
   FaUserPlus,
@@ -20,20 +19,29 @@ function Sidebar() {
 
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // 🔥 LOGOUT FUNCTION
+  const roleFromUser =
+    user?.role ??
+    user?.userRole ??
+    user?.user_role ??
+    user?.accountRole ??
+    user?.account_role;
+
+  const inferredRole = (() => {
+    if (roleFromUser && String(roleFromUser).trim()) return String(roleFromUser).trim();
+    if (!user) return null;
+    if (user.barangay && String(user.barangay).trim()) return "Barangay Employee";
+    if (user.municipality && String(user.municipality).trim()) return "Municipal Employee";
+    return "Provincial Employee";
+  })();
+
   const handleLogout = () => {
-
-    const confirmLogout = window.confirm("Are you sure you want to log out?");
-
-    if (confirmLogout) {
+    if (window.confirm("Are you sure you want to log out?")) {
       localStorage.removeItem("user");
       navigate("/login");
     }
-
   };
 
   return (
-
     <div className="sidebar">
 
       <h3 className="sidebar-title">
@@ -51,6 +59,11 @@ function Sidebar() {
         <h4 className="profile-name">
           {user?.username || "Guest"}
         </h4>
+
+        {/* 🔥 ROLE DISPLAY FIX */}
+        <p className="profile-role">
+          {inferredRole || "No Role"}
+        </p>
 
       </div>
 
@@ -95,20 +108,15 @@ function Sidebar() {
 
       </ul>
 
-      {/* 🔥 LOGOUT BUTTON */}
       <div className="logout-section">
-
         <button className="logout-btn" onClick={handleLogout}>
           <FaSignOutAlt className="menu-icon" />
           Logout
         </button>
-
       </div>
 
     </div>
-
   );
-
 }
 
 export default Sidebar;
