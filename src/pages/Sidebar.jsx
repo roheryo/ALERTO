@@ -21,17 +21,47 @@ function Sidebar() {
 
   const roleFromUser =
     user?.role ??
+    user?.Role ??
     user?.userRole ??
     user?.user_role ??
     user?.accountRole ??
     user?.account_role;
 
-  const inferredRole = (() => {
-    if (roleFromUser && String(roleFromUser).trim()) return String(roleFromUser).trim();
+  const roleKey = (() => {
+    const r = String(roleFromUser ?? "").trim().toLowerCase();
+    if (r.includes("barangay")) return "barangay";
+    if (r.includes("municipal")) return "municipal";
+    if (r.includes("provincial") || r.includes("province")) return "provincial";
     if (!user) return null;
-    if (user.barangay && String(user.barangay).trim()) return "Barangay Employee";
-    if (user.municipality && String(user.municipality).trim()) return "Municipal Employee";
+    if (user.barangay && String(user.barangay).trim()) return "barangay";
+    if (user.municipality && String(user.municipality).trim()) return "municipal";
+    return "provincial";
+  })();
+
+  const municipalityName = String(user?.municipality ?? "").trim();
+  const barangayName = String(user?.barangay ?? "").trim();
+  const provinceName = String(user?.province ?? "Davao de Oro").trim();
+
+  const roleLabel = (() => {
+    if (!roleKey) return null;
+    if (roleKey === "barangay") {
+      if (municipalityName && barangayName) {
+        return `Municipality of ${municipalityName}, Barangay ${barangayName} Employee`;
+      }
+      if (municipalityName) return `Municipality of ${municipalityName}, Barangay Employee`;
+      return "Barangay Employee";
+    }
+    if (roleKey === "municipal") {
+      if (municipalityName) return `Municipality of ${municipalityName} Employee`;
+      return "Municipal Employee";
+    }
+    if (provinceName) return `Province of ${provinceName} Employee`;
     return "Provincial Employee";
+  })();
+
+  const canAddPatient = (() => {
+    if (!roleKey) return false;
+    return roleKey !== "provincial";
   })();
 
   const handleLogout = () => {
@@ -62,7 +92,7 @@ function Sidebar() {
 
         {/* 🔥 ROLE DISPLAY FIX */}
         <p className="profile-role">
-          {inferredRole || "No Role"}
+          {roleLabel || "No Role"}
         </p>
 
       </div>
@@ -78,12 +108,14 @@ function Sidebar() {
           </Link>
         </li>
 
-        <li className={location.pathname === "/dashboard/add-patient" ? "active" : ""}>
-          <Link to="/dashboard/add-patient">
-            <FaUserPlus className="menu-icon" />
-            Add New Patient
-          </Link>
-        </li>
+        {canAddPatient && (
+          <li className={location.pathname === "/dashboard/add-patient" ? "active" : ""}>
+            <Link to="/dashboard/add-patient">
+              <FaUserPlus className="menu-icon" />
+              Add New Patient
+            </Link>
+          </li>
+        )}
 
         <li className={location.pathname === "/dashboard/cases" ? "active" : ""}>
           <Link to="/dashboard/cases">

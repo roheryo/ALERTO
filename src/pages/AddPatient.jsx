@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./AddPatient.css";
 import logo from "../assets/images/ddoLOGO.jpg";
+import { useNavigate } from "react-router-dom";
 
 function AddPatient() {
+  const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
 
@@ -13,7 +15,7 @@ function AddPatient() {
     birthdate: "",
     civilStatus: "",
 
-    province: "",
+    province: "Davao de Oro",
     municipality: "",
     barangay: "",
     purok: "",
@@ -22,6 +24,36 @@ function AddPatient() {
     diseaseType: "",
     dateStarted: ""
   });
+
+  const user = JSON.parse(localStorage.getItem("user"));
+  const role = String(user?.role ?? "").toLowerCase();
+  const inferredRole = (() => {
+    if (role) return role;
+    if (user?.barangay && String(user.barangay).trim()) return "barangay employee";
+    if (user?.municipality && String(user.municipality).trim()) return "municipal employee";
+    return "provincial employee";
+  })();
+
+  useEffect(() => {
+    if (String(inferredRole).includes("provincial")) {
+      navigate("/dashboard");
+    }
+  }, [inferredRole, navigate]);
+
+  // Municipality → Barangay mapping (Davao de Oro)
+  const barangayData = {
+    Nabunturan: ["Basak", "Bayabas", "Bukal", "Cabidianan", "Katipunan", "Magsaysay", "San Isidro", "San Vicente"],
+    Monkayo: ["Awao", "Babag", "Banlag", "Haguimitan", "Union", "Oro", "Poblacion"],
+    Compostela: ["Bagongon", "Gabi", "Lagab", "Mangayon", "Osmena", "Poblacion"],
+    Mawab: ["Andap", "Concepcion", "Nuevo Iloco", "Poblacion", "Salvacion"],
+    Maco: ["Anibongan", "Anislagan", "Bucana", "Calabcab", "Concepcion", "Dumlan", "Hijo", "Lapu-lapu", "Poblacion", "San Juan", "Taglawig"],
+    Maragusan: ["Bagong Silang", "Coronobe", "Katipunan", "Mahayahay", "New Albay", "Poblacion"],
+    Montevista: ["Banagbanag", "Banglasan", "Camansi", "Canidkid", "Concepcion", "Poblacion"],
+    Pantukan: ["Kingking", "Magnaga", "Napnapan", "Poblacion", "Tagdanua"],
+    NewBataan: ["Andap", "Cabinuangan", "Camanlangan", "Poblacion", "San Roque"],
+    Laak: ["Amorcruz", "Anitap", "Datu Ampunan", "Longanapan", "Poblacion"],
+    Mabini: ["Cadunan", "Golden Valley", "Pindasan", "San Antonio", "Tagnanan"]
+  };
 
   const handleChange = (e) => {
 
@@ -32,6 +64,15 @@ function AddPatient() {
       [name]: value
     });
 
+  };
+
+  const handleMunicipalityChange = (e) => {
+    const value = e.target.value;
+    setPatientData((prev) => ({
+      ...prev,
+      municipality: value,
+      barangay: ""
+    }));
   };
 
   const nextStep = () => {
@@ -260,14 +301,18 @@ function AddPatient() {
               <label>Municipality</label>
               <div className="input-with-icon">
                 <span className="input-icon"></span>
-
-                <input
-                  type="text"
+                <select
                   name="municipality"
                   value={patientData.municipality}
-                  onChange={handleChange}
-                  placeholder="Enter municipality"
-                />
+                  onChange={handleMunicipalityChange}
+                >
+                  <option value="">Select municipality</option>
+                  {Object.keys(barangayData).map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             {/* Barangay */}
@@ -275,14 +320,19 @@ function AddPatient() {
               <label>Barangay</label>
               <div className="input-with-icon">
                 <span className="input-icon"></span>
-
-                <input
-                  type="text"
+                <select
                   name="barangay"
                   value={patientData.barangay}
                   onChange={handleChange}
-                  placeholder="Enter barangay"
-                />
+                  disabled={!patientData.municipality}
+                >
+                  <option value="">Select barangay</option>
+                  {(barangayData[patientData.municipality] ?? []).map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             {/* Purok */}

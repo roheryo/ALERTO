@@ -18,6 +18,15 @@ function Dashboard() {
   const temperature = "29°C";
   const condition = "Partly Cloudy";
 
+  const user = JSON.parse(localStorage.getItem("user"));
+  const role = String(user?.role ?? "").toLowerCase();
+  const inferredRole = (() => {
+    if (role) return role;
+    if (user?.barangay && String(user.barangay).trim()) return "barangay employee";
+    if (user?.municipality && String(user.municipality).trim()) return "municipal employee";
+    return "provincial employee";
+  })();
+
   const [patients, setPatients] = useState([]);
 
   useEffect(() => {
@@ -54,40 +63,69 @@ function Dashboard() {
     return v.toUpperCase();
   };
 
+  const scopedPatients = useMemo(() => {
+    if (!Array.isArray(patients)) return [];
+    const municipality = String(user?.municipality ?? "").trim();
+    const barangay = String(user?.barangay ?? "").trim();
+
+    if (String(inferredRole).includes("provincial")) return patients;
+
+    if (String(inferredRole).includes("barangay")) {
+      // Dashboard for barangay users should show top barangays within their municipality
+      // so we scope to municipality (not a single barangay).
+      if (!municipality) return patients;
+      return patients.filter((p) => String(p?.municipality ?? "").trim() === municipality);
+    }
+
+    if (String(inferredRole).includes("municipal")) {
+      if (!municipality) return patients;
+      return patients.filter((p) => String(p?.municipality ?? "").trim() === municipality);
+    }
+
+    return patients;
+  }, [patients, inferredRole, user?.municipality, user?.barangay]);
+
   const { totalAWD, totalILI, totalDengue, awdData, iliData, dengueData } = useMemo(() => {
     const countsByDisease = { AWD: 0, ILI: 0, DENGUE: 0 };
-    const byDiseaseByMunicipality = {
+    const groupByKey = String(inferredRole).includes("provincial") ? "municipality" : "barangay";
+
+    const byDiseaseByGroup = {
       AWD: new Map(),
       ILI: new Map(),
       DENGUE: new Map()
     };
 
-    for (const p of patients) {
+    for (const p of scopedPatients) {
       const disease = normalizeDisease(p?.diseaseType);
       if (disease !== "AWD" && disease !== "ILI" && disease !== "DENGUE") continue;
 
       countsByDisease[disease] += 1;
 
-      const muni = String(p?.municipality ?? "Unknown").trim() || "Unknown";
-      const map = byDiseaseByMunicipality[disease];
-      map.set(muni, (map.get(muni) ?? 0) + 1);
+      const key =
+        groupByKey === "municipality"
+          ? String(p?.municipality ?? "Unknown").trim() || "Unknown"
+          : String(p?.barangay ?? "Unknown").trim() || "Unknown";
+
+      const map = byDiseaseByGroup[disease];
+      map.set(key, (map.get(key) ?? 0) + 1);
     }
 
     const toTopList = (map, topN = 3) =>
       Array.from(map.entries())
         .sort((a, b) => b[1] - a[1])
         .slice(0, topN)
-        .map(([municipality, cases]) => ({ municipality, cases }));
+        // Keep the same chart XAxis dataKey ("municipality") to avoid UI changes.
+        .map(([label, cases]) => ({ municipality: label, cases }));
 
     return {
       totalAWD: countsByDisease.AWD.toLocaleString(),
       totalILI: countsByDisease.ILI.toLocaleString(),
       totalDengue: countsByDisease.DENGUE.toLocaleString(),
-      awdData: toTopList(byDiseaseByMunicipality.AWD),
-      iliData: toTopList(byDiseaseByMunicipality.ILI),
-      dengueData: toTopList(byDiseaseByMunicipality.DENGUE)
+      awdData: toTopList(byDiseaseByGroup.AWD),
+      iliData: toTopList(byDiseaseByGroup.ILI),
+      dengueData: toTopList(byDiseaseByGroup.DENGUE)
     };
-  }, [patients]);
+  }, [scopedPatients, normalizeDisease, inferredRole]);
 
   return (
 
