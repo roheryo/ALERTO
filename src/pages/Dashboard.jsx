@@ -27,6 +27,30 @@ function Dashboard() {
     return "provincial employee";
   })();
 
+  const roleKey = (() => {
+    const r = String(inferredRole ?? "").toLowerCase();
+    if (r.includes("barangay")) return "barangay";
+    if (r.includes("municipal")) return "municipal";
+    return "provincial";
+  })();
+
+  const municipalityName = String(user?.municipality ?? "").trim();
+
+  const awdChartTitle =
+    roleKey === "provincial"
+      ? "Highest Municipalities with AWD Cases"
+      : `Highest Cases in Barangays in ${municipalityName || "Municipality"} (AWD)`;
+
+  const iliChartTitle =
+    roleKey === "provincial"
+      ? "Highest Municipalities with ILI Cases"
+      : `Highest Cases in Barangays in ${municipalityName || "Municipality"} (ILI)`;
+
+  const dengueChartTitle =
+    roleKey === "provincial"
+      ? "Highest Municipalities with Dengue Cases"
+      : `Highest Cases in Barangays in ${municipalityName || "Municipality"} (Dengue)`;
+
   const [patients, setPatients] = useState([]);
 
   useEffect(() => {
@@ -224,7 +248,7 @@ function Dashboard() {
           <div className="chart-card">
 
             <h3>
-              Highest Municipalities with AWD Cases
+              {awdChartTitle}
             </h3>
 
             <ResponsiveContainer width="100%" height={250}>
@@ -253,7 +277,7 @@ function Dashboard() {
           <div className="chart-card">
 
             <h3>
-              Highest Municipalities with ILI Cases
+              {iliChartTitle}
             </h3>
 
             <ResponsiveContainer width="100%" height={250}>
@@ -282,7 +306,7 @@ function Dashboard() {
           <div className="chart-card">
 
             <h3>
-              Highest Municipalities with Dengue Cases
+              {dengueChartTitle}
             </h3>
 
             <ResponsiveContainer width="100%" height={250}>

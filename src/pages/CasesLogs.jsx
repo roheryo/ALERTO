@@ -30,99 +30,81 @@ function CasesLogs() {
 
   const [patients, setPatients] = useState([]);
 
-useEffect(() => {
-  fetch("http://localhost:5000/patients")
-    .then(res => res.json())
-    .then(data => setPatients(data))
-    .catch(err => console.error(err));
-}, []);
+  const [showView, setShowView] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [editData, setEditData] = useState(null);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/patients")
+      .then(res => res.json())
+      .then(data => setPatients(data))
+      .catch(err => console.error(err));
+  }, []);
 
   const user = JSON.parse(localStorage.getItem("user"));
-  const role = String(user?.role ?? user?.Role ?? user?.userRole ?? user?.user_role ?? "").toLowerCase();
-  const inferredRole = (() => {
-    if (role) return role;
-    if (user?.barangay && String(user.barangay).trim()) return "barangay employee";
-    if (user?.municipality && String(user.municipality).trim()) return "municipal employee";
-    return "provincial employee";
-  })();
+  const role = String(user?.role ?? "").toLowerCase();
 
-  const roleKey = (() => {
-    const r = String(inferredRole ?? "").toLowerCase();
-    if (r.includes("barangay")) return "barangay";
-    if (r.includes("municipal")) return "municipal";
-    return "provincial";
-  })();
+  const roleKey = role.includes("barangay")
+    ? "barangay"
+    : role.includes("municipal")
+    ? "municipal"
+    : "provincial";
 
-  const lockedMunicipality = String(user?.municipality ?? "").trim();
-  const lockedBarangay = String(user?.barangay ?? "").trim();
+  const lockedMunicipality = user?.municipality || "";
+  const lockedBarangay = user?.barangay || "";
 
   useEffect(() => {
     if (roleKey === "municipal" || roleKey === "barangay") {
       if (lockedMunicipality) {
         setSelectedMunicipality(lockedMunicipality);
-        setBarangays(municipalityData[lockedMunicipality] ?? []);
+        setBarangays(municipalityData[lockedMunicipality] || []);
       }
     }
     if (roleKey === "barangay") {
-      if (lockedBarangay) setSelectedBarangay(lockedBarangay);
+      setSelectedBarangay(lockedBarangay);
     }
-  }, [roleKey, lockedMunicipality, lockedBarangay]);
+  }, []);
 
   const visiblePatients = useMemo(() => {
-    if (!Array.isArray(patients)) return [];
+    let filtered = patients;
 
-    const scoped = (() => {
-      if (roleKey === "provincial") return patients;
-      if (roleKey === "municipal") {
-        if (!lockedMunicipality) return patients;
-        return patients.filter((p) => String(p?.municipality ?? "").trim() === lockedMunicipality);
-      }
-      return patients.filter((p) => {
-        const pM = String(p?.municipality ?? "").trim();
-        const pB = String(p?.barangay ?? "").trim();
-        return (!lockedMunicipality || pM === lockedMunicipality) && (!lockedBarangay || pB === lockedBarangay);
-      });
-    })();
-
-    const muniFilter = roleKey === "provincial" ? selectedMunicipality : lockedMunicipality;
-    const brgyFilter = roleKey === "barangay" ? lockedBarangay : selectedBarangay;
-
-    let filtered = scoped;
-
-    if (muniFilter) filtered = filtered.filter((p) => String(p?.municipality ?? "").trim() === muniFilter);
-    if (brgyFilter) filtered = filtered.filter((p) => String(p?.barangay ?? "").trim() === brgyFilter);
-
-    if (selectedDisease) {
-      filtered = filtered.filter((p) => String(p?.diseaseType ?? "").trim() === selectedDisease);
+    if (roleKey === "municipal") {
+      filtered = filtered.filter(p => p.municipality === lockedMunicipality);
     }
 
-    if (searchTerm.trim()) {
-      const q = searchTerm.trim().toLowerCase();
-      if (roleKey === "barangay") {
-        filtered = filtered.filter((p) => String(p?.purok ?? "").toLowerCase().includes(q));
-      } else {
-        filtered = filtered.filter((p) => String(p?.name ?? "").toLowerCase().includes(q));
-      }
+    if (roleKey === "barangay") {
+      filtered = filtered.filter(
+        p => p.municipality === lockedMunicipality &&
+             p.barangay === lockedBarangay
+      );
+    }
+
+    if (selectedMunicipality) {
+      filtered = filtered.filter(p => p.municipality === selectedMunicipality);
+    }
+
+    if (selectedBarangay) {
+      filtered = filtered.filter(p => p.barangay === selectedBarangay);
+    }
+
+    if (selectedDisease) {
+      filtered = filtered.filter(p => p.diseaseType === selectedDisease);
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(p =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
     return filtered;
-  }, [
-    patients,
-    roleKey,
-    lockedMunicipality,
-    lockedBarangay,
-    selectedMunicipality,
-    selectedBarangay,
-    selectedDisease,
-    searchTerm
-  ]);
+  }, [patients, selectedMunicipality, selectedBarangay, selectedDisease, searchTerm]);
 
-  /* ================= HANDLE MUNICIPALITY CHANGE ================= */
+  /* ================= FUNCTIONS ================= */
 
   const handleMunicipalityChange = (e) => {
-
     const municipality = e.target.value;
-
     setSelectedMunicipality(municipality);
     setSelectedBarangay("");
 
@@ -131,133 +113,118 @@ useEffect(() => {
     } else {
       setBarangays([]);
     }
-
   };
 
   const handleBarangayChange = (e) => {
     setSelectedBarangay(e.target.value);
   };
 
+  const handleView = (p) => {
+    setSelectedPatient(p);
+    setShowView(true);
+  };
+
+  const handleEdit = (p) => {
+    setEditData(p);
+    setShowEdit(true);
+  };
+
+  const handleDelete = async (id) => {
+    const confirmDelete = window.confirm("Are you sure you want to delete?");
+    if (!confirmDelete) return;
+
+    await fetch(`http://localhost:5000/patients/${id}`, {
+      method: "DELETE"
+    });
+
+    setPatients(prev => prev.filter(p => p.id !== id));
+  };
+
+  const handleUpdate = async () => {
+    await fetch(`http://localhost:5000/patients/${editData.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editData)
+    });
+
+    setPatients(prev =>
+      prev.map(p => (p.id === editData.id ? editData : p))
+    );
+
+    setShowEdit(false);
+  };
+
+  /* ================= UI ================= */
+
   return (
     <div className="caseslogs-container">
 
-      {/* ================= HEADER ================= */}
-
+      {/* HEADER (UNCHANGED) */}
       <div className="dashboard-header">
-
         <h2>Cases Logs</h2>
 
         <div className="header-right">
-
           <div className="header-text">
             <span>Davao de Oro</span>
             <small>Provincial Health Office</small>
           </div>
 
-          <img
-            src={logo}
-            alt="DDO Logo"
-            className="header-logo"
-          />
-
+          <img src={logo} alt="DDO Logo" className="header-logo" />
         </div>
-
       </div>
 
-      {/* ================= CONTENT ================= */}
-
+      {/* CONTENT */}
       <div className="caseslogs-content">
-
-        {/* ================= CONTROLS ================= */}
 
         <div className="caseslogs-controls">
 
-            {/* LEFT — Search */}
-            <input
-              type="text"
-              placeholder="Search patient name..."
-              className="search-input"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <input
+            type="text"
+            placeholder="Search patient name..."
+            className="search-input"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
 
-            {/* RIGHT — Filters */}
-            <div className="filters-right">
+          <div className="filters-right">
 
-              {/* Municipality */}
-              <select
-                className="filter-select"
-                onChange={handleMunicipalityChange}
-                value={roleKey === "provincial" ? selectedMunicipality : lockedMunicipality}
-                disabled={roleKey !== "provincial"}
-              >
-                <option value="">
-                  All Municipalities
-                </option>
+            <select
+              className="filter-select"
+              onChange={handleMunicipalityChange}
+              value={selectedMunicipality}
+            >
+              <option value="">All Municipalities</option>
+              {Object.keys(municipalityData).map((m) => (
+                <option key={m}>{m}</option>
+              ))}
+            </select>
 
-                {Object.keys(municipalityData).map((municipality) => (
+            <select
+              className="filter-select"
+              onChange={handleBarangayChange}
+              value={selectedBarangay}
+            >
+              <option value="">All Barangays</option>
+              {barangays.map((b, i) => (
+                <option key={i}>{b}</option>
+              ))}
+            </select>
 
-                  <option
-                    key={municipality}
-                    value={municipality}
-                  >
-                    {municipality}
-                  </option>
-
-                ))}
-
-              </select>
-
-              {/* Barangay */}
-              <select
-                className="filter-select"
-                disabled={roleKey === "barangay" ? true : !selectedMunicipality}
-                onChange={handleBarangayChange}
-                value={roleKey === "barangay" ? lockedBarangay : selectedBarangay}
-              >
-
-                <option>
-                  All Barangays
-                </option>
-
-                {(roleKey === "barangay"
-                  ? (lockedBarangay ? [lockedBarangay] : [])
-                  : barangays
-                ).map((barangay, index) => (
-
-                  <option
-                    key={index}
-                    value={barangay}
-                  >
-                    {barangay}
-                  </option>
-
-                ))}
-
-              </select>
-
-              {/* Disease */}
-              <select
-                className="filter-select"
-                value={selectedDisease}
-                onChange={(e) => setSelectedDisease(e.target.value)}
-              >
-                <option value="">All Diseases</option>
-                <option>Acute Watery Diarrhea</option>
-                <option>Influenza-Like Illness</option>
-                <option>Dengue</option>
-              </select>
-
-            </div>
+            <select
+              className="filter-select"
+              value={selectedDisease}
+              onChange={(e) => setSelectedDisease(e.target.value)}
+            >
+              <option value="">All Diseases</option>
+              <option>Dengue</option>
+            </select>
 
           </div>
+        </div>
 
-        {/* ================= TABLE ================= */}
-
+        {/* TABLE */}
         <div className="table-container">
-
           <table className="cases-table">
-
             <thead>
               <tr>
                 <th>Patient Name</th>
@@ -271,61 +238,73 @@ useEffect(() => {
               </tr>
             </thead>
 
-            {/* <tbody>
-
-              <tr>
-                <td>Juan Dela Cruz</td>
-                <td>25</td>
-                <td>Male</td>
-                <td>Dengue</td>
-                <td>Nabunturan</td>
-                <td>Poblacion</td>
-                <td>08/04/2026</td>
-
-                <td className="action-buttons">
-
-                  <button className="view-btn">
-                    View
-                  </button>
-
-                  <button className="edit-btn">
-                    Edit
-                  </button>
-
-                  <button className="delete-btn">
-                    Delete
-                  </button>
-
-                </td>
-
-              </tr>
-
-            </tbody> */}
             <tbody>
-  {visiblePatients.map((p) => (
-    <tr key={p.id}>
-      <td>{p.name}</td>
-      <td>{p.age}</td>
-      <td>{p.sex}</td>
-      <td>{p.diseaseType}</td>
-      <td>{p.municipality}</td>
-      <td>{p.barangay}</td>
-      <td>{p.dateStarted}</td>
+              {visiblePatients.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.name}</td>
+                  <td>{p.age}</td>
+                  <td>{p.sex}</td>
+                  <td>{p.diseaseType}</td>
+                  <td>{p.municipality}</td>
+                  <td>{p.barangay}</td>
+                  <td>{p.dateStarted}</td>
 
-      <td className="action-buttons">
-        <button className="view-btn">View</button>
-        <button className="edit-btn">Edit</button>
-        <button className="delete-btn">Delete</button>
-      </td>
-    </tr>
-  ))}
-</tbody>
+                  <td className="action-buttons">
+                    <button className="view-btn" onClick={() => handleView(p)}>View</button>
+                    <button className="edit-btn" onClick={() => handleEdit(p)}>Edit</button>
+                    <button className="delete-btn" onClick={() => handleDelete(p.id)}>Delete</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
 
           </table>
-
         </div>
-
       </div>
+
+      {/* VIEW MODAL (FULL DATA) */}
+      {showView && selectedPatient && (
+        <div className="modal-overlay">
+          <div className="modal">
+
+            <h3>Patient Details</h3>
+
+            <p><b>Name:</b> {selectedPatient.name}</p>
+            <p><b>Age:</b> {selectedPatient.age}</p>
+            <p><b>Sex:</b> {selectedPatient.sex}</p>
+            <p><b>Disease:</b> {selectedPatient.diseaseType}</p>
+            <p><b>Municipality:</b> {selectedPatient.municipality}</p>
+            <p><b>Barangay:</b> {selectedPatient.barangay}</p>
+            <p><b>Purok:</b> {selectedPatient.purok}</p>
+            <p><b>Birthdate:</b> {selectedPatient.birthdate}</p>
+            <p><b>Civil Status:</b> {selectedPatient.civilStatus}</p>
+            <p><b>Birthplace:</b> {selectedPatient.birthplace}</p>
+            <p><b>Date Started:</b> {selectedPatient.dateStarted}</p>
+
+            <button onClick={() => setShowView(false)}>Close</button>
+
+          </div>
+        </div>
+      )}
+
+      {/* EDIT MODAL */}
+      {showEdit && editData && (
+        <div className="modal-overlay">
+          <div className="modal">
+
+            <h3>Edit Patient</h3>
+
+            <input value={editData.name} onChange={(e)=>setEditData({...editData,name:e.target.value})}/>
+            <input value={editData.age} onChange={(e)=>setEditData({...editData,age:e.target.value})}/>
+            <input value={editData.sex} onChange={(e)=>setEditData({...editData,sex:e.target.value})}/>
+            <input value={editData.diseaseType} onChange={(e)=>setEditData({...editData,diseaseType:e.target.value})}/>
+
+            <button onClick={handleUpdate}>Save</button>
+            <button onClick={()=>setShowEdit(false)}>Cancel</button>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

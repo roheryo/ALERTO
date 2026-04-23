@@ -382,13 +382,16 @@ function AddPatient() {
                 <div className="input-with-icon">
                   <span className="input-icon"></span>
 
-                  <input
-                    type="text"
+                  <select
                     name="diseaseType"
                     value={patientData.diseaseType}
                     onChange={handleChange}
-                    placeholder="Enter disease type"
-                  />
+                  >
+                    <option value="">Select disease</option>
+                    <option value="Dengue">Dengue</option>
+                    <option value="Influenza-Like Illness">Influenza Like Illness</option>
+                    <option value="Acute Watery Diarrhea">Acute Watery Diarrhea</option>
+                  </select>
                 </div>
               </div>
               {/* Date Started */}
