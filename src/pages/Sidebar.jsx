@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 
 import profileIcon from "../assets/images/account.png";
@@ -9,15 +9,28 @@ import {
   FaUserPlus,
   FaClipboardList,
   FaChartBar,
-  FaBell
+  FaBell,
+  FaSignOutAlt
 } from "react-icons/fa";
 
 function Sidebar() {
 
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // 🔥 GET USER FROM LOCAL STORAGE
   const user = JSON.parse(localStorage.getItem("user"));
+
+  // 🔥 LOGOUT FUNCTION
+  const handleLogout = () => {
+
+    const confirmLogout = window.confirm("Are you sure you want to log out?");
+
+    if (confirmLogout) {
+      localStorage.removeItem("user");
+      navigate("/login");
+    }
+
+  };
 
   return (
 
@@ -35,7 +48,6 @@ function Sidebar() {
           className="profile-icon"
         />
 
-        {/* 🔥 DISPLAY USERNAME */}
         <h4 className="profile-name">
           {user?.username || "Guest"}
         </h4>
@@ -82,6 +94,16 @@ function Sidebar() {
         </li>
 
       </ul>
+
+      {/* 🔥 LOGOUT BUTTON */}
+      <div className="logout-section">
+
+        <button className="logout-btn" onClick={handleLogout}>
+          <FaSignOutAlt className="menu-icon" />
+          Logout
+        </button>
+
+      </div>
 
     </div>
 

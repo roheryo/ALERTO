@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 import logo from "../assets/images/ddoLOGO.JPG";
 import bgImage from "../assets/images/ddoBG.jpg";
+
 function Login() {
 
   const navigate = useNavigate();
@@ -11,41 +12,6 @@ function Login() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
-  const [municipality, setMunicipality] = useState("");
-  const [barangay, setBarangay] = useState("");
-
-  const barangayData = {
-
-    Nabunturan: [
-      "Basak",
-      "Bayabas",
-      "Bukal",
-      "Cabidianan",
-      "Katipunan"
-    ],
-
-    Monkayo: [
-      "Awao",
-      "Babag",
-      "Banlag",
-      "Haguimitan"
-    ],
-
-    Compostela: [
-      "Bagongon",
-      "Gabi",
-      "Lagab",
-      "Mangayon"
-    ],
-
-    Mawab: [
-      "Andap",
-      "Concepcion",
-      "Nuevo Iloco"
-    ]
-
-  };
 
   const handleLogin = async (e) => {
 
@@ -94,13 +60,11 @@ function Login() {
       <div className="login-card">
 
         <div className="logo-placeholder">
-
           <img
             src={logo}
             alt="Davao de Oro Logo"
             className="logo-image"
           />
-
         </div>
 
         <h2 className="system-title">
@@ -111,17 +75,11 @@ function Login() {
           Dengue, ILI, AWD
         </h2>
 
-        <div
-          className={`tab-container ${
-            isSignup ? "signup-active" : ""
-          }`}
-        >
+        <div className={`tab-container ${isSignup ? "signup-active" : ""}`}>
 
           <button
             className="tab"
-            onClick={() => {
-              setIsSignup(false);
-            }}
+            onClick={() => setIsSignup(false)}
           >
             LOGIN
           </button>
@@ -130,10 +88,7 @@ function Login() {
             className="tab"
             onClick={() => {
               setIsSignup(true);
-
-              setTimeout(() => {
-                navigate("/signup");
-              }, 150);
+              setTimeout(() => navigate("/signup"), 150);
             }}
           >
             SIGN UP
@@ -152,9 +107,7 @@ function Login() {
             type="text"
             placeholder="Enter Username"
             value={username}
-            onChange={(e) =>
-              setUsername(e.target.value)
-            }
+            onChange={(e) => setUsername(e.target.value)}
             required
           />
 
@@ -163,73 +116,9 @@ function Login() {
             type="password"
             placeholder="Enter Password"
             value={password}
-            onChange={(e) =>
-              setPassword(e.target.value)
-            }
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
-
-          <div className="location-row">
-
-            <div className="location-group">
-
-              <label>Municipality</label>
-
-              <select
-                value={municipality}
-                onChange={(e) => {
-                  setMunicipality(e.target.value);
-                  setBarangay("");
-                }}
-                className="dropdown"
-                required
-              >
-                <option value="">
-                  Select Municipality
-                </option>
-
-                {Object.keys(barangayData).map((muni) => (
-
-                  <option
-                    key={muni}
-                    value={muni}
-                  >
-                    {muni}
-                  </option>
-
-                ))}
-
-              </select>
-            </div>
-
-            <div className="location-group">
-              <label>Barangay</label>
-
-              <select
-                value={barangay}
-                onChange={(e) =>
-                  setBarangay(e.target.value)
-                }
-                className="dropdown"
-                required
-              >
-                <option value="">
-                  Select Barangay
-                </option>
-
-                {municipality &&
-                  barangayData[municipality].map((brgy) => (
-
-                    <option
-                      key={brgy}
-                      value={brgy}
-                    >
-                      {brgy}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          </div>
 
           <button
             type="submit"
@@ -239,10 +128,7 @@ function Login() {
           </button>
 
           <div className="signup-section">
-
-            <span>
-              Don't have an account?
-            </span>
+            <span>Don't have an account?</span>
 
             <button
               type="button"
@@ -251,14 +137,14 @@ function Login() {
             >
               Sign Up
             </button>
-
-          </div>  
+          </div>
 
         </form>
 
         <p className="footer-text">
           Secure authentication for ALERTO Disease Surveillance
         </p>
+
       </div>
     </div>
   );

@@ -2,17 +2,21 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./db");
 
-const app = express(); // ✅ THIS FIXES YOUR ERROR
+const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// test route
+/* =========================
+   TEST ROUTE
+========================= */
 app.get("/", (req, res) => {
   res.send("Backend is running");
 });
 
-// ADD PATIENT ROUTE
+/* =========================
+   ADD PATIENT
+========================= */
 app.post("/add-patient", async (req, res) => {
   try {
     const {
@@ -57,6 +61,10 @@ app.post("/add-patient", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+/* =========================
+   GET PATIENTS
+========================= */
 app.get("/patients", async (req, res) => {
   try {
     const [rows] = await db.query("SELECT * FROM patients");
@@ -66,17 +74,48 @@ app.get("/patients", async (req, res) => {
   }
 });
 
-app.listen(5000, () => {
-  console.log("Server running on http://localhost:5000");
-});
-
+/* =========================
+   SIGNUP (UPDATED ✅)
+========================= */
 app.post("/signup", async (req, res) => {
-  const { username, email, password } = req.body;
+
+  const {
+    fullName,
+    email,
+    contactNumber,
+    username,
+    password,
+    role,
+    municipality,
+    barangay
+  } = req.body;
 
   try {
+    // 🔥 CHECK IF USER EXISTS
+    const [existing] = await db.query(
+      "SELECT * FROM users WHERE username = ? OR email = ?",
+      [username, email]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    // 🔥 INSERT USER WITH ROLE + LOCATION
     await db.query(
-      "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-      [username, email, password]
+      `INSERT INTO users 
+      (fullName, email, contactNumber, username, password, role, municipality, barangay)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        fullName,
+        email,
+        contactNumber,
+        username,
+        password,
+        role,
+        municipality,
+        barangay
+      ]
     );
 
     res.json({ message: "User registered!" });
@@ -86,6 +125,9 @@ app.post("/signup", async (req, res) => {
   }
 });
 
+/* =========================
+   LOGIN
+========================= */
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -99,9 +141,19 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    res.json({ message: "Login successful", user: rows[0] });
+    res.json({
+      message: "Login successful",
+      user: rows[0] // 🔥 includes role, municipality, etc
+    });
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+/* =========================
+   SERVER START
+========================= */
+app.listen(5000, () => {
+  console.log("Server running on http://localhost:5000");
 });
