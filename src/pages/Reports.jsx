@@ -1,6 +1,76 @@
 import { useEffect, useMemo, useState } from "react";
 import "./Reports.css";
 
+const MUNICIPALITY_DATA = {
+  Compostela: [
+    "Aurora","Bagongon","Gabi","Lagab","Mangayon","Mapaca","Maparat",
+    "New Alegria","Ngan","Osmeña","Panansalan","Poblacion",
+    "San Jose","San Miguel","Siocon","Tamia"
+  ],
+  Maragusan: [
+    "Bagong Silang","Bahi","Cambawan","Coronobe","Katipunan","Lahi",
+    "Langgawisan","Mabugnao","Magcagong","Mahayahay","Mapawa",
+    "Maragusan (Poblacion)","Mauswagon","New Albay","New Katipunan",
+    "New Manay","New Panay","Paloc","Parasanon","Talian","Tandik",
+    "Tigbao","Tupaz","Tupaz Proper"
+  ],
+  Monkayo: [
+    "Awao","Babag","Banlag","Baylo","Casoon","Haguimitan","Inambatan",
+    "Macopa","Mamunga","Mount Diwata","Naboc","Olaycon","Pasian",
+    "Poblacion","Rizal","Salvacion","San Isidro","San Jose",
+    "Tubo-tubo","Union","Upper Ulip"
+  ],
+  Montevista: [
+    "Banagbanag","Banglasan","Bankerohan Norte","Bankerohan Sur",
+    "Camansi","Camantangan","Concepcion","Dauman","Kapatagan",
+    "Lebanon","Linoan","Mayaon","New Eagle","New Visayas",
+    "Prosperidad","San Jose","San Vicente","Santa Maria","Tapasan","Poblacion"
+  ],
+  "New Bataan": [
+    "Andap","Bantacan","Batinao","Cabinuangan (Poblacion)","Camanlangan",
+    "Cogonon","Fatima","Kahayag","Katipunan","Magangit","Magsaysay",
+    "Manurigao","Pagsabangan","Panag","San Roque","Tandawan"
+  ],
+  Nabunturan: [
+    "Anislagan","Antiquera","Basak","Bayabas","Bukal","Cabacungan",
+    "Cabidianan","Katipunan","Libasan","Linda","Magading","Magsaysay",
+    "Mainit","Manat","Matilo","Mipangi","New Dauis","New Sibonga",
+    "Ogao","Pangutosan","Poblacion","San Isidro","San Roque",
+    "San Vicente","Santa Maria","Santo Niño (Kao)","Sasa","Tagnocon"
+  ],
+  Laak: [
+    "Aguinaldo","Amor Cruz","Ampawid","Andap","Anitap","Bagong Silang",
+    "Banbanon","Belmonte","Binasbas","Bullucan","Cebulida","Concepcion",
+    "Datu Ampunan","Datu Davao","Doña Josefa","El Katipunan","Il Papa",
+    "Imelda","Inacayan","Kaligutan","Kapatagan","Kidawa","Kilagding",
+    "Kiokmay","Laak (Poblacion)","Langtud","Longanapan","Mabuhay",
+    "Macopa","Malinao","Mangloy","Melale","Naga","New Bethlehem",
+    "Panamoren","Sabud","San Antonio","Santa Emilia","Santo Niño","Sisimon"
+  ],
+  Mabini: [
+    "Cadunan","Concepcion","Cuvia","Golden Valley (Maraut)","Libodon",
+    "Pindasan","Poblacion","San Antonio","San Vicente",
+    "Tagnanan (Mabini)","Del Pilar"
+  ],
+  Maco: [
+    "Anibongan","Anislagan","Binuangan","Bucana","Calabcab","Concepcion",
+    "Dumlan","Elizalde (Somil)","Gubatan","Hijo","Kinuban","Langgam",
+    "Lapu-lapu","Libay-libay","Limbo","Lumatab","Magangit","Mainit",
+    "Malamodao","Manipongol","Mapaang","Masara","New Asturias",
+    "New Barili","Panibasan","Panoraon","Pangi (Gaudencio Antonio)",
+    "Poblacion","San Juan","San Roque","Sangab","Taglawig"
+  ],
+  Mawab: [
+    "Andili","Bawani","Concepcion","Malinawon","Nueva Visayas",
+    "Nuevo Iloco","Poblacion","Salvacion","Saosao","Sawangan","Tuboran"
+  ],
+  Pantukan: [
+    "Araibo","Bongabong","Bongbong","Kingking (Poblacion)",
+    "Las Arenas","Magnaga","Matiao","Napnapan","P. Fuentes",
+    "Tag-ugpo","Tagdangua","Tambongon","Tibagon"
+  ]
+};
+
 function formatLongDate(d) {
   try {
     return new Intl.DateTimeFormat("en-PH", {
@@ -131,31 +201,18 @@ function Reports() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleKey, lockedMunicipality, lockedBarangay]);
 
-  const municipalityOptions = useMemo(() => {
-    const set = new Set();
-    for (const p of patients ?? []) {
-      const m = String(p?.municipality ?? "").trim();
-      if (m) set.add(m);
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [patients]);
+ const municipalityOptions = Object.keys(MUNICIPALITY_DATA);
 
   const barangayOptions = useMemo(() => {
-    const set = new Set();
-    const scopeMunicipality =
-      roleKey === "barangay" || roleKey === "municipal"
-        ? lockedMunicipality
-        : selectedMunicipality;
+  const selected =
+    roleKey === "barangay" || roleKey === "municipal"
+      ? lockedMunicipality
+      : selectedMunicipality;
 
-    for (const p of patients ?? []) {
-      const m = String(p?.municipality ?? "").trim();
-      const b = String(p?.barangay ?? "").trim();
-      if (!b) continue;
-      if (scopeMunicipality && m !== scopeMunicipality) continue;
-      set.add(b);
-    }
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [patients, selectedMunicipality, roleKey, lockedMunicipality]);
+  if (!selected) return [];
+
+  return MUNICIPALITY_DATA[selected] || [];
+}, [selectedMunicipality, roleKey, lockedMunicipality]);
 
   const range = useMemo(() => {
     const start = safeDate(startDate);
