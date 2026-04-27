@@ -24,19 +24,75 @@ function Signup() {
   const [barangay, setBarangay] = useState("");
   const [role, setRole] = useState("");
 
-  const barangayData = {
-    Nabunturan: ["Basak", "Bayabas", "Bukal", "Cabidianan", "Katipunan", "Magsaysay", "San Isidro", "San Vicente"],
-    Monkayo: ["Awao", "Babag", "Banlag", "Haguimitan", "Union", "Oro", "Poblacion"],
-    Compostela: ["Bagongon", "Gabi", "Lagab", "Mangayon", "Osmena", "Poblacion"],
-    Mawab: ["Andap", "Concepcion", "Nuevo Iloco", "Poblacion", "Salvacion"],
-    Maco: ["Anibongan", "Anislagan", "Bucana", "Calabcab", "Concepcion", "Dumlan", "Hijo", "Lapu-lapu", "Poblacion", "San Juan", "Taglawig"],
-    Maragusan: ["Bagong Silang", "Coronobe", "Katipunan", "Mahayahay", "New Albay", "Poblacion"],
-    Montevista: ["Banagbanag", "Banglasan", "Camansi", "Canidkid", "Concepcion", "Poblacion"],
-    Pantukan: ["Kingking", "Magnaga", "Napnapan", "Poblacion", "Tagdanua"],
-    NewBataan: ["Andap", "Cabinuangan", "Camanlangan", "Poblacion", "San Roque"],
-    Laak: ["Amorcruz", "Anitap", "Datu Ampunan", "Longanapan", "Poblacion"],
-    Mabini: ["Cadunan", "Golden Valley", "Pindasan", "San Antonio", "Tagnanan"]
-  };
+const MUNICIPALITY_DATA = {
+  Compostela: [
+    "Aurora","Bagongon","Gabi","Lagab","Mangayon","Mapaca","Maparat",
+    "New Alegria","Ngan","Osmeña","Panansalan","Poblacion",
+    "San Jose","San Miguel","Siocon","Tamia"
+  ],
+  Maragusan: [
+    "Bagong Silang","Bahi","Cambawan","Coronobe","Katipunan","Lahi",
+    "Langgawisan","Mabugnao","Magcagong","Mahayahay","Mapawa",
+    "Maragusan (Poblacion)","Mauswagon","New Albay","New Katipunan",
+    "New Manay","New Panay","Paloc","Parasanon","Talian","Tandik",
+    "Tigbao","Tupaz","Tupaz Proper"
+  ],
+  Monkayo: [
+    "Awao","Babag","Banlag","Baylo","Casoon","Haguimitan","Inambatan",
+    "Macopa","Mamunga","Mount Diwata","Naboc","Olaycon","Pasian",
+    "Poblacion","Rizal","Salvacion","San Isidro","San Jose",
+    "Tubo-tubo","Union","Upper Ulip"
+  ],
+  Montevista: [
+    "Banagbanag","Banglasan","Bankerohan Norte","Bankerohan Sur",
+    "Camansi","Camantangan","Concepcion","Dauman","Kapatagan",
+    "Lebanon","Linoan","Mayaon","New Eagle","New Visayas",
+    "Prosperidad","San Jose","San Vicente","Santa Maria","Tapasan","Poblacion"
+  ],
+  "New Bataan": [
+    "Andap","Bantacan","Batinao","Cabinuangan (Poblacion)","Camanlangan",
+    "Cogonon","Fatima","Kahayag","Katipunan","Magangit","Magsaysay",
+    "Manurigao","Pagsabangan","Panag","San Roque","Tandawan"
+  ],
+  Nabunturan: [
+    "Anislagan","Antiquera","Basak","Bayabas","Bukal","Cabacungan",
+    "Cabidianan","Katipunan","Libasan","Linda","Magading","Magsaysay",
+    "Mainit","Manat","Matilo","Mipangi","New Dauis","New Sibonga",
+    "Ogao","Pangutosan","Poblacion","San Isidro","San Roque",
+    "San Vicente","Santa Maria","Santo Niño (Kao)","Sasa","Tagnocon"
+  ],
+  Laak: [
+    "Aguinaldo","Amor Cruz","Ampawid","Andap","Anitap","Bagong Silang",
+    "Banbanon","Belmonte","Binasbas","Bullucan","Cebulida","Concepcion",
+    "Datu Ampunan","Datu Davao","Doña Josefa","El Katipunan","Il Papa",
+    "Imelda","Inacayan","Kaligutan","Kapatagan","Kidawa","Kilagding",
+    "Kiokmay","Laak (Poblacion)","Langtud","Longanapan","Mabuhay",
+    "Macopa","Malinao","Mangloy","Melale","Naga","New Bethlehem",
+    "Panamoren","Sabud","San Antonio","Santa Emilia","Santo Niño","Sisimon"
+  ],
+  Mabini: [
+    "Cadunan","Concepcion","Cuvia","Golden Valley (Maraut)","Libodon",
+    "Pindasan","Poblacion","San Antonio","San Vicente",
+    "Tagnanan (Mabini)","Del Pilar"
+  ],
+  Maco: [
+    "Anibongan","Anislagan","Binuangan","Bucana","Calabcab","Concepcion",
+    "Dumlan","Elizalde (Somil)","Gubatan","Hijo","Kinuban","Langgam",
+    "Lapu-lapu","Libay-libay","Limbo","Lumatab","Magangit","Mainit",
+    "Malamodao","Manipongol","Mapaang","Masara","New Asturias",
+    "New Barili","Panibasan","Panoraon","Pangi (Gaudencio Antonio)",
+    "Poblacion","San Juan","San Roque","Sangab","Taglawig"
+  ],
+  Mawab: [
+    "Andili","Bawani","Concepcion","Malinawon","Nueva Visayas",
+    "Nuevo Iloco","Poblacion","Salvacion","Saosao","Sawangan","Tuboran"
+  ],
+  Pantukan: [
+    "Araibo","Bongabong","Bongbong","Kingking (Poblacion)",
+    "Las Arenas","Magnaga","Matiao","Napnapan","P. Fuentes",
+    "Tag-ugpo","Tagdangua","Tambongon","Tibagon"
+  ]
+};
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -192,7 +248,7 @@ function Signup() {
                 required
               >
                 <option value="">Select Municipality</option>
-                {Object.keys(barangayData).map(m => (
+                {Object.keys(MUNICIPALITY_DATA).map(m => (
                   <option key={m}>{m}</option>
                 ))}
               </select>
@@ -207,7 +263,7 @@ function Signup() {
               >
                 <option value="">Select Barangay</option>
                 {municipality &&
-                  barangayData[municipality]?.map(b => (
+                  MUNICIPALITY_DATA[municipality]?.map(b => (
                     <option key={b}>{b}</option>
                   ))}
               </select>
