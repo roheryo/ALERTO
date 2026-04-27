@@ -2,6 +2,8 @@ import "./Dashboard.css";
 
 import logo from "../assets/images/ddoLOGO.jpg";
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { FaBell } from "react-icons/fa";
 
 import {
   BarChart,
@@ -164,6 +166,10 @@ function Dashboard() {
         </h2>
 
         <div className="header-right">
+
+          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
+            <FaBell />
+          </Link>
 
           <div className="header-text">
 

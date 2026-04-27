@@ -92,6 +92,27 @@ body {
   gap: 4px;
 }
 
+.header-notification-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: white;
+  text-decoration: none;
+}
+
+.header-notification-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.header-notification-link svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
 
 
 .header-logo {

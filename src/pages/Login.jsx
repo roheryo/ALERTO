@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./Login.css";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 import logo from "../assets/images/ddoLOGO.JPG";
 import bgImage from "../assets/images/ddoBG.jpg";
@@ -12,6 +13,7 @@ function Login() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e) => {
   e.preventDefault();
@@ -80,17 +82,16 @@ function Login() {
 
           <button
             className="tab"
-            onClick={() => setIsSignup(false)}
+            type="button"
+            disabled
           >
             LOGIN
           </button>
 
           <button
             className="tab"
-            onClick={() => {
-              setIsSignup(true);
-              setTimeout(() => navigate("/signup"), 150);
-            }}
+            type="button"
+            disabled
           >
             SIGN UP
           </button>
@@ -113,13 +114,19 @@ function Login() {
           />
 
           <label>Password</label>
-          <input
-            type="password"
-            placeholder="Enter Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="password-wrapper">
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <span onClick={() => setShowPassword(!showPassword)}>
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </span>
+          </div>
 
           <button
             type="submit"

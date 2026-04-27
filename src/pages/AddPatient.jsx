@@ -1,12 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./AddPatient.css";
 import logo from "../assets/images/ddoLOGO.jpg";
 import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { FaBell } from "react-icons/fa";
 
 function AddPatient() {
   const navigate = useNavigate();
-
   const [step, setStep] = useState(1);
+  const birthdateRef = useRef(null);
+
+  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const role = String(user?.role ?? "").toLowerCase();
+  const roleKey = role.includes("barangay")
+    ? "barangay"
+    : role.includes("municipal")
+    ? "municipal"
+    : "provincial";
+
+  useEffect(() => {
+    if (roleKey === "provincial") {
+      navigate("/dashboard");
+    }
+  }, [roleKey, navigate]);
 
   const [patientData, setPatientData] = useState({
     name: "",
@@ -25,20 +41,7 @@ function AddPatient() {
     dateStarted: ""
   });
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  const role = String(user?.role ?? "").toLowerCase();
-  const inferredRole = (() => {
-    if (role) return role;
-    if (user?.barangay && String(user.barangay).trim()) return "barangay employee";
-    if (user?.municipality && String(user.municipality).trim()) return "municipal employee";
-    return "provincial employee";
-  })();
-
-  useEffect(() => {
-    if (String(inferredRole).includes("provincial")) {
-      navigate("/dashboard");
-    }
-  }, [inferredRole, navigate]);
+  // Access is controlled by routing/menu; no forced redirect here.
 
   // Municipality → Barangay mapping (Davao de Oro)
   const barangayData = {
@@ -84,27 +87,28 @@ function AddPatient() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    const res = await fetch("http://localhost:5000/add-patient", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(patientData)
-    });
+    try {
+      const res = await fetch("http://localhost:5000/add-patient", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patientData)
+      });
 
-    const data = await res.json();
-    console.log(data);
+      const data = await res.json().catch(() => ({}));
 
-    alert("Patient Saved Successfully!");
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to save patient");
+      }
 
-  } catch (err) {
-    console.error(err);
-    alert("Error saving patient");
-  }
-};
+      alert(data?.message || "Patient saved successfully!");
+      navigate("/dashboard/cases");
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || "Error saving patient");
+    }
+  };
 
   return (
 
@@ -117,6 +121,9 @@ function AddPatient() {
         <h2>Add Patient</h2>
 
         <div className="header-right">
+          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
+            <FaBell />
+          </Link>
 
           <div className="header-text">
             <h3>Davao de Oro</h3>
@@ -245,10 +252,26 @@ function AddPatient() {
           <div className="input-group">
             <label>Birthdate</label>
             <div className="input-with-icon">
-              <span className="input-icon"></span>
+              <button
+                type="button"
+                className="date-icon-btn"
+                aria-label="Open calendar"
+                onClick={() => {
+                  const el = birthdateRef.current;
+                  if (!el) return;
+                  if (typeof el.showPicker === "function") el.showPicker();
+                  else {
+                    el.focus();
+                    el.click();
+                  }
+                }}
+              >
+                📅
+              </button>
               <input
                 type="date"
                 name="birthdate"
+                ref={birthdateRef}
                 value={patientData.birthdate}
                 onChange={handleChange}
               />

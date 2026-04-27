@@ -24,6 +24,51 @@
   margin: 0;         
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  color: white;
+}
+
+.header-text h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.header-text p {
+  margin: 0;
+  font-size: 11px;
+}
+
+.header-notification-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  color: white;
+  text-decoration: none;
+}
+
+.header-notification-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.header-notification-link svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
 .header-logo {
   width: 45px;
   height: 45px;

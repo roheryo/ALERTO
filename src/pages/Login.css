@@ -17,7 +17,6 @@ body {
 
 /* Background */
 .login-container {
-
   width: 100%;
   height: 100vh;
 
@@ -55,8 +54,6 @@ body {
   position: relative;
   z-index: 1;
   backdrop-filter: blur(12px);
-
-  /* ⭐ FIX: Allow dropdown to expand */
   overflow: visible;
 }
 
@@ -95,7 +92,6 @@ body {
   overflow: hidden;
 }
 
-/* Sliding Indicator */
 .tab-container::before {
   content: "";
   position: absolute;
@@ -112,7 +108,6 @@ body {
   transform: translateX(100%);
 }
 
-/* Tabs */
 .tab {
   flex: 1;
   padding: 10px;
@@ -123,6 +118,11 @@ body {
   color: white;
   position: relative;
   z-index: 1;
+}
+
+.tab:disabled {
+  cursor: default;
+  opacity: 0.9;
 }
 
 /* Subtitle */
@@ -153,54 +153,36 @@ form input {
   color: black;
 }
 
-/* Dropdown */
-.dropdown {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 30px;
-  border: 2px solid rgba(255,255,255,0.4);
-  background: rgba(255,255,255,0.6);
-  cursor: pointer;
-  transition: 0.25s;
-
-  
-  position: relative;
-  z-index: 10;
+/* Placeholder */
+input::placeholder {
+  color: rgba(0,0,0,0.5);
 }
 
-
-.dropdown option {
+/* Dropdown */
+form select {
+  width: 100%;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  border-radius: 30px;
+  border: 2px solid rgba(0,0,0,0.15);
+  background: rgba(255,255,255,0.6);
+  transition: 0.25s;
   color: black;
-  background: white;
+  appearance: none;
 }
 
 /* Hover */
 form input:hover,
-.dropdown:hover {
+form select:hover {
   border-color: #adbd1c;
 }
 
 /* Focus */
 form input:focus,
-.dropdown:focus {
+form select:focus {
   outline: none;
   border-color: #adbd1c;
   box-shadow: 0 0 6px rgba(173,189,28,0.6);
-}
-
-/* Side-by-side layout */
-.location-row {
-  display: flex;
-  gap: 12px;
-  margin-top: -5px;   
-  margin-bottom: 12px;
-}
-
-.location-group {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  position: relative;
 }
 
 /* Button */
@@ -227,35 +209,25 @@ form input:focus,
   margin-top: 12px;
 }
 
-/* Mobile Responsive */
-@media (max-width: 500px) {
-
-  .location-row {
-    flex-direction: column;
-  }
-
-}
-
-/* Sign Up Section */
+/* Signup link */
 .signup-section {
   margin-top: 10px;
-  font-size: 12px;
+  font-size: 14px;
   display: flex;
   justify-content: center;
-  gap: 5px;
+  gap: 8px;
   align-items: center;
-  color: black;
+  color: white;
+  font-weight: 600;
 }
 
-/* Sign Up Link */
 .signup-link {
   background: none;
   border: none;
   color: #adbd1c;
   font-weight: bold;
   cursor: pointer;
-  font-size: 12px;
-  transition: 0.2s;
+  font-size: 14px;
 }
 
 .signup-link:hover {
@@ -263,14 +235,14 @@ form input:focus,
   color: #8c990f;
 }
 
-/* 🔥 MAKE CARD WIDER */
+/* Wide card */
 .wide-card {
   max-width: 950px;
   width: 95%;
   padding: 30px 40px;
 }
 
-/* 🔥 TWO COLUMN LAYOUT */
+/* Two-column layout */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -278,63 +250,32 @@ form input:focus,
   margin-top: 10px;
 }
 
-
 .form-grid > div {
   display: flex;
   flex-direction: column;
 }
 
-
+/* Responsive */
 @media (max-width: 768px) {
   .form-grid {
     grid-template-columns: 1fr;
   }
 }
 
-
-form select {
-  width: 100%;
-  padding: 12px 16px;
-  margin-bottom: 12px;
-  border-radius: 30px;
-  border: 2px solid rgba(0,0,0,0.15);
-  background: rgba(255,255,255,0.6);
-  transition: 0.25s;
-  color: black;
-  appearance: none;
-}
-
-/* Hover */
-form select:hover {
-  border-color: #adbd1c;
-}
-
-/* Focus */
-form select:focus {
-  outline: none;
-  border-color: #adbd1c;
-  box-shadow: 0 0 6px rgba(173,189,28,0.6);
-}
-
-/* 🔥 TOP ROW (LIKE YOUR DRAWING) */
-/* 🔥 PERFECT CENTERED ROW */
-/* 🔥 CENTERED SMALL BUBBLES (LIKE YOUR DRAWING) */
+/* CENTERED DROPDOWNS */
 .top-row {
   display: flex;
-  justify-content: center;   /* center group */
-  align-items: center;
-  gap: 12px;
+  justify-content: center;
+  gap: 15px;
   margin: 15px 0;
 }
 
-/* container of each dropdown */
 .top-row > div {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-/* labels */
 .top-row label {
   font-size: 12px;
   color: white;
@@ -342,13 +283,43 @@ form select:focus {
   text-align: center;
 }
 
-/* 🔥 SMALL PILLS */
 .top-row select {
-  width: 130px;             /* 👈 SMALL like your drawing */
-  padding: 8px 10px;
-  border-radius: 30px;
-  border: 2px solid rgba(0,0,0,0.15);
-  background: rgba(255,255,255,0.6);
+  width: 150px;
+  padding: 10px;
+  border-radius: 25px;
   text-align: center;
-  font-size: 12px;
+}
+
+.password-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding: 12px 45px 12px 16px;
+  border-radius: 30px;
+  margin-bottom: 0;
+}
+
+/* 🔥 THIS IS THE REAL FIX */
+.password-wrapper span {
+  position: absolute;
+  right: 15px;
+  top: 0;
+  bottom: 0;
+
+  width: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  line-height: 0;
+  cursor: pointer;
+}
+
+/* make sure icon itself isn't offset */
+.password-wrapper span svg {
+  display: block;
 }

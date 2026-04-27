@@ -8,7 +8,6 @@ import {
   FaUserPlus,
   FaClipboardList,
   FaChartBar,
-  FaBell,
   FaSignOutAlt
 } from "react-icons/fa";
 
@@ -60,8 +59,8 @@ function Sidebar() {
   })();
 
   const canAddPatient = (() => {
-    if (!roleKey) return false;
-    return roleKey !== "provincial";
+    if (!user) return false;
+    return roleKey === "municipal" || roleKey === "barangay";
   })();
 
   const handleLogout = () => {
@@ -86,14 +85,16 @@ function Sidebar() {
           className="profile-icon"
         />
 
-        <h4 className="profile-name">
-          {user?.username || "Guest"}
-        </h4>
+        <div className="profile-meta">
+          <h4 className="profile-name">
+            {user?.username || "Guest"}
+          </h4>
 
-        {/* 🔥 ROLE DISPLAY FIX */}
-        <p className="profile-role">
-          {roleLabel || "No Role"}
-        </p>
+          {/* ROLE DISPLAY */}
+          <p className="profile-role">
+            {roleLabel || "No Role"}
+          </p>
+        </div>
 
       </div>
 
@@ -128,13 +129,6 @@ function Sidebar() {
           <Link to="/dashboard/reports">
             <FaChartBar className="menu-icon" />
             Reports
-          </Link>
-        </li>
-
-        <li className={location.pathname === "/dashboard/notification" ? "active" : ""}>
-          <Link to="/dashboard/notification">
-            <FaBell className="menu-icon" />
-            Notification
           </Link>
         </li>
 

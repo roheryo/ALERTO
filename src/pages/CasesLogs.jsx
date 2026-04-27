@@ -1,8 +1,12 @@
 import "./CasesLogs.css";
 import logo from "../assets/images/ddoLOGO.JPG";
 import { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { FaBell } from "react-icons/fa";
 
 function CasesLogs() {
+  const navigate = useNavigate();
 
   /* ================= MUNICIPALITY DATA ================= */
 
@@ -164,6 +168,10 @@ function CasesLogs() {
         <h2>Cases Logs</h2>
 
         <div className="header-right">
+          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
+            <FaBell />
+          </Link>
+
           <div className="header-text">
             <span>Davao de Oro</span>
             <small>Provincial Health Office</small>
@@ -185,6 +193,16 @@ function CasesLogs() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+
+          {(roleKey === "municipal" || roleKey === "barangay") && (
+            <button
+              type="button"
+              className="add-patient-btn"
+              onClick={() => navigate("/dashboard/add-patient")}
+            >
+              + Add Patient
+            </button>
+          )}
 
           <div className="filters-right">
 
@@ -216,7 +234,9 @@ function CasesLogs() {
               onChange={(e) => setSelectedDisease(e.target.value)}
             >
               <option value="">All Diseases</option>
-              <option>Dengue</option>
+              <option value="Dengue">Dengue</option>
+              <option value="Influenza-Like Illness">Influenza-like illness (ILI)</option>
+              <option value="Acute Watery Diarrhea">Acute Watery Diarrhoea (AWD)</option>
             </select>
 
           </div>
