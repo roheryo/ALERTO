@@ -72,6 +72,7 @@ const MUNICIPALITY_DATA = {
 };
 
 function formatLongDate(d) {
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return "—";
   try {
     return new Intl.DateTimeFormat("en-PH", {
       year: "numeric",
@@ -79,7 +80,7 @@ function formatLongDate(d) {
       day: "2-digit"
     }).format(d);
   } catch {
-    return d.toISOString().slice(0, 10);
+    return "—";
   }
 }
 
@@ -111,12 +112,6 @@ function dateKey(d) {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
-}
-
-function addDays(d, days) {
-  const next = new Date(d);
-  next.setDate(next.getDate() + days);
-  return next;
 }
 
 function Reports() {
@@ -154,6 +149,7 @@ function Reports() {
 
   const [startDate, setStartDate] = useState(() => dateKey(defaultStart));
   const [endDate, setEndDate] = useState(() => dateKey(defaultEnd));
+  const [dateMode, setDateMode] = useState("CUSTOM"); // CUSTOM | ALL
   const [reportType, setReportType] = useState("ALL"); // ALL | Dengue | ILI | AWD
   const [selectedMunicipality, setSelectedMunicipality] = useState("");
   const [selectedBarangay, setSelectedBarangay] = useState("");
@@ -215,6 +211,7 @@ function Reports() {
 }, [selectedMunicipality, roleKey, lockedMunicipality]);
 
   const range = useMemo(() => {
+    if (dateMode === "ALL") return null;
     const start = safeDate(startDate);
     const end = safeDate(endDate);
     if (!start || !end) return null;
@@ -222,11 +219,12 @@ function Reports() {
     end.setHours(23, 59, 59, 999);
     if (start > end) return null;
     return { start, end };
-  }, [startDate, endDate]);
+  }, [startDate, endDate, dateMode]);
 
   const filtered = useMemo(() => {
-    if (!range) return [];
-    const { start, end } = range;
+    if (dateMode === "CUSTOM" && !range) return [];
+    const start = range?.start ?? null;
+    const end = range?.end ?? null;
 
     return (patients ?? [])
       .map((p) => {
@@ -250,7 +248,11 @@ function Reports() {
           status: String(p?.status ?? "Recorded").trim() || "Recorded"
         };
       })
-      .filter((x) => x.date && x.date >= start && x.date <= end)
+      .filter((x) => {
+        if (!x.date) return false;
+        if (dateMode === "ALL") return true;
+        return x.date >= start && x.date <= end;
+      })
       .filter((x) => (reportType === "ALL" ? true : x.disease === reportType))
       .filter((x) => {
         const municipalityScope =
@@ -270,7 +272,8 @@ function Reports() {
     lockedMunicipality,
     lockedBarangay,
     selectedMunicipality,
-    selectedBarangay
+    selectedBarangay,
+    dateMode
   ]);
 
   const summary = useMemo(() => {
@@ -299,31 +302,26 @@ function Reports() {
   }, [filtered]);
 
   const chartData = useMemo(() => {
-    if (!range) return [];
-    const { start, end } = range;
     const map = new Map();
 
-    // init buckets per day to keep the chart steady
-    for (let d = new Date(start); d <= end; d = addDays(d, 1)) {
-      map.set(dateKey(d), { date: dateKey(d), total: 0, Dengue: 0, ILI: 0, AWD: 0 });
-    }
+    if (dateMode === "CUSTOM" && !range) return [];
 
     for (const c of filtered) {
       if (!c.date) continue;
       const k = dateKey(c.date);
-      const row = map.get(k);
-      if (!row) continue;
+      const row = map.get(k) || { date: k, total: 0, Dengue: 0, ILI: 0, AWD: 0 };
       row.total += 1;
       if (c.disease === "Dengue") row.Dengue += 1;
       else if (c.disease === "ILI") row.ILI += 1;
       else if (c.disease === "AWD") row.AWD += 1;
+      map.set(k, row);
     }
 
-    return Array.from(map.values());
-  }, [filtered, range]);
+    return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }, [filtered, range, dateMode]);
 
   const remarks = useMemo(() => {
-    if (!range) return "Invalid date range selected.";
+    if (dateMode === "CUSTOM" && !range) return "Invalid date range selected.";
     if (!filtered.length) return "No cases recorded within the selected reporting period.";
 
     const top = municipalityRows[0];
@@ -344,14 +342,15 @@ function Reports() {
       reportType === "ALL" ? "Dengue, ILI, and AWD" : `${reportType} cases`;
 
     return `${trend} Current hotspot area: ${hotspot}. Continue intensified surveillance and timely reporting for ${scope}.`;
-  }, [range, filtered.length, municipalityRows, chartData, reportType]);
+  }, [range, filtered.length, municipalityRows, chartData, reportType, dateMode]);
 
   const titleRange = useMemo(() => {
+    if (dateMode === "ALL") return "All dates";
     const s = safeDate(startDate);
     const e = safeDate(endDate);
     if (!s || !e) return "—";
     return `${formatLongDate(s)} – ${formatLongDate(e)}`;
-  }, [startDate, endDate]);
+  }, [startDate, endDate, dateMode]);
 
   const reportTitle = reportType === "ALL" ? "Disease Surveillance Report" : `${reportType} Surveillance Report`;
 
@@ -450,14 +449,36 @@ function Reports() {
             </label>
           </div>
 
-          <label className="toolbar-field">
-            <span>From</span>
-            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          </label>
-          <label className="toolbar-field">
-            <span>To</span>
-            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-          </label>
+          <div className="toolbar-dates">
+            <label className="toolbar-field">
+              <span>Date Mode</span>
+              <select value={dateMode} onChange={(e) => setDateMode(e.target.value)}>
+                <option value="CUSTOM">Custom Range</option>
+                <option value="ALL">All Dates</option>
+              </select>
+            </label>
+
+            <label className="toolbar-field">
+              <span>From</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                disabled={dateMode === "ALL"}
+              />
+            </label>
+
+            <label className="toolbar-field">
+              <span>To</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                disabled={dateMode === "ALL"}
+              />
+            </label>
+          </div>
+
           <button type="button" className="toolbar-btn" onClick={() => window.print()}>
             Export to PDF
           </button>

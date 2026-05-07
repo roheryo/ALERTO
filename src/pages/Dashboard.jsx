@@ -15,11 +15,42 @@ import {
   ResponsiveContainer
 } from "recharts";
 
+const MUNICIPALITY_BARANGAYS = {
+  Nabunturan: ["Basak", "Bayabas", "Bukal", "Cabidianan", "Katipunan", "Magsaysay", "San Isidro", "San Vicente"],
+  Monkayo: ["Awao", "Babag", "Banlag", "Haguimitan", "Union", "Oro", "Poblacion"],
+  Compostela: ["Bagongon", "Gabi", "Lagab", "Mangayon", "Osmena", "Poblacion"],
+  Mawab: ["Andap", "Concepcion", "Nuevo Iloco", "Poblacion", "Salvacion"],
+  Maco: ["Anibongan", "Anislagan", "Bucana", "Calabcab", "Concepcion", "Dumlan", "Hijo", "Lapu-lapu", "Poblacion", "San Juan", "Taglawig"],
+  Maragusan: ["Bagong Silang", "Coronobe", "Katipunan", "Mahayahay", "New Albay", "Poblacion"],
+  Montevista: ["Banagbanag", "Banglasan", "Camansi", "Canidkid", "Concepcion", "Poblacion"],
+  Pantukan: ["Kingking", "Magnaga", "Napnapan", "Poblacion", "Tagdanua"],
+  NewBataan: ["Andap", "Cabinuangan", "Camanlangan", "Poblacion", "San Roque"],
+  Laak: ["Amorcruz", "Anitap", "Datu Ampunan", "Longanapan", "Poblacion"],
+  Mabini: ["Cadunan", "Golden Valley", "Pindasan", "San Antonio", "Tagnanan"]
+};
+
+function getWeatherIcon(condition) {
+  const c = String(condition || "").toLowerCase();
+  if (c.includes("thunder")) return "⛈";
+  if (c.includes("rain") || c.includes("drizzle")) return "🌧";
+  if (c.includes("fog") || c.includes("mist") || c.includes("haze")) return "🌫";
+  if (c.includes("cloud")) return "☁";
+  if (c.includes("clear") || c.includes("sun")) return "☀";
+  return "🌡";
+}
+
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  const value = payload[0]?.value;
+  return (
+    <div className="chart-tooltip" role="status" aria-live="polite">
+      <div className="chart-tooltip-label">{label}</div>
+      <div className="chart-tooltip-value">{Number(value ?? 0).toLocaleString()} cases</div>
+    </div>
+  );
+}
+
 function Dashboard() {
-
-  const temperature = "29°C";
-  const condition = "Partly Cloudy";
-
   const user = JSON.parse(localStorage.getItem("user"));
   const role = String(user?.role ?? "").toLowerCase();
   const inferredRole = (() => {
@@ -54,6 +85,19 @@ function Dashboard() {
       : `Highest Cases in Barangays in ${municipalityName || "Municipality"} (Dengue)`;
 
   const [patients, setPatients] = useState([]);
+  const [weather, setWeather] = useState({
+    municipality: "",
+    temperature: null,
+    humidity: null,
+    condition: "Loading...",
+    provider: ""
+  });
+  const [selectedWeatherMunicipality, setSelectedWeatherMunicipality] = useState(
+    roleKey === "provincial" ? "Nabunturan" : municipalityName || "Nabunturan"
+  );
+  const [selectedWeatherBarangay, setSelectedWeatherBarangay] = useState(
+    roleKey === "barangay" ? String(user?.barangay ?? "").trim() : ""
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +117,63 @@ function Dashboard() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const weatherMunicipality =
+      roleKey === "provincial"
+        ? selectedWeatherMunicipality || "Nabunturan"
+        : municipalityName || "Nabunturan";
+    let cancelled = false;
+
+    fetch(`http://localhost:5000/weather/${encodeURIComponent(weatherMunicipality)}`)
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        return { ok: res.ok, data };
+      })
+      .then(({ ok, data }) => {
+        if (cancelled) return;
+        if (!ok || data?.error) {
+          setWeather({
+            municipality: weatherMunicipality,
+            temperature: null,
+            humidity: null,
+            condition: "Unavailable"
+          });
+          return;
+        }
+        setWeather({
+          municipality: data?.municipality || weatherMunicipality,
+          temperature: Number.isFinite(data?.temperature) ? data.temperature : null,
+          humidity: Number.isFinite(data?.humidity) ? data.humidity : null,
+          condition: data?.condition || "Unknown",
+          provider: String(data?.provider ?? "")
+        });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setWeather({
+          municipality: weatherMunicipality,
+          temperature: null,
+          humidity: null,
+          condition: "Unavailable",
+          provider: ""
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedWeatherMunicipality, municipalityName, roleKey]);
+
+  const municipalityOptions = useMemo(() => Object.keys(MUNICIPALITY_BARANGAYS), []);
+  const barangayOptions = useMemo(() => {
+    if (roleKey === "barangay") return [String(user?.barangay ?? "").trim()].filter(Boolean);
+    const key =
+      roleKey === "provincial"
+        ? selectedWeatherMunicipality
+        : municipalityName;
+    return MUNICIPALITY_BARANGAYS[key] || [];
+  }, [roleKey, user?.barangay, selectedWeatherMunicipality, municipalityName]);
 
   const normalizeDisease = (raw) => {
     const v = String(raw ?? "").trim().toLowerCase();
@@ -198,13 +299,91 @@ function Dashboard() {
         <div className="weather-container">
 
           <div className="weather-card">
+            <div className="weather-header">
+              <div className="weather-header-left">
+                <div className="weather-title">Live Weather</div>
+                <div className="weather-location">
+                  {weather.municipality}
+                  {selectedWeatherBarangay ? `, ${selectedWeatherBarangay}` : ""}
+                </div>
+              </div>
 
-            <div className="weather-temp">
-              {temperature}
+              <div className="weather-header-right">
+                <span className="weather-pill" aria-label="Weather data source">
+                  {weather.provider === "openweathermap"
+                    ? "OpenWeather"
+                    : weather.provider
+                      ? String(weather.provider)
+                      : "Open‑Meteo"}
+                </span>
+              </div>
             </div>
 
-            <div>
-              {condition}
+            <div className="weather-controls weather-controls--pro">
+              <label>
+                Municipality
+                <select
+                  value={roleKey === "provincial" ? selectedWeatherMunicipality : municipalityName}
+                  onChange={(e) => {
+                    setSelectedWeatherMunicipality(e.target.value);
+                    if (roleKey !== "barangay") setSelectedWeatherBarangay("");
+                  }}
+                  disabled={roleKey !== "provincial"}
+                >
+                  {roleKey === "provincial"
+                    ? municipalityOptions.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))
+                    : (
+                        <option value={municipalityName}>{municipalityName || "Municipality"}</option>
+                      )}
+                </select>
+              </label>
+
+              <label>
+                Barangay
+                <select
+                  value={roleKey === "barangay" ? String(user?.barangay ?? "").trim() : selectedWeatherBarangay}
+                  onChange={(e) => setSelectedWeatherBarangay(e.target.value)}
+                  disabled={roleKey === "barangay"}
+                >
+                  {roleKey !== "barangay" && <option value="">All Barangays</option>}
+                  {barangayOptions.map((b) => (
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="weather-main weather-main--pro">
+              <div className="weather-icon" aria-hidden="true">
+                {getWeatherIcon(weather.condition)}
+              </div>
+
+              <div className="weather-primary">
+                <div className="weather-stats weather-stats--pro">
+                  <div className="weather-stat weather-stat--primary">
+                    <div className="weather-stat-label">Temperature</div>
+                    <div className="weather-stat-value">
+                      {weather.temperature !== null ? `${weather.temperature.toFixed(1)}°C` : "—"}
+                    </div>
+                  </div>
+                  <div className="weather-stat">
+                    <div className="weather-stat-label">Condition</div>
+                    <div className="weather-stat-value">{weather.condition}</div>
+                  </div>
+                  <div className="weather-stat">
+                    <div className="weather-stat-label">Humidity</div>
+                    <div className="weather-stat-value">
+                      {weather.humidity !== null ? `${weather.humidity}%` : "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -253,25 +432,49 @@ function Dashboard() {
 
           <div className="chart-card">
 
-            <h3>
-              {awdChartTitle}
-            </h3>
+            <div className="chart-header">
+              <h3 className="chart-title">{awdChartTitle}</h3>
+              <div className="chart-subtitle">Top 3 by cases</div>
+            </div>
 
             <ResponsiveContainer width="100%" height={250}>
 
               <BarChart data={awdData}>
 
-                <CartesianGrid strokeDasharray="3 3" />
+                <defs>
+                  <linearGradient id="dashBarBlue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#1d4ed8" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
 
-                <XAxis dataKey="municipality" />
+                <CartesianGrid stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
 
-                <YAxis />
+                <XAxis
+                  dataKey="municipality"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "rgba(15, 23, 42, 0.70)", fontSize: 12, fontWeight: 700 }}
+                  dy={8}
+                />
 
-                <Tooltip />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "rgba(15, 23, 42, 0.55)", fontSize: 12, fontWeight: 700 }}
+                  width={32}
+                />
+
+                <Tooltip
+                  content={<ChartTooltip />}
+                  cursor={{ fill: "rgba(37, 99, 235, 0.08)" }}
+                />
 
                 <Bar
                   dataKey="cases"
-                  fill="#2f80ed"
+                  fill="url(#dashBarBlue)"
+                  radius={[10, 10, 0, 0]}
+                  barSize={34}
                 />
 
               </BarChart>
@@ -282,25 +485,49 @@ function Dashboard() {
 
           <div className="chart-card">
 
-            <h3>
-              {iliChartTitle}
-            </h3>
+            <div className="chart-header">
+              <h3 className="chart-title">{iliChartTitle}</h3>
+              <div className="chart-subtitle">Top 3 by cases</div>
+            </div>
 
             <ResponsiveContainer width="100%" height={250}>
 
               <BarChart data={iliData}>
 
-                <CartesianGrid strokeDasharray="3 3" />
+                <defs>
+                  <linearGradient id="dashBarRed" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fb7185" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#e11d48" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
 
-                <XAxis dataKey="municipality" />
+                <CartesianGrid stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
 
-                <YAxis />
+                <XAxis
+                  dataKey="municipality"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "rgba(15, 23, 42, 0.70)", fontSize: 12, fontWeight: 700 }}
+                  dy={8}
+                />
 
-                <Tooltip />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "rgba(15, 23, 42, 0.55)", fontSize: 12, fontWeight: 700 }}
+                  width={32}
+                />
+
+                <Tooltip
+                  content={<ChartTooltip />}
+                  cursor={{ fill: "rgba(225, 29, 72, 0.08)" }}
+                />
 
                 <Bar
                   dataKey="cases"
-                  fill="#eb5757"
+                  fill="url(#dashBarRed)"
+                  radius={[10, 10, 0, 0]}
+                  barSize={34}
                 />
 
               </BarChart>
@@ -311,25 +538,49 @@ function Dashboard() {
 
           <div className="chart-card">
 
-            <h3>
-              {dengueChartTitle}
-            </h3>
+            <div className="chart-header">
+              <h3 className="chart-title">{dengueChartTitle}</h3>
+              <div className="chart-subtitle">Top 3 by cases</div>
+            </div>
 
             <ResponsiveContainer width="100%" height={250}>
 
               <BarChart data={dengueData}>
 
-                <CartesianGrid strokeDasharray="3 3" />
+                <defs>
+                  <linearGradient id="dashBarAmber" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fbbf24" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#d97706" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
 
-                <XAxis dataKey="municipality" />
+                <CartesianGrid stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
 
-                <YAxis />
+                <XAxis
+                  dataKey="municipality"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "rgba(15, 23, 42, 0.70)", fontSize: 12, fontWeight: 700 }}
+                  dy={8}
+                />
 
-                <Tooltip />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "rgba(15, 23, 42, 0.55)", fontSize: 12, fontWeight: 700 }}
+                  width={32}
+                />
+
+                <Tooltip
+                  content={<ChartTooltip />}
+                  cursor={{ fill: "rgba(217, 119, 6, 0.10)" }}
+                />
 
                 <Bar
                   dataKey="cases"
-                  fill="#f2994a"
+                  fill="url(#dashBarAmber)"
+                  radius={[10, 10, 0, 0]}
+                  barSize={34}
                 />
 
               </BarChart>

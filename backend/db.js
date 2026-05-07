@@ -1,12 +1,34 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 const mysql = require("mysql2");
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  database: process.env.DB_NAME
-});
+function createDb(password) {
+  return mysql
+    .createPool({
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password,
+      database: process.env.DB_NAME
+    })
+    .promise();
+}
 
-module.exports = pool.promise();
-console.log(process.env.DB_USER, process.env.DB_PASS);
+const primary = createDb(process.env.DB_PASS ?? "");
+const fallbackNoPassword = createDb("");
+
+async function queryWithFallback(method, args) {
+  try {
+    return await primary[method](...args);
+  } catch (err) {
+    // Common local setup: root user has NO password (XAMPP/WAMP).
+    if (err?.code === "ER_ACCESS_DENIED_ERROR" && (process.env.DB_PASS ?? "") !== "") {
+      return await fallbackNoPassword[method](...args);
+    }
+    throw err;
+  }
+}
+
+module.exports = {
+  query: (...args) => queryWithFallback("query", args),
+  execute: (...args) => queryWithFallback("execute", args)
+};
