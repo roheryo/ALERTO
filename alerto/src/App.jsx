@@ -8,7 +8,7 @@ import DashboardLayout from "./layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import CasesLogs from "./pages/CasesLogs";
 import Reports from "./pages/Reports";
-import Notifications from "./pages/Notification"; 
+import Notification from "./pages/Notification";
 import AddPatient from "./pages/AddPatient";
 
 function App() {
@@ -21,12 +21,13 @@ function App() {
 
         {/* PUBLIC */}
 
+        <Route path="/" element={<Login />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
         {/* DASHBOARD */}
 
-        <Route path="/" element={<DashboardLayout />}>
+        <Route path="/dashboard" element={<DashboardLayout />}>
 
           <Route index element={<Dashboard />} />
 
@@ -49,7 +50,7 @@ function App() {
 
           <Route
             path="notification"
-            element={<Notifications />}
+            element={<Notification />}
           />
 
         </Route>

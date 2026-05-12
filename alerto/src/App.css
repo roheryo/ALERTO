@@ -181,8 +181,9 @@
     right: 0;
     border-right-color: var(--border);
   }
+}
 
-  /* ============================= */
+/* ============================= */
 /* DASHBOARD LAYOUT FIX */
 /* ============================= */
 
@@ -239,5 +240,4 @@
 /* Optional: make charts full width */
 .chart-container {
   width: 100%;
-}
 }

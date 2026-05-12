@@ -16,6 +16,12 @@ function Sidebar() {
 
   const location = useLocation();
 
+  const pathname = location.pathname;
+  const isDashboardActive =
+    pathname === "/dashboard" ||
+    pathname === "/dashboard/" ||
+    pathname.startsWith("/dashboard/");
+
   return (
 
     <div className="sidebar">
@@ -49,36 +55,36 @@ function Sidebar() {
       {/* MENU */}
       <ul className="menu-list">
 
-        <li className={location.pathname === "/" ? "active" : ""}>
-          <Link to="/">
+        <li className={isDashboardActive ? "active" : ""}>
+          <Link to="/dashboard">
             <FaHome className="menu-icon" />
             Dashboard
           </Link>
         </li>
 
-        <li className={location.pathname === "/add-patient" ? "active" : ""}>
-          <Link to="/add-patient">
+        <li className={location.pathname === "/dashboard/add-patient" ? "active" : ""}>
+          <Link to="/dashboard/add-patient">
             <FaUserPlus className="menu-icon" />
             Add New Patient
           </Link>
         </li>
 
-        <li className={location.pathname === "/cases" ? "active" : ""}>
-          <Link to="/cases">
+        <li className={location.pathname === "/dashboard/cases" ? "active" : ""}>
+          <Link to="/dashboard/cases">
             <FaClipboardList className="menu-icon" />
             Cases Logs
           </Link>
         </li>
 
-        <li className={location.pathname === "/reports" ? "active" : ""}>
-          <Link to="/reports">
+        <li className={location.pathname === "/dashboard/reports" ? "active" : ""}>
+          <Link to="/dashboard/reports">
             <FaChartBar className="menu-icon" />
             Reports
           </Link>
         </li>
 
-        <li className={location.pathname === "/notification" ? "active" : ""}>
-          <Link to="/notification">
+        <li className={location.pathname === "/dashboard/notification" ? "active" : ""}>
+          <Link to="/dashboard/notification">
             <FaBell className="menu-icon" />
             Notification
           </Link>
