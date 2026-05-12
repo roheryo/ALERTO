@@ -12,55 +12,26 @@ import Notification from "./pages/Notification";
 import AddPatient from "./pages/AddPatient";
 
 function App() {
-
   return (
-
     <Router>
-
       <Routes>
 
-        {/* PUBLIC */}
-
         <Route path="/" element={<Login />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        {/* DASHBOARD */}
-
         <Route path="/dashboard" element={<DashboardLayout />}>
-
           <Route index element={<Dashboard />} />
-
-          <Route
-            path="add-patient"
-            element={<AddPatient />}
-          />
-
-          <Route
-            path="cases"
-            element={<CasesLogs />}
-          />
-
-          <Route
-            path="reports"
-            element={<Reports />}
-          />
-
-          {/* NOTIFICATIONS */}
-
-          <Route
-            path="notification"
-            element={<Notification />}
-          />
-
+          <Route path="add-patient" element={<AddPatient />} />
+          <Route path="cases" element={<CasesLogs />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="notification" element={<Notification />} />
         </Route>
 
       </Routes>
-
     </Router>
-
   );
-
 }
 
 export default App;
