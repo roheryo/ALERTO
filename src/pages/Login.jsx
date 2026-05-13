@@ -15,41 +15,28 @@ function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async (e) => {
-  e.preventDefault();
+  const handleLogin = (e) => {
+    e.preventDefault();
 
-  try {
-    const res = await fetch("http://localhost:5000/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        username,
-        password
-      })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.error);
+    if (!username.trim() || !password.trim()) {
+      alert("Enter username and password.");
       return;
     }
 
-    // 🔥 SAVE FULL USER (IMPORTANT)
-    localStorage.setItem("user", JSON.stringify(data.user));
-
-    console.log("SAVED USER:", data.user);
-
-    alert(data.message);
+    // Client-only session for UI testing. Replace with your auth API when the backend exists.
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        username,
+        fullName: username,
+        role: "Provincial Employee",
+        municipality: "Nabunturan",
+        barangay: ""
+      })
+    );
 
     navigate("/dashboard");
-
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
 
   return (
 

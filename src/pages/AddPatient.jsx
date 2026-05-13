@@ -86,28 +86,13 @@ function AddPatient() {
     setStep(1);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
-    try {
-      const res = await fetch("http://localhost:5000/add-patient", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(patientData)
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to save patient");
-      }
-
-      alert(data?.message || "Patient saved successfully!");
-      navigate("/dashboard/cases");
-    } catch (err) {
-      console.error(err);
-      alert(err?.message || "Error saving patient");
-    }
+    alert(
+      "Patient data is not persisted yet. Connect your API in AddPatient.jsx when your backend is ready."
+    );
+    navigate("/dashboard/cases");
   };
 
   return (

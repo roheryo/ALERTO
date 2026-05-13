@@ -1,8 +1,9 @@
+# ALERTO (Vite app in `alerto/`)
 
-ThesisProject ClaSanMad
-
-note:
+```bash
+cd alerto
 npm install
-npm install react-router-dom
-npm install rechart
-npm install express mysql2 cors dotenv bcrypt jsonwebtoken
+npm run dev
+```
+
+This folder is a standalone React + Vite frontend only.

@@ -40,10 +40,7 @@ function CasesLogs() {
   const [editData, setEditData] = useState(null);
 
   useEffect(() => {
-    fetch("http://localhost:5000/patients")
-      .then(res => res.json())
-      .then(data => setPatients(data))
-      .catch(err => console.error(err));
+    setPatients([]);
   }, []);
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -133,28 +130,15 @@ function CasesLogs() {
     setShowEdit(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete?");
     if (!confirmDelete) return;
 
-    await fetch(`http://localhost:5000/patients/${id}`, {
-      method: "DELETE"
-    });
-
-    setPatients(prev => prev.filter(p => p.id !== id));
+    setPatients((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleUpdate = async () => {
-    await fetch(`http://localhost:5000/patients/${editData.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editData)
-    });
-
-    setPatients(prev =>
-      prev.map(p => (p.id === editData.id ? editData : p))
-    );
-
+  const handleUpdate = () => {
+    setPatients((prev) => prev.map((p) => (p.id === editData.id ? editData : p)));
     setShowEdit(false);
   };
 

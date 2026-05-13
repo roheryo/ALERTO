@@ -158,27 +158,9 @@ function Reports() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
+    setPatients([]);
     setError("");
-
-    fetch("http://localhost:5000/patients")
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return;
-        setPatients(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setPatients([]);
-        setError("Failed to load cases from server.");
-        setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    setLoading(false);
   }, []);
 
   // Initialize scope defaults based on role

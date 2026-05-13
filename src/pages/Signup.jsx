@@ -94,31 +94,17 @@ const MUNICIPALITY_DATA = {
   ]
 };
 
-  const handleSignup = async (e) => {
+  const handleSignup = (e) => {
     e.preventDefault();
 
     if (password !== confirmPassword) return alert("Passwords do not match!");
     if (contactNumber.length !== 11) return alert("Contact must be 11 digits!");
     if (!role) return alert("Select a role!");
 
-    try {
-      const res = await fetch("http://localhost:5000/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName, email, contactNumber, username, password, role, municipality, barangay
-        })
-      });
-
-      const data = await res.json();
-      if (!res.ok) return alert(data.error);
-
-      alert(data.message);
-      navigate("/login");
-
-    } catch (err) {
-      console.error(err);
-    }
+    alert(
+      "Sign-up needs your own backend. After you add an API, wire it in Signup.jsx (see form fields you already collect)."
+    );
+    navigate("/login");
   };
 
   return (

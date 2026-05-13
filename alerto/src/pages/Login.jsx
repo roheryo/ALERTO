@@ -1,68 +1,55 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Login.css";
 
 import logo from "../assets/images/ddoLOGO.JPG";
 import bgImage from "../assets/images/ddoBG.jpg";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { apiFetch } from "../lib/api";
 
 function Login() {
 
   const navigate = useNavigate();
-  const [isSignup, setIsSignup] = useState(false);
+  const { isAuthenticated, login } = useAuth();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const [municipality, setMunicipality] = useState("");
-  const [barangay, setBarangay] = useState("");
+  useEffect(() => {
 
-  
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
+    }
 
-  /* Municipality → Barangay Mapping */
-  const barangayData = {
+  }, [isAuthenticated, navigate]);
 
-    Nabunturan: [
-      "Basak",
-      "Bayabas",
-      "Bukal",
-      "Cabidianan",
-      "Katipunan"
-    ],
-
-    Monkayo: [
-      "Awao",
-      "Babag",
-      "Banlag",
-      "Haguimitan"
-    ],
-
-    Compostela: [
-      "Bagongon",
-      "Gabi",
-      "Lagab",
-      "Mangayon"
-    ],
-
-    Mawab: [
-      "Andap",
-      "Concepcion",
-      "Nuevo Iloco"
-    ]
-
-  };
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
 
     e.preventDefault();
+    setError("");
+    setSubmitting(true);
 
-    console.log({
-      username,
-      password,
-      municipality,
-      barangay
-    });
+    try {
 
-    alert("Login button clicked");
+      const data = await apiFetch("/auth/login", {
+        method: "POST",
+        body: { username, password }
+      });
+
+      login(data.token, data.user);
+      navigate("/dashboard", { replace: true });
+
+    } catch (err) {
+
+      setError(err.message || "Login failed");
+
+    } finally {
+
+      setSubmitting(false);
+
+    }
 
   };
 
@@ -77,7 +64,6 @@ function Login() {
 
       <div className="login-card">
 
-        {/* Logo */}
         <div className="logo-placeholder">
 
           <img
@@ -88,7 +74,6 @@ function Login() {
 
         </div>
 
-        {/* Title */}
         <h2 className="system-title">
           ALERTO: Davao de Oro
           <br />
@@ -97,175 +82,66 @@ function Login() {
           Dengue, ILI, AWD
         </h2>
 
-        {/* Tabs */}
-        <div
-          className={`tab-container ${
-            isSignup ? "signup-active" : ""
-          }`}
-        >
-
-          {/* Login Tab */}
-          <button
-            className="tab"
-            onClick={() => {
-
-              setIsSignup(false);
-
-            }}
-          >
-            LOGIN
-          </button>
-
-          {/* Signup Tab */}
-          <button
-            className="tab"
-            onClick={() => {
-
-              setIsSignup(true);
-
-              setTimeout(() => {
-
-                navigate("/signup");
-
-              }, 150); // wait for slide animation
-
-            }}
-          >
-            SIGN UP
-          </button>
-
-        </div>
-
         <p className="subtitle">
-          Sign in to your account
+          Sign in with your username or email
         </p>
+
+        <p className="login-policy-note">
+          Access is not self-service. Contact your municipality or province administrator if you need an account or a password reset.
+        </p>
+
+        {error ? <p className="login-error">{error}</p> : null}
 
         <form onSubmit={handleLogin}>
 
-          {/* Username */}
-          <label>Username</label>
+          <label htmlFor="login-username">Username or email</label>
 
           <input
+            id="login-username"
             type="text"
-            placeholder="Enter Username"
+            placeholder="e.g. ddo_province_admin or province.admin@alerto.local"
             value={username}
             onChange={(e) =>
               setUsername(e.target.value)
             }
+            autoComplete="username"
             required
           />
 
-          {/* Password */}
-          <label>Password</label>
+          <label htmlFor="login-password">Password</label>
 
           <input
+            id="login-password"
             type="password"
-            placeholder="Enter Password"
+            placeholder="Enter password"
             value={password}
             onChange={(e) =>
               setPassword(e.target.value)
             }
+            autoComplete="current-password"
             required
           />
 
-          {/* Municipality + Barangay Side-by-Side */}
-
-          <div className="location-row">
-
-            {/* Municipality */}
-            <div className="location-group">
-
-              <label>Municipality</label>
-
-              <select
-                value={municipality}
-                onChange={(e) => {
-
-                  setMunicipality(e.target.value);
-                  setBarangay("");
-
-                }}
-                className="dropdown"
-                required
-              >
-                <option value="">
-                  Select Municipality
-                </option>
-
-                {Object.keys(barangayData).map((muni) => (
-
-                  <option
-                    key={muni}
-                    value={muni}
-                  >
-                    {muni}
-                  </option>
-
-                ))}
-
-              </select>
-            </div>
-
-            {/* Barangay */}
-            <div className="location-group">
-              <label>Barangay</label>
-
-              <select
-                value={barangay}
-                onChange={(e) =>
-                  setBarangay(e.target.value)
-                }
-                className="dropdown"
-                required
-              >
-                <option value="">
-                  Select Barangay
-                </option>
-
-                {municipality &&
-                  barangayData[municipality].map((brgy) => (
-
-                    <option
-                      key={brgy}
-                      value={brgy}
-                    >
-                      {brgy}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Button */}
-        <button
+          <button
             type="submit"
             className="login-button"
-            >
-            SIGN IN
-            </button>
-            {/* Sign Up Section */}
-            <div className="signup-section">
+            disabled={submitting}
+          >
+            {submitting ? "Signing in…" : "Sign in"}
+          </button>
 
-            <span>
-                Don't have an account?
-            </span>
-
-            <button
-                type="button"
-                className="signup-link"
-                onClick={() => window.location.href = "/signup"}
-            >
-                Sign Up
-            </button>
-            </div>  
         </form>
 
         <p className="footer-text">
           Secure authentication for ALERTO Disease Surveillance
         </p>
+
       </div>
+
     </div>
+
   );
+
 }
 
 export default Login;

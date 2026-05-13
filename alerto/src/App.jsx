@@ -1,8 +1,15 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate
+} from "react-router-dom";
+
+import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import RoleRoute from "./components/RoleRoute";
 
 import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-
 import DashboardLayout from "./layout/DashboardLayout";
 
 import Dashboard from "./pages/Dashboard";
@@ -10,6 +17,7 @@ import CasesLogs from "./pages/CasesLogs";
 import Reports from "./pages/Reports";
 import Notification from "./pages/Notification";
 import AddPatient from "./pages/AddPatient";
+import AccountManagement from "./pages/AccountManagement";
 
 function App() {
 
@@ -17,45 +25,59 @@ function App() {
 
     <Router>
 
-      <Routes>
+      <AuthProvider>
 
-        {/* PUBLIC */}
+        <Routes>
 
-        <Route path="/" element={<Login />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-
-        {/* DASHBOARD */}
-
-        <Route path="/dashboard" element={<DashboardLayout />}>
-
-          <Route index element={<Dashboard />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Navigate to="/login" replace />} />
 
           <Route
-            path="add-patient"
-            element={<AddPatient />}
-          />
+            path="/dashboard"
+            element={(
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            )}
+          >
 
-          <Route
-            path="cases"
-            element={<CasesLogs />}
-          />
+            <Route index element={<Dashboard />} />
 
-          <Route
-            path="reports"
-            element={<Reports />}
-          />
+            <Route
+              path="add-patient"
+              element={<AddPatient />}
+            />
 
-          {/* NOTIFICATIONS */}
+            <Route
+              path="cases"
+              element={<CasesLogs />}
+            />
 
-          <Route
-            path="notification"
-            element={<Notification />}
-          />
+            <Route
+              path="reports"
+              element={<Reports />}
+            />
 
-        </Route>
+            <Route
+              path="notification"
+              element={<Notification />}
+            />
 
-      </Routes>
+            <Route
+              path="account-management"
+              element={(
+                <RoleRoute allow={["province", "municipality"]}>
+                  <AccountManagement />
+                </RoleRoute>
+              )}
+            />
+
+          </Route>
+
+        </Routes>
+
+      </AuthProvider>
 
     </Router>
 

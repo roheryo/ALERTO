@@ -14,6 +14,7 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
+import { fetchWeatherForMunicipality } from "../lib/weatherClient";
 
 const MUNICIPALITY_BARANGAYS = {
   Nabunturan: ["Basak", "Bayabas", "Bukal", "Cabidianan", "Katipunan", "Magsaysay", "San Isidro", "San Vicente"],
@@ -100,22 +101,7 @@ function Dashboard() {
   );
 
   useEffect(() => {
-    let cancelled = false;
-
-    fetch("http://localhost:5000/patients")
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return;
-        setPatients(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setPatients([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
+    setPatients([]);
   }, []);
 
   useEffect(() => {
@@ -125,14 +111,10 @@ function Dashboard() {
         : municipalityName || "Nabunturan";
     let cancelled = false;
 
-    fetch(`http://localhost:5000/weather/${encodeURIComponent(weatherMunicipality)}`)
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        return { ok: res.ok, data };
-      })
-      .then(({ ok, data }) => {
+    fetchWeatherForMunicipality(weatherMunicipality)
+      .then((result) => {
         if (cancelled) return;
-        if (!ok || data?.error) {
+        if (!result.ok || result.error) {
           setWeather({
             municipality: weatherMunicipality,
             temperature: null,
@@ -141,6 +123,7 @@ function Dashboard() {
           });
           return;
         }
+        const data = result.data;
         setWeather({
           municipality: data?.municipality || weatherMunicipality,
           temperature: Number.isFinite(data?.temperature) ? data.temperature : null,

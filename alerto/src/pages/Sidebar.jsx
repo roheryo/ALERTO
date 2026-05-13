@@ -1,38 +1,52 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./Sidebar.css";
 
 import profileIcon from "../assets/images/account.png";
+import { useAuth } from "../context/AuthContext";
 
-/* ICONS */
 import {
   FaHome,
   FaUserPlus,
   FaClipboardList,
   FaChartBar,
-  FaBell
+  FaBell,
+  FaUsersCog,
+  FaSignOutAlt
 } from "react-icons/fa";
 
 function Sidebar() {
 
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const pathname = location.pathname;
   const isDashboardActive =
     pathname === "/dashboard" ||
     pathname === "/dashboard/" ||
-    pathname.startsWith("/dashboard/");
+    (pathname.startsWith("/dashboard/") &&
+      pathname !== "/dashboard/account-management");
+
+  const canManageAccounts =
+    user?.role === "province" || user?.role === "municipality";
+
+  const displayName = user?.fullName ?? "User";
+
+  const handleLogout = () => {
+
+    logout();
+    navigate("/login", { replace: true });
+
+  };
 
   return (
 
     <div className="sidebar">
 
-      {/* TITLE */}
       <h3 className="sidebar-title">
         Disease Surveillance
       </h3>
 
-
-      {/* PROFILE */}
       <div className="profile-section">
 
         <img
@@ -42,17 +56,23 @@ function Sidebar() {
         />
 
         <h4 className="profile-name">
-          Roger Madulara
+          {displayName}
         </h4>
+
+        <p className="profile-role">
+          {user?.role === "province"
+            ? "Province"
+            : user?.role === "municipality"
+              ? "Municipality"
+              : user?.role === "barangay"
+                ? "Barangay"
+                : ""}
+        </p>
 
       </div>
 
-
-      {/* DIVIDER */}
       <div className="sidebar-divider"></div>
 
-
-      {/* MENU */}
       <ul className="menu-list">
 
         <li className={isDashboardActive ? "active" : ""}>
@@ -90,7 +110,23 @@ function Sidebar() {
           </Link>
         </li>
 
+        {canManageAccounts ? (
+          <li className={location.pathname === "/dashboard/account-management" ? "active" : ""}>
+            <Link to="/dashboard/account-management">
+              <FaUsersCog className="menu-icon" />
+              Account management
+            </Link>
+          </li>
+        ) : null}
+
       </ul>
+
+      <div className="sidebar-footer">
+        <button type="button" className="sidebar-logout" onClick={handleLogout}>
+          <FaSignOutAlt className="menu-icon" />
+          Log out
+        </button>
+      </div>
 
     </div>
 

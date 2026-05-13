@@ -1,282 +1,255 @@
-const express = require("express");
-const cors = require("cors");
-const db = require("./db");
+import express from "express";
+import cors from "cors";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+import { pool } from "./db.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const app = express();
+const PORT = Number(process.env.PORT ?? 3001);
+const JWT_SECRET = process.env.JWT_SECRET ?? "dev-only-change-me";
 
-const MUNICIPALITY_COORDS = {
-  nabunturan: { lat: 7.6075, lon: 125.9667, label: "Nabunturan" },
-  monkayo: { lat: 7.8175, lon: 126.0503, label: "Monkayo" },
-  compostela: { lat: 7.6731, lon: 126.0886, label: "Compostela" },
-  mawab: { lat: 7.5592, lon: 125.9928, label: "Mawab" },
-  maco: { lat: 7.3619, lon: 125.8553, label: "Maco" },
-  maragusan: { lat: 7.3853, lon: 126.1069, label: "Maragusan" },
-  montevista: { lat: 7.695, lon: 125.9869, label: "Montevista" },
-  pantukan: { lat: 7.1242, lon: 126.0078, label: "Pantukan" },
-  "new bataan": { lat: 7.5325, lon: 126.1428, label: "New Bataan" },
-  newbataan: { lat: 7.5325, lon: 126.1428, label: "New Bataan" },
-  laak: { lat: 7.9703, lon: 125.9994, label: "Laak" },
-  mabini: { lat: 7.3122, lon: 125.8533, label: "Mabini" }
-};
-
-function normalizeMunicipalityName(value) {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, " ");
+if (JWT_SECRET === "dev-only-change-me") {
+  console.warn("[ALERTO API] Using default JWT_SECRET; set JWT_SECRET in .env for production.");
 }
 
-function mapOpenMeteoCodeToCondition(code) {
-  const n = Number(code);
-  if (n === 0) return "Clear";
-  if ([1, 2, 3].includes(n)) return "Cloudy";
-  if ([45, 48].includes(n)) return "Fog";
-  if ([51, 53, 55, 56, 57].includes(n)) return "Drizzle";
-  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(n)) return "Rain";
-  if ([95, 96, 99].includes(n)) return "Thunderstorm";
-  return "Unknown";
+app.use(cors({ origin: true, credentials: true }));
+app.use(express.json({ limit: "64kb" }));
+
+const api = express.Router();
+
+function signToken(userRow) {
+  return jwt.sign(
+    {
+      sub: userRow.id,
+      role: userRow.role,
+      provinceId: userRow.province_id,
+      municipalityId: userRow.municipality_id,
+      barangayId: userRow.barangay_id
+    },
+    JWT_SECRET,
+    { expiresIn: "12h" }
+  );
 }
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-/* =========================
-   LOGIN
-========================= */
-app.post("/login", async (req, res) => {
-  const { username, password } = req.body;
-
+function authMiddleware(req, res, next) {
+  const h = req.headers.authorization ?? "";
+  const m = /^Bearer\s+(.+)$/i.exec(h);
+  if (!m) return res.status(401).json({ error: "Missing bearer token" });
   try {
-    const [rows] = await db.query(
-      "SELECT * FROM users WHERE username = ? AND password = ?",
-      [username, password]
+    const payload = jwt.verify(m[1], JWT_SECRET);
+    req.auth = payload;
+    return next();
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+}
+
+api.post("/auth/login", async (req, res) => {
+  try {
+  const loginId = String(req.body?.username ?? "").trim();
+  const password = String(req.body?.password ?? "");
+  if (!loginId || !password) {
+    return res.status(400).json({ error: "Username or email and password are required" });
+  }
+
+  const [rows] = await pool.query(
+    `SELECT u.id, u.username, u.full_name AS fullName, u.email, u.contact_number AS contactNumber,
+            u.role, u.province_id AS provinceId, u.municipality_id AS municipalityId, u.barangay_id AS barangayId,
+            p.name AS provinceName, m.name AS municipalityName, b.name AS barangayName, u.password_hash AS passwordHash
+     FROM users u
+     LEFT JOIN provinces p ON p.id = u.province_id
+     LEFT JOIN municipalities m ON m.id = u.municipality_id
+     LEFT JOIN barangays b ON b.id = u.barangay_id
+     WHERE (u.username = ? OR u.email = ?) AND u.is_active = 1
+     LIMIT 1`,
+    [loginId, loginId]
+  );
+
+  const user = rows[0];
+  if (!user) return res.status(401).json({ error: "Invalid credentials" });
+
+  const storedHash = user.passwordHash;
+  const hashStr = Buffer.isBuffer(storedHash)
+    ? storedHash.toString("utf8")
+    : String(storedHash ?? "");
+
+  const ok = await bcrypt.compare(password, hashStr);
+  if (!ok) return res.status(401).json({ error: "Invalid credentials" });
+
+  delete user.passwordHash;
+  const token = signToken({
+    id: user.id,
+    role: user.role,
+    province_id: user.provinceId,
+    municipality_id: user.municipalityId,
+    barangay_id: user.barangayId
+  });
+
+  return res.json({ token, user });
+  } catch (err) {
+    console.error(err);
+    if (err?.code === "ER_ACCESS_DENIED_ERROR") {
+      return res.status(503).json({
+        error:
+          "Cannot connect to MySQL: access denied. Set DB_USER and DB_PASS in backend/.env to match your MySQL account (root often has a password on Windows)."
+      });
+    }
+    if (err?.code === "ER_BAD_DB_ERROR") {
+      return res.status(503).json({
+        error:
+          `Database "${process.env.DB_NAME ?? "ALERTO"}" does not exist. Create it and run the SQL scripts in database/.`
+      });
+    }
+    if (err?.code === "ECONNREFUSED") {
+      return res.status(503).json({
+        error:
+          "Cannot connect to MySQL (connection refused). Start MySQL and check DB_HOST in backend/.env."
+      });
+    }
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+/** Municipality: barangay accounts under their municipality only. */
+api.get("/admin/barangay-accounts", authMiddleware, async (req, res) => {
+  try {
+  const { role, municipalityId, provinceId } = req.auth;
+
+  if (role === "municipality") {
+    if (!municipalityId) return res.status(403).json({ error: "Forbidden" });
+    const [rows] = await pool.query(
+      `SELECT u.id, u.username, u.full_name AS fullName, u.email, u.contact_number AS contactNumber,
+              u.role, b.name AS barangayName, m.name AS municipalityName
+       FROM users u
+       JOIN barangays b ON b.id = u.barangay_id
+       JOIN municipalities m ON m.id = b.municipality_id
+       WHERE u.role = 'barangay' AND b.municipality_id = ?
+       ORDER BY b.name`,
+      [municipalityId]
     );
-
-    if (rows.length === 0) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    res.json({
-      message: "Login successful",
-      user: rows[0]
-    });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.json({ accounts: rows, readOnly: false });
   }
-});
 
-/* =========================
-   SIGNUP
-========================= */
-app.post("/signup", async (req, res) => {
-  const {
-    fullName,
-    email,
-    contactNumber,
-    username,
-    password,
-    role,
-    municipality,
-    barangay
-  } = req.body;
-
-  try {
-    await db.query(
-      `INSERT INTO users 
-      (fullName, email, contactNumber, username, password, role, municipality, barangay)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        fullName,
-        email,
-        contactNumber,
-        username,
-        password,
-        role,
-        municipality,
-        barangay
-      ]
+  if (role === "province") {
+    if (!provinceId) return res.status(403).json({ error: "Forbidden" });
+    const [rows] = await pool.query(
+      `SELECT u.id, u.username, u.full_name AS fullName, u.email, u.contact_number AS contactNumber,
+              u.role, b.name AS barangayName, m.name AS municipalityName
+       FROM users u
+       JOIN barangays b ON b.id = u.barangay_id
+       JOIN municipalities m ON m.id = b.municipality_id
+       WHERE u.role = 'barangay' AND m.province_id = ?
+       ORDER BY m.name, b.name`,
+      [provinceId]
     );
+    return res.json({ accounts: rows, readOnly: true });
+  }
 
-    res.json({ message: "User registered!" });
-
+  return res.status(403).json({ error: "Forbidden" });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
   }
 });
 
-/* =========================
-   ADD PATIENT
-========================= */
-app.post("/add-patient", async (req, res) => {
-  const data = req.body;
-
+/** Province: municipality accounts in their province. */
+api.get("/admin/municipality-accounts", authMiddleware, async (req, res) => {
   try {
-    await db.query(
-      `INSERT INTO patients 
-      (name, age, sex, birthdate, civilStatus, province, municipality, barangay, purok, birthplace, diseaseType, dateStarted)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        data.name,
-        data.age,
-        data.sex,
-        data.birthdate,
-        data.civilStatus,
-        data.province,
-        data.municipality,
-        data.barangay,
-        data.purok,
-        data.birthplace,
-        data.diseaseType,
-        data.dateStarted
-      ]
-    );
+  if (req.auth.role !== "province") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  const provinceId = req.auth.provinceId;
+  if (!provinceId) return res.status(403).json({ error: "Forbidden" });
 
-    res.json({ message: "Patient added!" });
-
+  const [rows] = await pool.query(
+    `SELECT u.id, u.username, u.full_name AS fullName, u.email, u.contact_number AS contactNumber,
+            u.role, m.name AS municipalityName
+     FROM users u
+     JOIN municipalities m ON m.id = u.municipality_id
+     WHERE u.role = 'municipality' AND m.province_id = ?
+     ORDER BY m.name`,
+    [provinceId]
+  );
+  return res.json({ accounts: rows });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
   }
 });
 
-/* =========================
-   GET PATIENTS (ROLE FILTER)
-========================= */
-app.get("/patients", async (req, res) => {
-  const { role, municipality, barangay } = req.query;
-
+/**
+ * Password update (RBAC enforced):
+ * - municipality -> only barangay users in same municipality
+ * - province -> only municipality users in same province
+ */
+api.patch("/admin/users/:userId/password", authMiddleware, async (req, res) => {
   try {
-    let sql = "SELECT * FROM patients";
-    let params = [];
+  const targetId = Number(req.params.userId);
+  const newPassword = String(req.body?.newPassword ?? "");
+  if (!Number.isFinite(targetId) || targetId <= 0) {
+    return res.status(400).json({ error: "Invalid user id" });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: "Password must be at least 8 characters" });
+  }
 
-    if (role === "Municipal Employee") {
-      sql += " WHERE municipality = ?";
-      params.push(municipality);
+  const actor = req.auth;
+
+  const [targets] = await pool.query(
+    `SELECT u.id, u.role, u.municipality_id AS municipalityId, m.province_id AS provinceId
+     FROM users u
+     LEFT JOIN municipalities m ON m.id = u.municipality_id
+     WHERE u.id = ? AND u.is_active = 1
+     LIMIT 1`,
+    [targetId]
+  );
+  const target = targets[0];
+  if (!target) return res.status(404).json({ error: "User not found" });
+
+  if (actor.role === "municipality") {
+    if (target.role !== "barangay") {
+      return res.status(403).json({ error: "Municipality accounts may only reset barangay passwords" });
     }
-
-    if (role === "Barangay Employee") {
-      sql += " WHERE barangay = ?";
-      params.push(barangay);
+    if (target.municipalityId !== actor.municipalityId) {
+      return res.status(403).json({ error: "Outside your jurisdiction" });
     }
-
-    sql += " ORDER BY id DESC";
-
-    const [rows] = await db.query(sql, params);
-
-    res.json(rows);
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* =========================
-   UPDATE PATIENT
-========================= */
-app.put("/patients/:id", async (req, res) => {
-  const { id } = req.params;
-  const data = req.body;
-
-  try {
-    await db.query(
-      `UPDATE patients SET
-        name=?, age=?, sex=?, municipality=?, barangay=?, diseaseType=?, dateStarted=?
-       WHERE id=?`,
-      [
-        data.name,
-        data.age,
-        data.sex,
-        data.municipality,
-        data.barangay,
-        data.diseaseType,
-        data.dateStarted,
-        id
-      ]
-    );
-
-    res.json({ message: "Updated successfully" });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* =========================
-   DELETE PATIENT
-========================= */
-app.delete("/patients/:id", async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    await db.query("DELETE FROM patients WHERE id=?", [id]);
-    res.json({ message: "Deleted successfully" });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* =========================
-   WEATHER BY MUNICIPALITY
-========================= */
-app.get("/weather/:municipality", async (req, res) => {
-  const apiKey = process.env.OPENWEATHER_API_KEY;
-  const rawMunicipality = req.params.municipality;
-  const key = normalizeMunicipalityName(rawMunicipality);
-  const coords = MUNICIPALITY_COORDS[key];
-
-  if (!coords) {
-    return res.status(404).json({ error: `No coordinates mapped for municipality: ${rawMunicipality}` });
-  }
-
-  try {
-    // 1) Primary provider: OpenWeatherMap
-    if (apiKey) {
-      const url =
-        `https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lon}` +
-        `&units=metric&appid=${apiKey}`;
-
-      const weatherRes = await fetch(url);
-      const weatherData = await weatherRes.json();
-
-      if (weatherRes.ok) {
-        return res.json({
-          municipality: coords.label,
-          temperature: Number(weatherData?.main?.temp ?? 0),
-          humidity: Number(weatherData?.main?.humidity ?? 0),
-          condition: String(weatherData?.weather?.[0]?.main ?? "Unknown"),
-          provider: "openweathermap"
-        });
-      }
+  } else if (actor.role === "province") {
+    if (target.role !== "municipality") {
+      return res.status(403).json({ error: "Province accounts may only reset municipality passwords" });
     }
-
-    // 2) Fallback provider: Open-Meteo (no API key required)
-    const fallbackUrl =
-      `https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}` +
-      `&current=temperature_2m,relative_humidity_2m,weather_code`;
-    const fallbackRes = await fetch(fallbackUrl);
-    const fallbackData = await fallbackRes.json();
-
-    if (!fallbackRes.ok || !fallbackData?.current) {
-      return res.status(502).json({ error: "Failed to fetch weather from providers" });
+    if (target.provinceId !== actor.provinceId) {
+      return res.status(403).json({ error: "Outside your jurisdiction" });
     }
+  } else {
+    return res.status(403).json({ error: "Forbidden" });
+  }
 
-    return res.json({
-      municipality: coords.label,
-      temperature: Number(fallbackData.current.temperature_2m ?? 0),
-      humidity: Number(fallbackData.current.relative_humidity_2m ?? 0),
-      condition: mapOpenMeteoCodeToCondition(fallbackData.current.weather_code),
-      provider: "open-meteo"
-    });
+  const hash = await bcrypt.hash(newPassword, 10);
+  await pool.query(`UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, [
+    hash,
+    targetId
+  ]);
+
+  return res.json({ ok: true });
   } catch (err) {
-    return res.status(500).json({ error: err.message || "Weather API request failed" });
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
   }
 });
 
-/* =========================
-   START SERVER
-========================= */
-app.listen(5000, () => {
-  console.log("Server running on http://localhost:5000");
+app.use("/api", api);
+
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(500).json({ error: "Server error" });
+});
+
+app.listen(PORT, () => {
+  console.log(`ALERTO API listening on http://localhost:${PORT}`);
 });
