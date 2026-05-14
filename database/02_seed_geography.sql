@@ -1,5 +1,5 @@
 -- Seed province, municipalities, barangays (Davao de Oro)
--- Barangay names match src/pages/Signup.jsx MUNICIPALITY_DATA for consistency with the UI.
+-- Barangay names match src/pages/Reports.jsx MUNICIPALITY_DATA for consistency with the UI.
 
 USE ALERTO;
 
@@ -34,11 +34,11 @@ CROSS JOIN (
 INSERT INTO barangays (municipality_id, name)
 SELECT m.id, j.name FROM municipalities m
 CROSS JOIN (
-  SELECT 'Bagong Silang' AS name UNION ALL SELECT 'Bahi' UNION ALL SELECT 'Cambawan' UNION ALL SELECT 'Coronobe' UNION ALL SELECT 'Katipunan'
+  SELECT 'Bagong Silang' AS name UNION ALL SELECT 'Bahi' UNION ALL SELECT 'Cambagang' UNION ALL SELECT 'Coronobe' UNION ALL SELECT 'Katipunan'
   UNION ALL SELECT 'Lahi' UNION ALL SELECT 'Langgawisan' UNION ALL SELECT 'Mabugnao' UNION ALL SELECT 'Magcagong' UNION ALL SELECT 'Mahayahay'
   UNION ALL SELECT 'Mapawa' UNION ALL SELECT 'Maragusan (Poblacion)' UNION ALL SELECT 'Mauswagon' UNION ALL SELECT 'New Albay'
   UNION ALL SELECT 'New Katipunan' UNION ALL SELECT 'New Manay' UNION ALL SELECT 'New Panay' UNION ALL SELECT 'Paloc'
-  UNION ALL SELECT 'Parasanon' UNION ALL SELECT 'Talian' UNION ALL SELECT 'Tandik' UNION ALL SELECT 'Tigbao' UNION ALL SELECT 'Tupaz'
+  UNION ALL SELECT 'Pamintaran' UNION ALL SELECT 'Parasanon' UNION ALL SELECT 'Talian' UNION ALL SELECT 'Tandik' UNION ALL SELECT 'Tigbao' UNION ALL SELECT 'Tupaz'
   UNION ALL SELECT 'Tupaz Proper'
 ) j WHERE m.name = 'Maragusan';
 
@@ -58,9 +58,9 @@ INSERT INTO barangays (municipality_id, name)
 SELECT m.id, j.name FROM municipalities m
 CROSS JOIN (
   SELECT 'Banagbanag' AS name UNION ALL SELECT 'Banglasan' UNION ALL SELECT 'Bankerohan Norte' UNION ALL SELECT 'Bankerohan Sur'
-  UNION ALL SELECT 'Camansi' UNION ALL SELECT 'Camantangan' UNION ALL SELECT 'Concepcion' UNION ALL SELECT 'Dauman'
+  UNION ALL SELECT 'Camansi' UNION ALL SELECT 'Camantangan' UNION ALL SELECT 'Canidkid' UNION ALL SELECT 'Concepcion' UNION ALL SELECT 'Dauman'
   UNION ALL SELECT 'Kapatagan' UNION ALL SELECT 'Lebanon' UNION ALL SELECT 'Linoan' UNION ALL SELECT 'Mayaon'
-  UNION ALL SELECT 'New Eagle' UNION ALL SELECT 'New Visayas' UNION ALL SELECT 'Prosperidad' UNION ALL SELECT 'San Jose'
+  UNION ALL SELECT 'New Calape' UNION ALL SELECT 'New Cebulan (Sambayon)' UNION ALL SELECT 'New Dalaguete' UNION ALL SELECT 'New Eagle' UNION ALL SELECT 'New Visayas' UNION ALL SELECT 'Prosperidad' UNION ALL SELECT 'San Jose'
   UNION ALL SELECT 'San Vicente' UNION ALL SELECT 'Santa Maria' UNION ALL SELECT 'Tapasan' UNION ALL SELECT 'Poblacion'
 ) j WHERE m.name = 'Montevista';
 
@@ -107,23 +107,24 @@ CROSS JOIN (
 INSERT INTO barangays (municipality_id, name)
 SELECT m.id, j.name FROM municipalities m
 CROSS JOIN (
-  SELECT 'Cadunan' AS name UNION ALL SELECT 'Concepcion' UNION ALL SELECT 'Cuvia' UNION ALL SELECT 'Golden Valley (Maraut)'
-  UNION ALL SELECT 'Libodon' UNION ALL SELECT 'Pindasan' UNION ALL SELECT 'Poblacion' UNION ALL SELECT 'San Antonio'
-  UNION ALL SELECT 'San Vicente' UNION ALL SELECT 'Tagnanan (Mabini)' UNION ALL SELECT 'Del Pilar'
+  SELECT 'Anitapan' AS name UNION ALL SELECT 'Cabuyuan' UNION ALL SELECT 'Cadunan' UNION ALL SELECT 'Cuambog' UNION ALL SELECT 'Golden Valley (Maraut)'
+  UNION ALL SELECT 'Libodon' UNION ALL SELECT 'Pangibiran' UNION ALL SELECT 'Pindasan' UNION ALL SELECT 'Poblacion' UNION ALL SELECT 'San Antonio'
+  UNION ALL SELECT 'Tagnanan (Mabini)' UNION ALL SELECT 'Del Pilar'
 ) j WHERE m.name = 'Mabini';
 
 -- Maco
 INSERT INTO barangays (municipality_id, name)
 SELECT m.id, j.name FROM municipalities m
 CROSS JOIN (
-  SELECT 'Anibongan' AS name UNION ALL SELECT 'Anislagan' UNION ALL SELECT 'Binuangan' UNION ALL SELECT 'Bucana' UNION ALL SELECT 'Calabcab'
-  UNION ALL SELECT 'Concepcion' UNION ALL SELECT 'Dumlan' UNION ALL SELECT 'Elizalde (Somil)' UNION ALL SELECT 'Gubatan'
+  SELECT 'Anibongan' AS name UNION ALL SELECT 'Anislagan' UNION ALL SELECT 'Binuangan' UNION ALL SELECT 'Buanan' UNION ALL SELECT 'Bucana'
+  UNION ALL SELECT 'Calabcab' UNION ALL SELECT 'Concepcion' UNION ALL SELECT 'Dumlan' UNION ALL SELECT 'Elizalde (Somil)' UNION ALL SELECT 'Gubatan'
   UNION ALL SELECT 'Hijo' UNION ALL SELECT 'Kinuban' UNION ALL SELECT 'Langgam' UNION ALL SELECT 'Lapu-lapu'
   UNION ALL SELECT 'Libay-libay' UNION ALL SELECT 'Limbo' UNION ALL SELECT 'Lumatab' UNION ALL SELECT 'Magangit'
   UNION ALL SELECT 'Mainit' UNION ALL SELECT 'Malamodao' UNION ALL SELECT 'Manipongol' UNION ALL SELECT 'Mapaang'
-  UNION ALL SELECT 'Masara' UNION ALL SELECT 'New Asturias' UNION ALL SELECT 'New Barili' UNION ALL SELECT 'Panibasan'
-  UNION ALL SELECT 'Panoraon' UNION ALL SELECT 'Pangi (Gaudencio Antonio)' UNION ALL SELECT 'Poblacion' UNION ALL SELECT 'San Juan'
-  UNION ALL SELECT 'San Roque' UNION ALL SELECT 'Sangab' UNION ALL SELECT 'Taglawig'
+  UNION ALL SELECT 'Masara' UNION ALL SELECT 'New Asturias' UNION ALL SELECT 'New Barili' UNION ALL SELECT 'New Leyte' UNION ALL SELECT 'New Visayas'
+  UNION ALL SELECT 'Panangan' UNION ALL SELECT 'Panibasan' UNION ALL SELECT 'Panoraon' UNION ALL SELECT 'Pangi (Gaudencio Antonio)' UNION ALL SELECT 'Poblacion'
+  UNION ALL SELECT 'San Juan' UNION ALL SELECT 'San Roque' UNION ALL SELECT 'Sangab' UNION ALL SELECT 'Tagbaros' UNION ALL SELECT 'Taglawig'
+  UNION ALL SELECT 'Teresa' UNION ALL SELECT 'Ubalaz' UNION ALL SELECT 'Unangian' UNION ALL SELECT 'Uracia' UNION ALL SELECT 'Vacolan' UNION ALL SELECT 'Vancezo'
 ) j WHERE m.name = 'Maco';
 
 -- Mawab

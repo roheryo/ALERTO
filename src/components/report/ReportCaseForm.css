@@ -1,0 +1,929 @@
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap");
+
+/* Light theme — structure matches reference; tokens inverted from dark UI */
+.report-case-form {
+  --bg: #f4f7fb;
+  --bg2: #eef2f7;
+  --bg3: #e6ecf4;
+  --surface: #ffffff;
+  --surface2: #f0f4fa;
+  --border: rgba(15, 23, 42, 0.08);
+  --border2: rgba(15, 23, 42, 0.14);
+
+  --primary: #00a896;
+  --primary-dim: rgba(0, 168, 150, 0.14);
+  --primary-glow: rgba(0, 168, 150, 0.28);
+  --accent: #d97706;
+  --danger: #dc2626;
+  --danger-dim: rgba(220, 38, 38, 0.1);
+  --warning: #ca8a04;
+  --warning-dim: rgba(202, 138, 4, 0.12);
+  --info: #2563eb;
+  --info-dim: rgba(37, 99, 235, 0.1);
+
+  --dengue: #c2410c;
+  --ili: #1d4ed8;
+  --awd: #5b21b6;
+
+  --text: #0f172a;
+  --text-dim: rgba(15, 23, 42, 0.55);
+  --text-xs: rgba(15, 23, 42, 0.38);
+
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+
+  --header-h: 62px;
+
+  font-family: "DM Sans", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+.report-case-form ::-webkit-scrollbar {
+  width: 5px;
+}
+.report-case-form ::-webkit-scrollbar-track {
+  background: var(--bg2);
+}
+.report-case-form ::-webkit-scrollbar-thumb {
+  background: var(--border2);
+  border-radius: 10px;
+}
+
+.report-case-form .rc-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.report-case-form .topbar {
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  gap: 16px;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+.report-case-form .topbar-title {
+  font-family: Syne, sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  flex: 1;
+}
+.report-case-form .topbar-sub {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.report-case-form .topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.report-case-form .topbar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: all 0.2s;
+  position: relative;
+}
+.report-case-form .topbar-btn:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+.report-case-form .weather-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.report-case-form .weather-pill span {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.report-case-form .content {
+  padding: 28px 32px;
+  flex: 1;
+  max-width: 1100px;
+}
+
+.report-case-form .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+.report-case-form .btn svg {
+  width: 15px;
+  height: 15px;
+}
+.report-case-form .btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 12px var(--primary-glow);
+}
+.report-case-form .btn-primary:hover {
+  background: #009986;
+  box-shadow: 0 4px 18px var(--primary-glow);
+}
+.report-case-form .btn-primary:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.report-case-form .btn-outline {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border2);
+}
+.report-case-form .btn-outline:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+.report-case-form .btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 7px;
+}
+.report-case-form .btn-danger {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+.report-case-form .btn-danger:hover {
+  background: rgba(220, 38, 38, 0.18);
+}
+
+.report-case-form .section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.report-case-form .section-title {
+  font-family: Syne, sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+}
+.report-case-form .section-desc {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.report-case-form .step-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 28px;
+}
+.report-case-form .step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  position: relative;
+}
+.report-case-form .step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: calc(50% + 20px);
+  right: calc(-50% + 20px);
+  top: 14px;
+  height: 1px;
+  background: var(--border2);
+  transition: background 0.4s;
+}
+.report-case-form .step.done:not(:last-child)::after {
+  background: var(--primary);
+}
+.report-case-form .step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-dim);
+  transition: all 0.3s;
+  flex-shrink: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+.report-case-form .step.active .step-circle {
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-dim);
+}
+.report-case-form .step.done .step-circle {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.report-case-form .step-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.report-case-form .step.active .step-label {
+  color: var(--primary);
+  font-weight: 500;
+}
+.report-case-form .step.done .step-label {
+  color: var(--text-dim);
+}
+.report-case-form .step-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 0 auto;
+}
+
+.report-case-form .panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.report-case-form .panel-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.report-case-form .panel-title {
+  font-family: Syne, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+}
+.report-case-form .panel-body {
+  padding: 22px;
+}
+.report-case-form .panel-body.lg {
+  padding: 26px;
+}
+
+.report-case-form .form-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.report-case-form .form-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+}
+.report-case-form .form-grid-4 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 18px;
+}
+.report-case-form .form-full {
+  grid-column: 1 / -1;
+}
+
+.report-case-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.report-case-form .form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.report-case-form .form-label .req {
+  color: var(--danger);
+  font-size: 14px;
+  line-height: 1;
+}
+.report-case-form .form-label .lbl-tag {
+  background: var(--info-dim);
+  color: var(--info);
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.report-case-form .form-label .lbl-tag.model {
+  background: var(--primary-dim);
+  color: var(--primary);
+}
+
+.report-case-form .form-input,
+.report-case-form .form-select {
+  background: var(--bg2);
+  border: 1.5px solid var(--border2);
+  border-radius: 9px;
+  padding: 10px 13px;
+  color: var(--text);
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  width: 100%;
+}
+.report-case-form .form-input::placeholder {
+  color: var(--text-xs);
+}
+.report-case-form .form-input:focus,
+.report-case-form .form-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-dim);
+}
+.report-case-form .form-input.error,
+.report-case-form .form-select.error {
+  border-color: var(--danger);
+}
+.report-case-form .form-input.error:focus,
+.report-case-form .form-select.error:focus {
+  box-shadow: 0 0 0 3px var(--danger-dim);
+}
+.report-case-form .form-select {
+  appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(15,23,42,0.45)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+}
+.report-case-form .form-textarea {
+  background: var(--bg2);
+  border: 1.5px solid var(--border2);
+  border-radius: 9px;
+  padding: 10px 13px;
+  color: var(--text);
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  resize: vertical;
+  min-height: 80px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.report-case-form .form-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-dim);
+}
+.report-case-form .form-hint {
+  font-size: 11px;
+  color: var(--text-xs);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+.report-case-form .form-error-msg {
+  font-size: 11px;
+  color: var(--danger);
+  margin-top: 2px;
+  display: none;
+}
+.report-case-form .form-input.error ~ .form-error-msg,
+.report-case-form .form-select.error ~ .form-error-msg {
+  display: block;
+}
+
+.report-case-form .form-section {
+  margin-bottom: 24px;
+}
+.report-case-form .form-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.report-case-form .form-section-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.report-case-form .form-section-title {
+  font-family: Syne, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+}
+.report-case-form .form-section-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.report-case-form .divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 24px 0;
+}
+
+.report-case-form .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.report-case-form .badge-success {
+  background: var(--primary-dim);
+  color: var(--primary);
+}
+.report-case-form .badge-danger {
+  background: var(--danger-dim);
+  color: var(--danger);
+}
+.report-case-form .badge-warning {
+  background: var(--warning-dim);
+  color: var(--warning);
+}
+.report-case-form .badge-info {
+  background: var(--info-dim);
+  color: var(--info);
+}
+.report-case-form .badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.report-case-form .tag {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.report-case-form .radio-cards {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.report-case-form .radio-card {
+  flex: 1;
+  min-width: 100px;
+  border: 1.5px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  position: relative;
+}
+.report-case-form .radio-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.report-case-form .radio-card:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--primary-dim);
+}
+.report-case-form .radio-card-icon {
+  font-size: 20px;
+}
+.report-case-form .radio-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+.report-case-form .radio-card-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.report-case-form .radio-card:has(input:checked) .radio-card-label {
+  color: var(--primary);
+}
+.report-case-form .radio-card.dengue:has(input:checked) {
+  border-color: var(--dengue);
+  background: rgba(194, 65, 12, 0.08);
+}
+.report-case-form .radio-card.dengue:has(input:checked) .radio-card-label {
+  color: var(--dengue);
+}
+.report-case-form .radio-card.ili:has(input:checked) {
+  border-color: var(--ili);
+  background: rgba(29, 78, 216, 0.08);
+}
+.report-case-form .radio-card.ili:has(input:checked) .radio-card-label {
+  color: var(--ili);
+}
+.report-case-form .radio-card.awd:has(input:checked) {
+  border-color: var(--awd);
+  background: rgba(91, 33, 182, 0.08);
+}
+.report-case-form .radio-card.awd:has(input:checked) .radio-card-label {
+  color: var(--awd);
+}
+
+.report-case-form .check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.report-case-form .check-row:has(input:checked) {
+  border-color: var(--primary);
+  background: var(--primary-dim);
+}
+.report-case-form .check-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.report-case-form .check-row-label {
+  font-size: 13px;
+  color: var(--text);
+  flex: 1;
+}
+.report-case-form .check-row-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.report-case-form .alert-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  border-left: 3px solid;
+  font-size: 13px;
+}
+.report-case-form .alert-banner.info {
+  background: var(--info-dim);
+  border-color: var(--info);
+}
+.report-case-form .alert-banner.success {
+  background: var(--primary-dim);
+  border-color: var(--primary);
+}
+.report-case-form .alert-banner.warning {
+  background: var(--warning-dim);
+  border-color: var(--warning);
+}
+.report-case-form .alert-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.report-case-form .alert-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.report-case-form .alert-body {
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.report-case-form .summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.report-case-form .summary-item {
+  background: var(--bg3);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.report-case-form .summary-label {
+  font-size: 10px;
+  color: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.report-case-form .summary-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.report-case-form .summary-value.empty {
+  color: var(--text-xs);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.report-case-form .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.report-case-form .data-table th {
+  text-align: left;
+  padding: 9px 14px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.report-case-form .data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.report-case-form .data-table tr:last-child td {
+  border-bottom: none;
+}
+.report-case-form .data-table tr:hover td {
+  background: var(--surface2);
+}
+
+.report-case-form .progress-bar {
+  height: 5px;
+  background: var(--bg3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.report-case-form .progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--primary);
+  transition: width 0.6s ease;
+}
+
+.report-case-form .modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  backdrop-filter: blur(5px);
+}
+.report-case-form .modal-overlay.open {
+  display: flex;
+  animation: rc-fadeIn 0.2s;
+}
+.report-case-form .modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius-lg);
+  width: 480px;
+  max-width: 94vw;
+  padding: 30px;
+  animation: rc-slideUp 0.25s ease;
+  box-shadow: var(--shadow);
+}
+@keyframes rc-fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes rc-slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.report-case-form .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.report-case-form .modal-title {
+  font-family: Syne, sans-serif;
+  font-weight: 700;
+  font-size: 20px;
+}
+.report-case-form .modal-close {
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 20px;
+  line-height: 1;
+  padding: 4px;
+  border: none;
+  background: none;
+}
+.report-case-form .modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.report-case-form .step-page {
+  display: none;
+  animation: rc-fadeIn 0.25s ease;
+}
+.report-case-form .step-page.active {
+  display: block;
+}
+
+.report-case-form .form-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+}
+.report-case-form .form-nav-right {
+  display: flex;
+  gap: 10px;
+}
+
+.report-case-form .context-col {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.report-case-form .form-layout {
+  display: flex;
+  gap: 22px;
+  align-items: flex-start;
+}
+.report-case-form .form-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-case-form .success-check {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--primary-dim);
+  border: 2px solid var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  margin: 0 auto 18px;
+  animation: rc-popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes rc-popIn {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.report-case-form [data-tip] {
+  position: relative;
+  cursor: help;
+}
+.report-case-form [data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 110%;
+  left: 0;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text);
+  z-index: 999;
+  pointer-events: none;
+  box-shadow: var(--shadow);
+  max-width: 240px;
+  white-space: normal;
+  line-height: 1.4;
+}
+
+.report-case-form .disease-error-inline {
+  display: none;
+  color: var(--danger);
+  font-size: 12px;
+  margin-top: 8px;
+}
+.report-case-form .disease-error-inline.visible {
+  display: block;
+}
+
+.report-case-form .toast-rc {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 10000;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
+  max-width: 320px;
+  line-height: 1.4;
+  animation: rc-fadeIn 0.3s;
+}
+.report-case-form .toast-rc.info {
+  background: var(--info-dim);
+  color: var(--info);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+}
+.report-case-form .toast-rc.warning {
+  background: var(--warning-dim);
+  color: var(--warning);
+  border: 1px solid rgba(202, 138, 4, 0.3);
+}
+.report-case-form .toast-rc.success {
+  background: var(--primary-dim);
+  color: var(--primary);
+  border: 1px solid rgba(0, 168, 150, 0.3);
+}
+
+@media (max-width: 960px) {
+  .report-case-form .context-col {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .report-case-form .content {
+    padding: 16px;
+  }
+  .report-case-form .topbar {
+    padding: 0 16px;
+  }
+  .report-case-form .form-grid-2,
+  .report-case-form .form-grid-3,
+  .report-case-form .form-grid-4 {
+    grid-template-columns: 1fr;
+  }
+  .report-case-form .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

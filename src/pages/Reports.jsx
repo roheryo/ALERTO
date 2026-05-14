@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import "./Reports.css";
+import { useAuth } from "../context/AuthContext";
+import { sessionUserFromAuth } from "../lib/authUser";
+import { usePatients } from "../hooks/usePatients";
 
 const MUNICIPALITY_DATA = {
   Compostela: [
@@ -8,10 +11,10 @@ const MUNICIPALITY_DATA = {
     "San Jose","San Miguel","Siocon","Tamia"
   ],
   Maragusan: [
-    "Bagong Silang","Bahi","Cambawan","Coronobe","Katipunan","Lahi",
+    "Bagong Silang","Bahi","Cambagang","Coronobe","Katipunan","Lahi",
     "Langgawisan","Mabugnao","Magcagong","Mahayahay","Mapawa",
     "Maragusan (Poblacion)","Mauswagon","New Albay","New Katipunan",
-    "New Manay","New Panay","Paloc","Parasanon","Talian","Tandik",
+    "New Manay","New Panay","Paloc","Pamintaran","Parasanon","Talian","Tandik",
     "Tigbao","Tupaz","Tupaz Proper"
   ],
   Monkayo: [
@@ -22,9 +25,10 @@ const MUNICIPALITY_DATA = {
   ],
   Montevista: [
     "Banagbanag","Banglasan","Bankerohan Norte","Bankerohan Sur",
-    "Camansi","Camantangan","Concepcion","Dauman","Kapatagan",
-    "Lebanon","Linoan","Mayaon","New Eagle","New Visayas",
-    "Prosperidad","San Jose","San Vicente","Santa Maria","Tapasan","Poblacion"
+    "Camansi","Camantangan","Canidkid","Concepcion","Dauman","Kapatagan",
+    "Lebanon","Linoan","Mayaon","New Calape","New Cebulan (Sambayon)",
+    "New Dalaguete","New Eagle","New Visayas","Prosperidad","San Jose",
+    "San Vicente","Santa Maria","Tapasan","Poblacion"
   ],
   "New Bataan": [
     "Andap","Bantacan","Batinao","Cabinuangan (Poblacion)","Camanlangan",
@@ -48,17 +52,19 @@ const MUNICIPALITY_DATA = {
     "Panamoren","Sabud","San Antonio","Santa Emilia","Santo Niño","Sisimon"
   ],
   Mabini: [
-    "Cadunan","Concepcion","Cuvia","Golden Valley (Maraut)","Libodon",
-    "Pindasan","Poblacion","San Antonio","San Vicente",
+    "Anitapan","Cabuyuan","Cadunan","Cuambog","Golden Valley (Maraut)",
+    "Libodon","Pangibiran","Pindasan","Poblacion","San Antonio",
     "Tagnanan (Mabini)","Del Pilar"
   ],
   Maco: [
-    "Anibongan","Anislagan","Binuangan","Bucana","Calabcab","Concepcion",
-    "Dumlan","Elizalde (Somil)","Gubatan","Hijo","Kinuban","Langgam",
-    "Lapu-lapu","Libay-libay","Limbo","Lumatab","Magangit","Mainit",
-    "Malamodao","Manipongol","Mapaang","Masara","New Asturias",
-    "New Barili","Panibasan","Panoraon","Pangi (Gaudencio Antonio)",
-    "Poblacion","San Juan","San Roque","Sangab","Taglawig"
+    "Anibongan","Anislagan","Binuangan","Buanan","Bucana","Calabcab",
+    "Concepcion","Dumlan","Elizalde (Somil)","Gubatan","Hijo","Kinuban",
+    "Langgam","Lapu-lapu","Libay-libay","Limbo","Lumatab","Magangit",
+    "Mainit","Malamodao","Manipongol","Mapaang","Masara","New Asturias",
+    "New Barili","New Leyte","New Visayas","Panangan","Panibasan",
+    "Panoraon","Pangi (Gaudencio Antonio)","Poblacion","San Juan",
+    "San Roque","Sangab","Tagbaros","Taglawig","Teresa","Ubalaz",
+    "Unangian","Uracia","Vacolan","Vancezo"
   ],
   Mawab: [
     "Andili","Bawani","Concepcion","Malinawon","Nueva Visayas",
@@ -115,7 +121,8 @@ function dateKey(d) {
 }
 
 function Reports() {
-  const user = useMemo(() => JSON.parse(localStorage.getItem("user") || "null"), []);
+  const { user: authUser } = useAuth();
+  const user = useMemo(() => sessionUserFromAuth(authUser), [authUser]);
   const generatedBy = String(user?.username ?? "User").trim() || "User";
   const roleRaw = String(
     user?.role ??
@@ -153,17 +160,7 @@ function Reports() {
   const [reportType, setReportType] = useState("ALL"); // ALL | Dengue | ILI | AWD
   const [selectedMunicipality, setSelectedMunicipality] = useState("");
   const [selectedBarangay, setSelectedBarangay] = useState("");
-  const [patients, setPatients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    setPatients([]);
-    setError("");
-    setLoading(false);
-  }, []);
-
-  // Initialize scope defaults based on role
+  const { patients, loading, error } = usePatients();
   useEffect(() => {
     if (roleKey === "municipal") {
       setSelectedMunicipality(lockedMunicipality);

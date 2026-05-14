@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import "./Notification.css";
 import logo from "../assets/images/ddoLOGO.jpg";
 import { fetchWeatherForMunicipality, WEATHER_MUNICIPALITY_NAMES } from "../lib/weatherClient";
+import { useAuth } from "../context/AuthContext";
+import { sessionUserFromAuth } from "../lib/authUser";
 
 const RISK_THRESHOLD = {
   Dengue: 10,
@@ -38,7 +40,8 @@ function daysAgo(days) {
 }
 
 function Notification() {
-  const user = useMemo(() => JSON.parse(localStorage.getItem("user") || "null"), []);
+  const { user: authUser } = useAuth();
+  const user = useMemo(() => sessionUserFromAuth(authUser), [authUser]);
   const roleRaw = String(user?.role ?? "").toLowerCase();
   const roleKey = roleRaw.includes("barangay")
     ? "barangay"

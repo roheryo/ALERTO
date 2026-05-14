@@ -1,54 +1,55 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import "./Login.css";
-import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
 
 import logo from "../assets/images/ddoLOGO.JPG";
 import bgImage from "../assets/images/ddoBG.jpg";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { apiFetch } from "../lib/api";
 
 function Login() {
-
   const navigate = useNavigate();
-  const [isSignup, setIsSignup] = useState(false);
+  const { isAuthenticated, login } = useAuth();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-
-    if (!username.trim() || !password.trim()) {
-      alert("Enter username and password.");
-      return;
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard", { replace: true });
     }
+  }, [isAuthenticated, navigate]);
 
-    // Client-only session for UI testing. Replace with your auth API when the backend exists.
-    localStorage.setItem(
-      "user",
-      JSON.stringify({
-        username,
-        fullName: username,
-        role: "Provincial Employee",
-        municipality: "Nabunturan",
-        barangay: ""
-      })
-    );
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
 
-    navigate("/dashboard");
+    try {
+      const data = await apiFetch("/auth/login", {
+        method: "POST",
+        body: { username, password }
+      });
+
+      login(data.token, data.user);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      setError(err.message || "Login failed");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-
     <div
       className="login-container"
       style={{
         backgroundImage: `url(${bgImage})`
       }}
     >
-
       <div className="login-card">
-
         <div className="logo-placeholder">
           <img
             src={logo}
@@ -65,81 +66,53 @@ function Login() {
           Dengue, ILI, AWD
         </h2>
 
-        <div className={`tab-container ${isSignup ? "signup-active" : ""}`}>
-
-          <button
-            className="tab"
-            type="button"
-            disabled
-          >
-            LOGIN
-          </button>
-
-          <button
-            className="tab"
-            type="button"
-            disabled
-          >
-            SIGN UP
-          </button>
-
-        </div>
-
         <p className="subtitle">
-          Sign in to your account
+          Sign in with your username or email
         </p>
 
-        <form onSubmit={handleLogin}>
+        <p className="login-policy-note">
+          Access is not self-service. Contact your municipality or province administrator if you need an account or a password reset.
+        </p>
 
-          <label>Username</label>
+        {error ? <p className="login-error">{error}</p> : null}
+
+        <form onSubmit={handleLogin}>
+          <label htmlFor="login-username">Username or email</label>
+
           <input
+            id="login-username"
             type="text"
-            placeholder="Enter Username"
+            placeholder="e.g. ddo_province_admin or province.admin@alerto.local"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            autoComplete="username"
             required
           />
 
-          <label>Password</label>
-          <div className="password-wrapper">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Enter Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          <label htmlFor="login-password">Password</label>
 
-            <span onClick={() => setShowPassword(!showPassword)}>
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </span>
-          </div>
+          <input
+            id="login-password"
+            type="password"
+            placeholder="Enter password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
 
           <button
             type="submit"
             className="login-button"
+            disabled={submitting}
           >
-            SIGN IN
+            {submitting ? "Signing in…" : "Sign in"}
           </button>
-
-          <div className="signup-section">
-            <span>Don't have an account?</span>
-
-            <button
-              type="button"
-              className="signup-link"
-              onClick={() => navigate("/signup")}
-            >
-              Sign Up
-            </button>
-          </div>
-
         </form>
 
         <p className="footer-text">
           Secure authentication for ALERTO Disease Surveillance
         </p>
-
       </div>
     </div>
   );

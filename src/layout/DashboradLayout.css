@@ -1,11 +1,12 @@
 .dashboard-layout {
   display: flex;
   min-height: 100vh;
+  background: #ffffff;
 }
 
-/* Sidebar width */
+/* Fixed sidebar width matches Sidebar.css --sidebar-w */
 .dashboard-layout .sidebar {
-  width: 240px;
+  width: var(--sidebar-w, 280px);
   flex-shrink: 0;
 }
 

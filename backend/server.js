@@ -158,6 +158,71 @@ api.get("/admin/barangay-accounts", authMiddleware, async (req, res) => {
   }
 });
 
+/**
+ * Case log rows for dashboard / cases / reports (RBAC).
+ * - barangay: own barangay only
+ * - municipality: all patients in municipality
+ * - province: all patients in province
+ */
+api.get("/patients", authMiddleware, async (req, res) => {
+  try {
+    const { role, provinceId, municipalityId, barangayId } = req.auth;
+
+    let where = "";
+    const params = [];
+
+    if (role === "barangay") {
+      if (!barangayId) return res.status(403).json({ error: "Barangay scope missing" });
+      where = "WHERE p.barangay_id = ?";
+      params.push(barangayId);
+    } else if (role === "municipality") {
+      if (!municipalityId) return res.status(403).json({ error: "Municipality scope missing" });
+      where = "WHERE p.municipality_id = ?";
+      params.push(municipalityId);
+    } else if (role === "province") {
+      if (!provinceId) return res.status(403).json({ error: "Province scope missing" });
+      where = "WHERE m.province_id = ?";
+      params.push(provinceId);
+    } else {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT
+          p.id,
+          p.name,
+          p.age,
+          p.sex,
+          DATE_FORMAT(p.birthdate, '%Y-%m-%d') AS birthdate,
+          p.civil_status AS civilStatus,
+          p.province,
+          p.municipality_id AS municipalityId,
+          p.barangay_id AS barangayId,
+          m.name AS municipality,
+          b.name AS barangay,
+          p.purok,
+          p.birthplace,
+          p.disease_type AS diseaseType,
+          DATE_FORMAT(p.date_started, '%Y-%m-%d') AS dateStarted,
+          p.created_at AS createdAt
+        FROM patients p
+        JOIN municipalities m ON m.id = p.municipality_id
+        JOIN barangays b ON b.id = p.barangay_id
+        ${where}
+        ORDER BY p.date_started DESC, p.id DESC`,
+      params
+    );
+
+    return res.json({ patients: rows });
+  } catch (err) {
+    console.error(err);
+    if (err?.code === "ER_NO_SUCH_TABLE") {
+      return res.status(503).json({ error: "Database schema not installed (missing patients table)." });
+    }
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
 /** Province: municipality accounts in their province. */
 api.get("/admin/municipality-accounts", authMiddleware, async (req, res) => {
   try {
@@ -250,6 +315,20 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: "Server error" });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`ALERTO API listening on http://localhost:${PORT}`);
+});
+
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(
+      `[ALERTO API] Port ${PORT} is already in use. Another backend (or app) is listening.\n` +
+        "Stop it first, then retry. Examples:\n" +
+        "  • Close the other terminal running `npm run dev` or `node server.js` in backend/\n" +
+        "  • From repo root: npx kill-port 3001\n" +
+        "  • Windows: netstat -ano | findstr :3001   then   taskkill /PID <pid> /F\n"
+    );
+    process.exit(1);
+  }
+  throw err;
 });

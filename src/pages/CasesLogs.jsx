@@ -4,6 +4,9 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
+import { sessionUserFromAuth } from "../lib/authUser";
+import { usePatients } from "../hooks/usePatients";
 
 function CasesLogs() {
   const navigate = useNavigate();
@@ -32,18 +35,20 @@ function CasesLogs() {
   const [selectedDisease, setSelectedDisease] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const { patients: remotePatients } = usePatients();
   const [patients, setPatients] = useState([]);
+
+  useEffect(() => {
+    setPatients(remotePatients);
+  }, [remotePatients]);
 
   const [showView, setShowView] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [editData, setEditData] = useState(null);
 
-  useEffect(() => {
-    setPatients([]);
-  }, []);
-
-  const user = JSON.parse(localStorage.getItem("user"));
+  const { user: authUser } = useAuth();
+  const user = sessionUserFromAuth(authUser);
   const role = String(user?.role ?? "").toLowerCase();
 
   const roleKey = role.includes("barangay")

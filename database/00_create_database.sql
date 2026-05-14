@@ -8,6 +8,8 @@
 --   4) 03_seed_users.sql
 --   5) 04_seed_sample_patients.sql   (optional)
 --   6) 05_example_queries_for_api.sql (optional; mostly comments)
+--   7) 07_patch_barangays_geography.sql (optional; updates barangay rows on DBs seeded before geography fixes)
+--      then re-run 03_seed_users.sql to add barangay accounts for new barangays only
 
 CREATE DATABASE IF NOT EXISTS ALERTO
   CHARACTER SET utf8mb4
