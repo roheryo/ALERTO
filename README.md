@@ -1,8 +1,12 @@
+# ALERTO (frontend)
 
-ThesisProject ClaSanMad
+React + Vite UI for the ALERTO disease surveillance concept. This repository contains **no application server and no database**; add your own backend when you are ready.
 
-note:
+## Run locally
+
+```bash
 npm install
-npm install react-router-dom
-npm install rechart
-npm install express mysql2 cors dotenv bcrypt jsonwebtoken
+npm run dev
+```
+
+Optional: the `alerto/` folder is a second Vite app with the same stack if you use that copy instead.

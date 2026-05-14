@@ -1,9 +1,11 @@
-import "./Dashboard.css"; 
+import "./Dashboard.css";
 
 import logo from "../assets/images/ddoLOGO.jpg";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
+import { sessionUserFromAuth } from "../lib/authUser";
 
 import {
   BarChart,
@@ -14,6 +16,10 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
+import { fetchWeatherForMunicipality } from "../lib/weatherClient";
+import { normalizeDisease } from "../lib/disease";
+import { usePatients } from "../hooks/usePatients";
+import BarangayDashboard from "./dashboard/BarangayDashboard";
 
 const MUNICIPALITY_BARANGAYS = {
   Nabunturan: ["Basak", "Bayabas", "Bukal", "Cabidianan", "Katipunan", "Magsaysay", "San Isidro", "San Vicente"],
@@ -51,7 +57,9 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 function Dashboard() {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const { user: authUser } = useAuth();
+  const { patients, loading, error } = usePatients();
+  const user = sessionUserFromAuth(authUser);
   const role = String(user?.role ?? "").toLowerCase();
   const inferredRole = (() => {
     if (role) return role;
@@ -84,7 +92,6 @@ function Dashboard() {
       ? "Highest Municipalities with Dengue Cases"
       : `Highest Cases in Barangays in ${municipalityName || "Municipality"} (Dengue)`;
 
-  const [patients, setPatients] = useState([]);
   const [weather, setWeather] = useState({
     municipality: "",
     temperature: null,
@@ -100,39 +107,16 @@ function Dashboard() {
   );
 
   useEffect(() => {
-    let cancelled = false;
-
-    fetch("http://localhost:5000/patients")
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return;
-        setPatients(Array.isArray(data) ? data : []);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setPatients([]);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
     const weatherMunicipality =
       roleKey === "provincial"
         ? selectedWeatherMunicipality || "Nabunturan"
         : municipalityName || "Nabunturan";
     let cancelled = false;
 
-    fetch(`http://localhost:5000/weather/${encodeURIComponent(weatherMunicipality)}`)
-      .then(async (res) => {
-        const data = await res.json().catch(() => ({}));
-        return { ok: res.ok, data };
-      })
-      .then(({ ok, data }) => {
+    fetchWeatherForMunicipality(weatherMunicipality)
+      .then((result) => {
         if (cancelled) return;
-        if (!ok || data?.error) {
+        if (!result.ok || result.error) {
           setWeather({
             municipality: weatherMunicipality,
             temperature: null,
@@ -141,6 +125,7 @@ function Dashboard() {
           });
           return;
         }
+        const data = result.data;
         setWeather({
           municipality: data?.municipality || weatherMunicipality,
           temperature: Number.isFinite(data?.temperature) ? data.temperature : null,
@@ -175,33 +160,21 @@ function Dashboard() {
     return MUNICIPALITY_BARANGAYS[key] || [];
   }, [roleKey, user?.barangay, selectedWeatherMunicipality, municipalityName]);
 
-  const normalizeDisease = (raw) => {
-    const v = String(raw ?? "").trim().toLowerCase();
-    if (!v) return "";
-    if (v.includes("awd") || (v.includes("acute") && v.includes("watery") && v.includes("diarr"))) {
-      return "AWD";
-    }
-    if (v.includes("ili") || (v.includes("influenza") && v.includes("like"))) {
-      return "ILI";
-    }
-    if (v.includes("dengue")) {
-      return "DENGUE";
-    }
-    return v.toUpperCase();
-  };
+  const barangayPatients = useMemo(() => {
+    if (!Array.isArray(patients)) return [];
+    const b = String(user?.barangay ?? "").trim();
+    if (!b) return patients;
+    return patients.filter((p) => String(p?.barangay ?? "").trim() === b);
+  }, [patients, user?.barangay]);
 
   const scopedPatients = useMemo(() => {
     if (!Array.isArray(patients)) return [];
     const municipality = String(user?.municipality ?? "").trim();
-    const barangay = String(user?.barangay ?? "").trim();
 
     if (String(inferredRole).includes("provincial")) return patients;
 
     if (String(inferredRole).includes("barangay")) {
-      // Dashboard for barangay users should show top barangays within their municipality
-      // so we scope to municipality (not a single barangay).
-      if (!municipality) return patients;
-      return patients.filter((p) => String(p?.municipality ?? "").trim() === municipality);
+      return [];
     }
 
     if (String(inferredRole).includes("municipal")) {
@@ -210,7 +183,7 @@ function Dashboard() {
     }
 
     return patients;
-  }, [patients, inferredRole, user?.municipality, user?.barangay]);
+  }, [patients, inferredRole, user?.municipality]);
 
   const { totalAWD, totalILI, totalDengue, awdData, iliData, dengueData } = useMemo(() => {
     const countsByDisease = { AWD: 0, ILI: 0, DENGUE: 0 };
@@ -252,7 +225,7 @@ function Dashboard() {
       iliData: toTopList(byDiseaseByGroup.ILI),
       dengueData: toTopList(byDiseaseByGroup.DENGUE)
     };
-  }, [scopedPatients, normalizeDisease, inferredRole]);
+  }, [scopedPatients, inferredRole]);
 
   return (
 
@@ -390,206 +363,236 @@ function Dashboard() {
 
         </div>
 
-        {/* ================= SUMMARY CARDS ================= */}
+        {roleKey === "barangay" ? (
+          <>
+            {loading ? <p className="dashboard-data-status">Loading case data…</p> : null}
+            {error ? (
+              <p className="dashboard-data-status dashboard-data-status--error" role="alert">
+                {error}
+              </p>
+            ) : null}
+            {!loading ? (
+              <BarangayDashboard
+                patients={barangayPatients}
+                barangayName={String(user?.barangay ?? "").trim()}
+                municipalityName={String(user?.municipality ?? "").trim()}
+              />
+            ) : null}
+          </>
+        ) : (
+          <>
+            {loading ? <p className="dashboard-data-status">Loading case data…</p> : null}
+            {error ? (
+              <p className="dashboard-data-status dashboard-data-status--error" role="alert">
+                {error}
+              </p>
+            ) : null}
+            {!loading ? (
+              <>
+            {/* ================= SUMMARY CARDS ================= */}
 
-        <div className="card-container">
+            <div className="card-container">
 
-          <div className="summary-card blue">
+              <div className="summary-card blue">
 
-            <h4>Acute Watery Diarrhea</h4>
+                <h4>Acute Watery Diarrhea</h4>
 
-            <h2>{totalAWD}</h2>
+                <h2>{totalAWD}</h2>
 
-            <p>New infections</p>
+                <p>New infections</p>
 
-          </div>
+              </div>
 
-          <div className="summary-card red">
+              <div className="summary-card red">
 
-            <h4>Influenza-Like-Illness</h4>
+                <h4>Influenza-Like-Illness</h4>
 
-            <h2>{totalILI}</h2>
+                <h2>{totalILI}</h2>
 
-            <p>Total Cases</p>
+                <p>Total Cases</p>
 
-          </div>
+              </div>
 
-          <div className="summary-card orange">
+              <div className="summary-card orange">
 
-            <h4>Dengue</h4>
+                <h4>Dengue</h4>
 
-            <h2>{totalDengue}</h2>
+                <h2>{totalDengue}</h2>
 
-            <p>Cases</p>
+                <p>Cases</p>
 
-          </div>
+              </div>
 
-        </div>
-
-        {/* ================= CHARTS ================= */}
-
-        <div className="chart-container">
-
-          <div className="chart-card">
-
-            <div className="chart-header">
-              <h3 className="chart-title">{awdChartTitle}</h3>
-              <div className="chart-subtitle">Top 3 by cases</div>
             </div>
 
-            <ResponsiveContainer width="100%" height={250}>
+            {/* ================= CHARTS ================= */}
 
-              <BarChart data={awdData}>
+            <div className="chart-container">
 
-                <defs>
-                  <linearGradient id="dashBarBlue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#1d4ed8" stopOpacity={1} />
-                  </linearGradient>
-                </defs>
+              <div className="chart-card">
 
-                <CartesianGrid stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
+                <div className="chart-header">
+                  <h3 className="chart-title">{awdChartTitle}</h3>
+                  <div className="chart-subtitle">Top 3 by cases</div>
+                </div>
 
-                <XAxis
-                  dataKey="municipality"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "rgba(15, 23, 42, 0.70)", fontSize: 12, fontWeight: 700 }}
-                  dy={8}
-                />
+                <ResponsiveContainer width="100%" height={250}>
 
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "rgba(15, 23, 42, 0.55)", fontSize: 12, fontWeight: 700 }}
-                  width={32}
-                />
+                  <BarChart data={awdData}>
 
-                <Tooltip
-                  content={<ChartTooltip />}
-                  cursor={{ fill: "rgba(37, 99, 235, 0.08)" }}
-                />
+                    <defs>
+                      <linearGradient id="dashBarBlue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#1d4ed8" stopOpacity={1} />
+                      </linearGradient>
+                    </defs>
 
-                <Bar
-                  dataKey="cases"
-                  fill="url(#dashBarBlue)"
-                  radius={[10, 10, 0, 0]}
-                  barSize={34}
-                />
+                    <CartesianGrid stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
 
-              </BarChart>
+                    <XAxis
+                      dataKey="municipality"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "rgba(15, 23, 42, 0.70)", fontSize: 12, fontWeight: 700 }}
+                      dy={8}
+                    />
 
-            </ResponsiveContainer>
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "rgba(15, 23, 42, 0.55)", fontSize: 12, fontWeight: 700 }}
+                      width={32}
+                    />
 
-          </div>
+                    <Tooltip
+                      content={<ChartTooltip />}
+                      cursor={{ fill: "rgba(37, 99, 235, 0.08)" }}
+                    />
 
-          <div className="chart-card">
+                    <Bar
+                      dataKey="cases"
+                      fill="url(#dashBarBlue)"
+                      radius={[10, 10, 0, 0]}
+                      barSize={34}
+                    />
 
-            <div className="chart-header">
-              <h3 className="chart-title">{iliChartTitle}</h3>
-              <div className="chart-subtitle">Top 3 by cases</div>
+                  </BarChart>
+
+                </ResponsiveContainer>
+
+              </div>
+
+              <div className="chart-card">
+
+                <div className="chart-header">
+                  <h3 className="chart-title">{iliChartTitle}</h3>
+                  <div className="chart-subtitle">Top 3 by cases</div>
+                </div>
+
+                <ResponsiveContainer width="100%" height={250}>
+
+                  <BarChart data={iliData}>
+
+                    <defs>
+                      <linearGradient id="dashBarRed" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#fb7185" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#e11d48" stopOpacity={1} />
+                      </linearGradient>
+                    </defs>
+
+                    <CartesianGrid stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
+
+                    <XAxis
+                      dataKey="municipality"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "rgba(15, 23, 42, 0.70)", fontSize: 12, fontWeight: 700 }}
+                      dy={8}
+                    />
+
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "rgba(15, 23, 42, 0.55)", fontSize: 12, fontWeight: 700 }}
+                      width={32}
+                    />
+
+                    <Tooltip
+                      content={<ChartTooltip />}
+                      cursor={{ fill: "rgba(225, 29, 72, 0.08)" }}
+                    />
+
+                    <Bar
+                      dataKey="cases"
+                      fill="url(#dashBarRed)"
+                      radius={[10, 10, 0, 0]}
+                      barSize={34}
+                    />
+
+                  </BarChart>
+
+                </ResponsiveContainer>
+
+              </div>
+
+              <div className="chart-card">
+
+                <div className="chart-header">
+                  <h3 className="chart-title">{dengueChartTitle}</h3>
+                  <div className="chart-subtitle">Top 3 by cases</div>
+                </div>
+
+                <ResponsiveContainer width="100%" height={250}>
+
+                  <BarChart data={dengueData}>
+
+                    <defs>
+                      <linearGradient id="dashBarAmber" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#fbbf24" stopOpacity={1} />
+                        <stop offset="100%" stopColor="#d97706" stopOpacity={1} />
+                      </linearGradient>
+                    </defs>
+
+                    <CartesianGrid stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
+
+                    <XAxis
+                      dataKey="municipality"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "rgba(15, 23, 42, 0.70)", fontSize: 12, fontWeight: 700 }}
+                      dy={8}
+                    />
+
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "rgba(15, 23, 42, 0.55)", fontSize: 12, fontWeight: 700 }}
+                      width={32}
+                    />
+
+                    <Tooltip
+                      content={<ChartTooltip />}
+                      cursor={{ fill: "rgba(217, 119, 6, 0.10)" }}
+                    />
+
+                    <Bar
+                      dataKey="cases"
+                      fill="url(#dashBarAmber)"
+                      radius={[10, 10, 0, 0]}
+                      barSize={34}
+                    />
+
+                  </BarChart>
+
+                </ResponsiveContainer>
+
+              </div>
+
             </div>
-
-            <ResponsiveContainer width="100%" height={250}>
-
-              <BarChart data={iliData}>
-
-                <defs>
-                  <linearGradient id="dashBarRed" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#fb7185" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#e11d48" stopOpacity={1} />
-                  </linearGradient>
-                </defs>
-
-                <CartesianGrid stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
-
-                <XAxis
-                  dataKey="municipality"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "rgba(15, 23, 42, 0.70)", fontSize: 12, fontWeight: 700 }}
-                  dy={8}
-                />
-
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "rgba(15, 23, 42, 0.55)", fontSize: 12, fontWeight: 700 }}
-                  width={32}
-                />
-
-                <Tooltip
-                  content={<ChartTooltip />}
-                  cursor={{ fill: "rgba(225, 29, 72, 0.08)" }}
-                />
-
-                <Bar
-                  dataKey="cases"
-                  fill="url(#dashBarRed)"
-                  radius={[10, 10, 0, 0]}
-                  barSize={34}
-                />
-
-              </BarChart>
-
-            </ResponsiveContainer>
-
-          </div>
-
-          <div className="chart-card">
-
-            <div className="chart-header">
-              <h3 className="chart-title">{dengueChartTitle}</h3>
-              <div className="chart-subtitle">Top 3 by cases</div>
-            </div>
-
-            <ResponsiveContainer width="100%" height={250}>
-
-              <BarChart data={dengueData}>
-
-                <defs>
-                  <linearGradient id="dashBarAmber" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#fbbf24" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#d97706" stopOpacity={1} />
-                  </linearGradient>
-                </defs>
-
-                <CartesianGrid stroke="rgba(15, 23, 42, 0.08)" vertical={false} />
-
-                <XAxis
-                  dataKey="municipality"
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "rgba(15, 23, 42, 0.70)", fontSize: 12, fontWeight: 700 }}
-                  dy={8}
-                />
-
-                <YAxis
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fill: "rgba(15, 23, 42, 0.55)", fontSize: 12, fontWeight: 700 }}
-                  width={32}
-                />
-
-                <Tooltip
-                  content={<ChartTooltip />}
-                  cursor={{ fill: "rgba(217, 119, 6, 0.10)" }}
-                />
-
-                <Bar
-                  dataKey="cases"
-                  fill="url(#dashBarAmber)"
-                  radius={[10, 10, 0, 0]}
-                  barSize={34}
-                />
-
-              </BarChart>
-
-            </ResponsiveContainer>
-
-          </div>
-
-        </div>
+              </>
+            ) : null}
+          </>
+        )}
 
       </div>
 

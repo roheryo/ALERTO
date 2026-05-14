@@ -4,6 +4,9 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
+import { sessionUserFromAuth } from "../lib/authUser";
+import { usePatients } from "../hooks/usePatients";
 
 function CasesLogs() {
   const navigate = useNavigate();
@@ -32,21 +35,20 @@ function CasesLogs() {
   const [selectedDisease, setSelectedDisease] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
+  const { patients: remotePatients } = usePatients();
   const [patients, setPatients] = useState([]);
+
+  useEffect(() => {
+    setPatients(remotePatients);
+  }, [remotePatients]);
 
   const [showView, setShowView] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [editData, setEditData] = useState(null);
 
-  useEffect(() => {
-    fetch("http://localhost:5000/patients")
-      .then(res => res.json())
-      .then(data => setPatients(data))
-      .catch(err => console.error(err));
-  }, []);
-
-  const user = JSON.parse(localStorage.getItem("user"));
+  const { user: authUser } = useAuth();
+  const user = sessionUserFromAuth(authUser);
   const role = String(user?.role ?? "").toLowerCase();
 
   const roleKey = role.includes("barangay")
@@ -133,28 +135,15 @@ function CasesLogs() {
     setShowEdit(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     const confirmDelete = window.confirm("Are you sure you want to delete?");
     if (!confirmDelete) return;
 
-    await fetch(`http://localhost:5000/patients/${id}`, {
-      method: "DELETE"
-    });
-
-    setPatients(prev => prev.filter(p => p.id !== id));
+    setPatients((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleUpdate = async () => {
-    await fetch(`http://localhost:5000/patients/${editData.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editData)
-    });
-
-    setPatients(prev =>
-      prev.map(p => (p.id === editData.id ? editData : p))
-    );
-
+  const handleUpdate = () => {
+    setPatients((prev) => prev.map((p) => (p.id === editData.id ? editData : p)));
     setShowEdit(false);
   };
 

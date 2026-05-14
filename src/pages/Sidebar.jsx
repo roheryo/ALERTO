@@ -1,147 +1,217 @@
+import { useMemo, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import "./Sidebar.css";
-
-import profileIcon from "../assets/images/account.png";
-
 import {
-  FaHome,
-  FaUserPlus,
-  FaClipboardList,
-  FaChartBar,
-  FaSignOutAlt
-} from "react-icons/fa";
+  LayoutGrid,
+  UserPlus,
+  Bell,
+  ClipboardList,
+  PieChart,
+  Users
+} from "lucide-react";
+
+import "./Sidebar.css";
+import { useAuth } from "../context/AuthContext";
+import LogoutConfirmModal from "../components/LogoutConfirmModal";
+
+function initialsFromUser(user) {
+  const name = String(user?.fullName ?? user?.username ?? "U").trim();
+  const parts = name.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase() || "U";
+}
 
 function Sidebar() {
-
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const closeLogoutModal = useCallback(() => setLogoutOpen(false), []);
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const pathname = location.pathname;
 
-  const roleFromUser =
-    user?.role ??
-    user?.Role ??
-    user?.userRole ??
-    user?.user_role ??
-    user?.accountRole ??
-    user?.account_role;
+  const canManageAccounts =
+    user?.role === "province" || user?.role === "municipality";
 
-  const roleKey = (() => {
-    const r = String(roleFromUser ?? "").trim().toLowerCase();
-    if (r.includes("barangay")) return "barangay";
-    if (r.includes("municipal")) return "municipal";
-    if (r.includes("provincial") || r.includes("province")) return "provincial";
-    if (!user) return null;
-    if (user.barangay && String(user.barangay).trim()) return "barangay";
-    if (user.municipality && String(user.municipality).trim()) return "municipal";
-    return "provincial";
-  })();
+  const canReportCase =
+    user?.role === "municipality" || user?.role === "barangay";
 
-  const municipalityName = String(user?.municipality ?? "").trim();
-  const barangayName = String(user?.barangay ?? "").trim();
-  const provinceName = String(user?.province ?? "Davao de Oro").trim();
+  const showExtendedNav =
+    user?.role === "municipality" || user?.role === "province";
 
-  const roleLabel = (() => {
-    if (!roleKey) return null;
-    if (roleKey === "barangay") {
-      if (municipalityName && barangayName) {
-        return `Municipality of ${municipalityName}, Barangay ${barangayName} Employee`;
-      }
-      if (municipalityName) return `Municipality of ${municipalityName}, Barangay Employee`;
-      return "Barangay Employee";
+  const isDashboardActive = /^\/dashboard\/?$/.test(pathname);
+
+  const isReportCaseActive =
+    pathname === "/dashboard/report-case" || pathname === "/dashboard/add-patient";
+
+  const isAlertsActive =
+    pathname === "/dashboard/notification" || pathname.startsWith("/dashboard/notification/");
+
+  const barangayLine = useMemo(() => {
+    const b = user?.barangayName?.trim();
+    if (b) return `${b} - Barangay`;
+    if (user?.role === "barangay") return "Barangay";
+    if (user?.role === "municipality" && user?.municipalityName) {
+      return `${user.municipalityName} - Municipality`;
     }
-    if (roleKey === "municipal") {
-      if (municipalityName) return `Municipality of ${municipalityName} Employee`;
-      return "Municipal Employee";
+    if (user?.role === "province" && user?.provinceName) {
+      return `${user.provinceName} - Province`;
     }
-    if (provinceName) return `Province of ${provinceName} Employee`;
-    return "Provincial Employee";
-  })();
+    return "ALERTO";
+  }, [user]);
 
-  const canAddPatient = (() => {
-    if (!user) return false;
-    return roleKey === "municipal" || roleKey === "barangay";
-  })();
-
-  const handleLogout = () => {
-    if (window.confirm("Are you sure you want to log out?")) {
-      localStorage.removeItem("user");
-      navigate("/login");
+  const locationSubtitle = useMemo(() => {
+    if (user?.role === "barangay" && user?.barangayName) {
+      return `BHU Brgy. ${user.barangayName}`;
     }
+    if (user?.municipalityName && user?.barangayName) {
+      return `${user.municipalityName} · ${user.barangayName}`;
+    }
+    if (user?.municipalityName) return user.municipalityName;
+    if (user?.provinceName) return user.provinceName;
+    return "Davao de Oro PHO";
+  }, [user]);
+
+  const locationLabel = useMemo(() => {
+    if (user?.role === "barangay") return "Barangay";
+    if (user?.role === "municipality") return "Municipality";
+    if (user?.role === "province") return "Province";
+    return "Workspace";
+  }, [user]);
+
+  const usernameLine = String(user?.username ?? user?.email ?? "—").trim();
+
+  const avatarInitials = useMemo(() => initialsFromUser(user), [user]);
+
+  const confirmLogout = () => {
+    setLogoutOpen(false);
+    logout();
+    navigate("/login", { replace: true });
   };
 
   return (
-    <div className="sidebar">
+    <aside className="sidebar" aria-label="Primary navigation">
+      <div className="sidebar-inner">
+        <header className="sidebar-brand">
+          <div className="sidebar-brand-mark" aria-hidden="true">
+            <span className="sidebar-brand-mark-text">AL</span>
+          </div>
+          <div className="sidebar-brand-text">
+            <span className="sidebar-brand-title">ALERTO</span>
+            <span className="sidebar-brand-sub">DAVAO DE ORO PHO</span>
+          </div>
+        </header>
 
-      <h3 className="sidebar-title">
-        Disease Surveillance
-      </h3>
-
-      <div className="profile-section">
-
-        <img
-          src={profileIcon}
-          alt="Profile"
-          className="profile-icon"
-        />
-
-        <div className="profile-meta">
-          <h4 className="profile-name">
-            {user?.username || "Guest"}
-          </h4>
-
-          {/* ROLE DISPLAY */}
-          <p className="profile-role">
-            {roleLabel || "No Role"}
-          </p>
+        <div className="sidebar-location-card">
+          <span className="sidebar-location-dot" aria-hidden="true" />
+          <div className="sidebar-location-copy">
+            <span className="sidebar-location-label">{locationLabel}</span>
+            <span className="sidebar-location-detail">{locationSubtitle}</span>
+          </div>
         </div>
 
+        <nav className="sidebar-nav" aria-label="Main pages">
+          <p className="sidebar-nav-heading">Menu</p>
+          <ul className="sidebar-menu">
+            <li>
+              <Link
+                className={`sidebar-link${isDashboardActive ? " is-active" : ""}`}
+                to="/dashboard"
+              >
+                <LayoutGrid className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                <span>Dashboard</span>
+              </Link>
+            </li>
+
+            {canReportCase ? (
+              <li>
+                <Link
+                  className={`sidebar-link${isReportCaseActive ? " is-active" : ""}`}
+                  to="/dashboard/report-case"
+                >
+                  <UserPlus className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                  <span>Report Case</span>
+                </Link>
+              </li>
+            ) : null}
+
+            <li>
+              <Link
+                className={`sidebar-link${isAlertsActive ? " is-active" : ""}`}
+                to="/dashboard/notification"
+              >
+                <Bell className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                <span>Alerts</span>
+              </Link>
+            </li>
+
+            {showExtendedNav ? (
+              <>
+                <li>
+                  <Link
+                    className={`sidebar-link${pathname === "/dashboard/cases" ? " is-active" : ""}`}
+                    to="/dashboard/cases"
+                  >
+                    <ClipboardList className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                    <span>Cases Log</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className={`sidebar-link${pathname === "/dashboard/reports" ? " is-active" : ""}`}
+                    to="/dashboard/reports"
+                  >
+                    <PieChart className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                    <span>Reports</span>
+                  </Link>
+                </li>
+              </>
+            ) : null}
+          </ul>
+
+          {canManageAccounts ? (
+            <>
+              <p className="sidebar-nav-heading">Administration</p>
+              <ul className="sidebar-menu">
+                <li>
+                  <Link
+                    className={`sidebar-link${pathname === "/dashboard/account-management" ? " is-active" : ""}`}
+                    to="/dashboard/account-management"
+                  >
+                    <Users className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                    <span>Account management</span>
+                  </Link>
+                </li>
+              </ul>
+            </>
+          ) : null}
+        </nav>
       </div>
 
-      <div className="sidebar-divider"></div>
-
-      <ul className="menu-list">
-
-        <li className={location.pathname === "/dashboard" ? "active" : ""}>
-          <Link to="/dashboard">
-            <FaHome className="menu-icon" />
-            Dashboard
-          </Link>
-        </li>
-
-        {canAddPatient && (
-          <li className={location.pathname === "/dashboard/add-patient" ? "active" : ""}>
-            <Link to="/dashboard/add-patient">
-              <FaUserPlus className="menu-icon" />
-              Add New Patient
-            </Link>
-          </li>
-        )}
-
-        <li className={location.pathname === "/dashboard/cases" ? "active" : ""}>
-          <Link to="/dashboard/cases">
-            <FaClipboardList className="menu-icon" />
-            Cases Logs
-          </Link>
-        </li>
-
-        <li className={location.pathname === "/dashboard/reports" ? "active" : ""}>
-          <Link to="/dashboard/reports">
-            <FaChartBar className="menu-icon" />
-            Reports
-          </Link>
-        </li>
-
-      </ul>
-
-      <div className="logout-section">
-        <button className="logout-btn" onClick={handleLogout}>
-          <FaSignOutAlt className="menu-icon" />
-          Logout
+      <div className="sidebar-footer">
+        <button
+          type="button"
+          className="sidebar-profile"
+          onClick={() => setLogoutOpen(true)}
+          aria-haspopup="dialog"
+        >
+          <span className="sidebar-profile-avatar" aria-hidden="true">
+            {avatarInitials}
+          </span>
+          <span className="sidebar-profile-meta">
+            <span className="sidebar-profile-place">{barangayLine}</span>
+            <span className="sidebar-profile-user">{usernameLine}</span>
+          </span>
         </button>
       </div>
 
-    </div>
+      <LogoutConfirmModal
+        open={logoutOpen}
+        onCancel={closeLogoutModal}
+        onConfirm={confirmLogout}
+      />
+    </aside>
   );
 }
 

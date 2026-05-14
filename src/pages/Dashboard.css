@@ -19,62 +19,9 @@ body {
   color: var(--dash-text);
 }
 
+/* Legacy sidebar rules removed — navigation lives in `Sidebar.jsx` / `Sidebar.css`. */
 
-
-.sidebar {
-  width: 240px;
-  height: 100vh;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background: #2f4050;
-  color: white;
-  padding-top: 20px;
-}
-
-
-
-.sidebar-title {
-  font-size: 18px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-}
-
-.sidebar li {
-  padding: 14px 20px;
-  cursor: pointer;
-  transition: 0.2s;
-}
-
-.sidebar li:hover {
-  background: #1c2b36;
-}
-
-.sidebar li.active {
-  background: #1ab394;
-}
-
-/* ================= MAIN ================= */
-
-
-
-.main-content {
-
-  margin-left: 240px;
-  min-height: 100vh;
-  padding: 0; /* VERY IMPORTANT */
-
-}
-
-
+/* ================= MAIN (page chrome inside dashboard layout) ================= */
 
 .dashboard-header {
   position: sticky;
@@ -90,7 +37,6 @@ body {
   margin: 0;
   box-sizing: border-box;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-
 }
 
 /* Title */
@@ -489,7 +435,16 @@ body {
   color: rgba(15, 23, 42, 0.75);
 }
 
+.dashboard-data-status {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+}
 
+.dashboard-data-status--error {
+  color: #b91c1c;
+}
 
 @media (max-width: 900px) {
   .card-container,

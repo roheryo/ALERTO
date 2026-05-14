@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import "./Notification.css";
 import logo from "../assets/images/ddoLOGO.jpg";
+import { fetchWeatherForMunicipality, WEATHER_MUNICIPALITY_NAMES } from "../lib/weatherClient";
+import { useAuth } from "../context/AuthContext";
+import { sessionUserFromAuth } from "../lib/authUser";
 
 const RISK_THRESHOLD = {
   Dengue: 10,
@@ -37,7 +40,8 @@ function daysAgo(days) {
 }
 
 function Notification() {
-  const user = useMemo(() => JSON.parse(localStorage.getItem("user") || "null"), []);
+  const { user: authUser } = useAuth();
+  const user = useMemo(() => sessionUserFromAuth(authUser), [authUser]);
   const roleRaw = String(user?.role ?? "").toLowerCase();
   const roleKey = roleRaw.includes("barangay")
     ? "barangay"
@@ -57,23 +61,8 @@ function Notification() {
   const [levelFilter, setLevelFilter] = useState("All");
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    fetch("http://localhost:5000/patients")
-      .then((res) => res.json())
-      .then((data) => {
-        if (cancelled) return;
-        setCases(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setCases([]);
-        setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    setCases([]);
+    setLoading(false);
   }, []);
 
   const municipalityOptions = useMemo(() => {
@@ -88,7 +77,9 @@ function Notification() {
   useEffect(() => {
     const municipalities =
       roleKey === "provincial"
-        ? municipalityOptions
+        ? municipalityOptions.length
+          ? municipalityOptions
+          : WEATHER_MUNICIPALITY_NAMES
         : lockedMunicipality
         ? [lockedMunicipality]
         : [];
@@ -103,10 +94,9 @@ function Notification() {
     Promise.all(
       municipalities.map(async (m) => {
         try {
-          const res = await fetch(`http://localhost:5000/weather/${encodeURIComponent(m)}`);
-          const data = await res.json();
-          if (!res.ok || data?.error) return [m, null];
-          return [m, data];
+          const result = await fetchWeatherForMunicipality(m);
+          if (!result.ok) return [m, null];
+          return [m, result.data];
         } catch {
           return [m, null];
         }

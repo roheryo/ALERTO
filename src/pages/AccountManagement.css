@@ -1,0 +1,97 @@
+.am-page {
+  padding: 1.25rem 1.5rem 2rem;
+  max-width: 1200px;
+}
+
+.am-header h2 {
+  font-size: 1.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.am-sub,
+.am-hint,
+.am-muted {
+  color: #555;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin-bottom: 0.75rem;
+}
+
+.am-error {
+  color: #b42318;
+  margin-bottom: 1rem;
+}
+
+.am-section {
+  margin-top: 1.75rem;
+}
+
+.am-section h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.35rem;
+}
+
+.am-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.am-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.am-table th,
+.am-table td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.am-table th {
+  background: #f8fafc;
+  font-weight: 600;
+}
+
+.am-reset-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.am-reset-form input {
+  min-width: 140px;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.am-reset-form button {
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  background: #adbd1c;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.am-reset-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.am-msg {
+  font-size: 0.8rem;
+  color: #0f5132;
+}
+
+.am-readonly {
+  font-size: 0.85rem;
+  color: #666;
+}
