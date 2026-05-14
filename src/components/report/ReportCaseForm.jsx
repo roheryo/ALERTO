@@ -46,6 +46,16 @@ function getCurrentWeek() {
   return Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7);
 }
 
+/** Same week index as getCurrentWeek, for a YYYY-MM-DD onset date (aligns morbidity fields with onset). */
+function getWeekNumberForIsoDate(isoYmd) {
+  if (!isoYmd || typeof isoYmd !== "string") return null;
+  const d = new Date(`${isoYmd}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return null;
+  const start = new Date(d.getFullYear(), 0, 1);
+  const w = Math.ceil(((d - start) / 86400000 + start.getDay() + 1) / 7);
+  return Math.min(53, Math.max(1, w));
+}
+
 function IconBell() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -220,6 +230,14 @@ export default function ReportCaseForm({ user, onSubmitted }) {
         setDiseaseErr(true);
         ok = false;
       } else setDiseaseErr(false);
+      if (!fields.dOnset) {
+        err.dOnset = true;
+        ok = false;
+      }
+      if (!fields.dEntry) {
+        err.dEntry = true;
+        ok = false;
+      }
       if (!fields.caseClass) {
         err.caseClass = true;
         ok = false;
@@ -244,11 +262,9 @@ export default function ReportCaseForm({ user, onSubmitted }) {
       }
     }
     if (step === 3) {
-      if (!fields.dOnset) err.dOnset = true;
-      if (!fields.dEntry) err.dEntry = true;
       if (!fields.outcome) err.outcome = true;
       if (!fields.admitted) err.admitted = true;
-      if (!fields.dOnset || !fields.dEntry || !fields.outcome || !fields.admitted) ok = false;
+      if (!fields.outcome || !fields.admitted) ok = false;
     }
     setFieldErr(err);
     if (!ok) showToast("⚠ Please complete all required fields before continuing.", "warning");
@@ -395,7 +411,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                 <div className="panel">
                   <div className="panel-header">
                     <div>
-                      <div className="panel-title">Step 1 — Disease Type</div>
+                      <div className="panel-title">Step 1 — Disease, dates & classification</div>
                     </div>
                     <span className="badge badge-info">
                       <span className="badge-dot" />
@@ -460,6 +476,98 @@ export default function ReportCaseForm({ user, onSubmitted }) {
 
                     <div className="form-section">
                       <div className="form-section-head">
+                        <div className="form-section-icon" style={{ background: "var(--warning-dim)" }}>
+                          📅
+                        </div>
+                        <div>
+                          <div className="form-section-title" style={{ color: "var(--warning)" }}>
+                            Dates
+                          </div>
+                          <div className="form-section-desc">
+                            Enter date of onset first — morbidity week and month below follow from this date (you may
+                            override them).
+                          </div>
+                        </div>
+                      </div>
+                      <div className="form-grid-2">
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="dOnset">
+                            Date of Onset <span className="req">*</span>
+                            <span className="lbl-tag model">LSTM Input</span>
+                          </label>
+                          <input
+                            id="dOnset"
+                            className={`form-input${fieldErr.dOnset ? " error" : ""}`}
+                            type="date"
+                            value={fields.dOnset}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              const w = getWeekNumberForIsoDate(v);
+                              const mo = v ? String(new Date(`${v}T12:00:00`).getMonth() + 1) : fields.morbMonth;
+                              const yr = v ? String(new Date(`${v}T12:00:00`).getFullYear()) : fields.reportingYear;
+                              setFields((f) => ({
+                                ...f,
+                                dOnset: v,
+                                ...(w != null ? { morbWeek: String(w) } : {}),
+                                ...(v ? { morbMonth: mo, reportingYear: yr } : {})
+                              }));
+                              clearErr(["dOnset"]);
+                            }}
+                          />
+                          <div className="form-hint">DOnset — date symptoms first appeared</div>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="dAdmit">
+                            Date Admitted / Consulted
+                            <span className="lbl-tag model">LSTM Input</span>
+                          </label>
+                          <input
+                            id="dAdmit"
+                            className="form-input"
+                            type="date"
+                            value={fields.dAdmit}
+                            onChange={(e) => setF({ dAdmit: e.target.value })}
+                          />
+                          <div className="form-hint">DAdmit — leave blank if outpatient</div>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="dEntry">
+                            Date of Entry (Report) <span className="req">*</span>
+                          </label>
+                          <input
+                            id="dEntry"
+                            className={`form-input${fieldErr.dEntry ? " error" : ""}`}
+                            type="date"
+                            value={fields.dEntry}
+                            onChange={(e) => {
+                              setF({ dEntry: e.target.value });
+                              clearErr(["dEntry"]);
+                            }}
+                          />
+                          <div className="form-hint">DateOfEntry — today by default</div>
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label" htmlFor="lagDisplayStep1">
+                            Onset → Admit Lag <span className="lbl-tag">computed</span>
+                          </label>
+                          <input
+                            id="lagDisplayStep1"
+                            className="form-input"
+                            type="text"
+                            readOnly
+                            value={lagText}
+                            placeholder="— fill dates above —"
+                            style={{ opacity: 0.75 }}
+                          />
+                          <div className="form-hint">OnsetToAdmit (days) — auto-calculated</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <hr className="divider" />
+
+                    <div className="form-section">
+                      <div className="form-section-head">
                         <div className="form-section-icon" style={{ background: "var(--primary-dim)" }}>
                           📋
                         </div>
@@ -505,7 +613,9 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                             value={fields.morbWeek}
                             onChange={(e) => setF({ morbWeek: e.target.value })}
                           />
-                          <div className="form-hint">Epidemiological week of the case (MorbidityWeek)</div>
+                          <div className="form-hint">
+                            Epidemiological week (MorbidityWeek) — auto-filled from Date of Onset; editable if needed
+                          </div>
                         </div>
                         <div className="form-group">
                           <label className="form-label" htmlFor="morbMonth">
@@ -525,7 +635,9 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                               </option>
                             ))}
                           </select>
-                          <div className="form-hint">Calendar month of morbidity (MorbidityMonth)</div>
+                          <div className="form-hint">
+                            Calendar month (MorbidityMonth) — auto-filled from Date of Onset; editable if needed
+                          </div>
                         </div>
                         <div className="form-group">
                           <label className="form-label" htmlFor="reportingYear">
@@ -861,88 +973,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                     </span>
                   </div>
                   <div className="panel-body lg">
-                    <div className="form-section">
-                      <div className="form-section-head">
-                        <div className="form-section-icon" style={{ background: "var(--warning-dim)" }}>
-                          📅
-                        </div>
-                        <div>
-                          <div className="form-section-title" style={{ color: "var(--warning)" }}>
-                            Dates
-                          </div>
-                          <div className="form-section-desc">
-                            Used to compute lag periods for LSTM temporal modeling
-                          </div>
-                        </div>
-                      </div>
-                      <div className="form-grid-2">
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="dOnset">
-                            Date of Onset <span className="req">*</span>
-                            <span className="lbl-tag model">LSTM Input</span>
-                          </label>
-                          <input
-                            id="dOnset"
-                            className={`form-input${fieldErr.dOnset ? " error" : ""}`}
-                            type="date"
-                            value={fields.dOnset}
-                            onChange={(e) => {
-                              setF({ dOnset: e.target.value });
-                              clearErr(["dOnset"]);
-                            }}
-                          />
-                          <div className="form-hint">DOnset — date symptoms first appeared</div>
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="dAdmit">
-                            Date Admitted / Consulted
-                            <span className="lbl-tag model">LSTM Input</span>
-                          </label>
-                          <input
-                            id="dAdmit"
-                            className="form-input"
-                            type="date"
-                            value={fields.dAdmit}
-                            onChange={(e) => setF({ dAdmit: e.target.value })}
-                          />
-                          <div className="form-hint">DAdmit — leave blank if outpatient</div>
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="dEntry">
-                            Date of Entry (Report) <span className="req">*</span>
-                          </label>
-                          <input
-                            id="dEntry"
-                            className={`form-input${fieldErr.dEntry ? " error" : ""}`}
-                            type="date"
-                            value={fields.dEntry}
-                            onChange={(e) => {
-                              setF({ dEntry: e.target.value });
-                              clearErr(["dEntry"]);
-                            }}
-                          />
-                          <div className="form-hint">DateOfEntry — today by default</div>
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label" htmlFor="lagDisplay">
-                            Onset → Admit Lag <span className="lbl-tag">computed</span>
-                          </label>
-                          <input
-                            id="lagDisplay"
-                            className="form-input"
-                            type="text"
-                            readOnly
-                            value={lagText}
-                            placeholder="— fill dates above —"
-                            style={{ opacity: 0.75 }}
-                          />
-                          <div className="form-hint">OnsetToAdmit (days) — auto-calculated</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <hr className="divider" />
-
                     <div className="form-section">
                       <div className="form-section-head">
                         <div className="form-section-icon" style={{ background: "var(--danger-dim)" }}>
@@ -1369,6 +1399,14 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                               </div>
                             </div>
                             <div className="summary-item">
+                              <div className="summary-label">Date of Onset</div>
+                              <div className="summary-value">{fields.dOnset || "—"}</div>
+                            </div>
+                            <div className="summary-item">
+                              <div className="summary-label">Date of Entry (Report)</div>
+                              <div className="summary-value">{fields.dEntry || "—"}</div>
+                            </div>
+                            <div className="summary-item">
                               <div className="summary-label">Case Classification</div>
                               <div className="summary-value">{fields.caseClass || "—"}</div>
                             </div>
@@ -1409,10 +1447,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                             <div className="summary-item">
                               <div className="summary-label">Barangay</div>
                               <div className="summary-value">{fields.barangay || "—"}</div>
-                            </div>
-                            <div className="summary-item">
-                              <div className="summary-label">Date of Onset</div>
-                              <div className="summary-value">{fields.dOnset || "—"}</div>
                             </div>
                           </div>
                       </div>
@@ -1521,15 +1555,21 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                       </div>
                     </div>
                     <div className="summary-item">
-                      <div className="summary-label">Classification</div>
-                      <div className="summary-value" style={!sumClass ? { color: "var(--text-xs)", fontStyle: "italic", fontWeight: 400 } : undefined}>
-                        {sumClass || "—"}
+                      <div className="summary-label">Date of Onset</div>
+                      <div className="summary-value" style={!sumOnset ? { color: "var(--text-xs)", fontStyle: "italic", fontWeight: 400 } : undefined}>
+                        {sumOnset || "—"}
                       </div>
                     </div>
                     <div className="summary-item">
                       <div className="summary-label">Week / Month</div>
                       <div className="summary-value" style={!sumMorb ? { color: "var(--text-xs)", fontStyle: "italic", fontWeight: 400 } : undefined}>
                         {sumMorb || "—"}
+                      </div>
+                    </div>
+                    <div className="summary-item">
+                      <div className="summary-label">Classification</div>
+                      <div className="summary-value" style={!sumClass ? { color: "var(--text-xs)", fontStyle: "italic", fontWeight: 400 } : undefined}>
+                        {sumClass || "—"}
                       </div>
                     </div>
                     <div className="summary-item">
@@ -1544,12 +1584,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                       <div className="summary-label">Sex</div>
                       <div className="summary-value" style={!sumSex ? { color: "var(--text-xs)", fontStyle: "italic", fontWeight: 400 } : undefined}>
                         {sumSex || "—"}
-                      </div>
-                    </div>
-                    <div className="summary-item">
-                      <div className="summary-label">Date of Onset</div>
-                      <div className="summary-value" style={!sumOnset ? { color: "var(--text-xs)", fontStyle: "italic", fontWeight: 400 } : undefined}>
-                        {sumOnset || "—"}
                       </div>
                     </div>
                   </div>
@@ -1570,7 +1604,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                   </div>
                   <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6, fontSize: 12 }}>
                     {[
-                      "Disease Type",
+                      "Disease, dates & classification",
                       "Patient Demographics",
                       "Clinical Details",
                       "Environmental Factors",
