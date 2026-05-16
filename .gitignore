@@ -8,10 +8,14 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-backend
 dist
 dist-ssr
 *.local
+
+# Environment / secrets (track .env.example with placeholders only)
+.env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
