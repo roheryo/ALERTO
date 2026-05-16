@@ -48,6 +48,9 @@ function Sidebar() {
   const isAlertsActive =
     pathname === "/dashboard/notification" || pathname.startsWith("/dashboard/notification/");
 
+  const isCasesLogsActive =
+    pathname === "/dashboard/cases" || pathname.startsWith("/dashboard/cases/");
+
   const barangayLine = useMemo(() => {
     const b = user?.barangayName?.trim();
     if (b) return `${b} - Barangay`;
@@ -146,27 +149,26 @@ function Sidebar() {
               </Link>
             </li>
 
+            <li>
+              <Link
+                className={`sidebar-link${isCasesLogsActive ? " is-active" : ""}`}
+                to="/dashboard/cases"
+              >
+                <ClipboardList className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                <span>Cases Logs</span>
+              </Link>
+            </li>
+
             {showExtendedNav ? (
-              <>
-                <li>
-                  <Link
-                    className={`sidebar-link${pathname === "/dashboard/cases" ? " is-active" : ""}`}
-                    to="/dashboard/cases"
-                  >
-                    <ClipboardList className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
-                    <span>Cases Log</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    className={`sidebar-link${pathname === "/dashboard/reports" ? " is-active" : ""}`}
-                    to="/dashboard/reports"
-                  >
-                    <PieChart className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
-                    <span>Reports</span>
-                  </Link>
-                </li>
-              </>
+              <li>
+                <Link
+                  className={`sidebar-link${pathname === "/dashboard/reports" ? " is-active" : ""}`}
+                  to="/dashboard/reports"
+                >
+                  <PieChart className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                  <span>Reports</span>
+                </Link>
+              </li>
             ) : null}
           </ul>
 

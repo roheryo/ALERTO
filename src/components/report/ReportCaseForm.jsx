@@ -1,5 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { FaBell } from "react-icons/fa";
+import logo from "../../assets/images/ddoLOGO.jpg";
+import "../../pages/Dashboard.css";
 import "./ReportCaseForm.css";
+import { useAuth } from "../../context/AuthContext";
+import { apiFetch } from "../../lib/api";
+import { PATIENTS_CHANGED_EVENT } from "../../hooks/usePatients";
+
+function diseaseTypeForApi(code) {
+  const c = String(code ?? "").toLowerCase();
+  if (c === "dengue") return "Dengue";
+  if (c === "ili") return "Influenza-like illness (ILI)";
+  if (c === "awd") return "Acute Watery Diarrhea";
+  return "";
+}
 
 const TOTAL_STEPS = 5;
 
@@ -54,15 +69,6 @@ function getWeekNumberForIsoDate(isoYmd) {
   const start = new Date(d.getFullYear(), 0, 1);
   const w = Math.ceil(((d - start) / 86400000 + start.getDay() + 1) / 7);
   return Math.min(53, Math.max(1, w));
-}
-
-function IconBell() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  );
 }
 
 function IconChevRight() {
@@ -148,6 +154,7 @@ function defaultFields(user) {
  * @param {() => void} [onSubmitted]
  */
 export default function ReportCaseForm({ user, onSubmitted }) {
+  const { token } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [stepsCompleted, setStepsCompleted] = useState(() => Array(TOTAL_STEPS + 1).fill(false));
   const [fields, setFields] = useState(() => defaultFields(user));
@@ -318,18 +325,73 @@ export default function ReportCaseForm({ user, onSubmitted }) {
     });
   }, []);
 
-  const submitCase = () => {
-    setStepsCompleted((s) => {
-      const next = [...s];
-      next[5] = true;
-      return next;
-    });
+  const submitCase = async () => {
+    if (!validateStep(1)) {
+      goToStep(1);
+      return;
+    }
+    if (!validateStep(2)) {
+      goToStep(2);
+      return;
+    }
+    if (!validateStep(3)) {
+      goToStep(3);
+      return;
+    }
+
+    if (!token) {
+      showToast("You must be signed in to submit a case.", "warning");
+      return;
+    }
+
+    const diseaseType = diseaseTypeForApi(fields.disease);
+    if (!diseaseType) {
+      showToast("Select a disease type before submitting.", "warning");
+      return;
+    }
+
     setSubmitting(true);
-    setTimeout(() => {
-      setCaseRef(`DDO-${fields.reportingYear}-${1285 + Math.floor(Math.random() * 10)}`);
+    try {
+      const payload = {
+        name: (fields.fullName || "").trim() || "Unnamed patient",
+        age: fields.ageYears,
+        sex: fields.sex,
+        birthdate: fields.dob || null,
+        civilStatus: null,
+        province: user?.provinceName || user?.province || "Davao de Oro",
+        municipality: fields.muncity,
+        barangay: fields.barangay,
+        purok: fields.streetPurok || null,
+        birthplace: null,
+        diseaseType,
+        dateStarted: fields.dOnset,
+        caseClassification: fields.caseClass || null,
+        outcome: fields.outcome
+      };
+
+      const data = await apiFetch("/patients", { token, method: "POST", body: payload });
+
+      setStepsCompleted((s) => {
+        const next = [...s];
+        next[5] = true;
+        return next;
+      });
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent(PATIENTS_CHANGED_EVENT));
+      }
+
+      const ref =
+        typeof data?.caseRef === "string"
+          ? data.caseRef
+          : `DDO-${fields.reportingYear || new Date().getFullYear()}-${data?.id ?? ""}`;
+      setCaseRef(ref);
       setSuccessOpen(true);
+    } catch (err) {
+      showToast(err?.message ?? "Could not save case. Check your connection or database setup.", "warning");
+    } finally {
       setSubmitting(false);
-    }, 900);
+    }
   };
 
   const resetForm = () => {
@@ -355,37 +417,41 @@ export default function ReportCaseForm({ user, onSubmitted }) {
         </div>
       ) : null}
 
-      <div className="rc-main">
-        <header className="topbar">
-          <div>
-            <div className="topbar-title">Report New Case</div>
-            <div className="topbar-sub">{topbarSub}</div>
+      <header className="dashboard-header">
+        <div className="report-case-header-left">
+          <h2 className="header-title">Report New Case</h2>
+          <p className="header-subline">{topbarSub}</p>
+        </div>
+        <div className="header-right">
+          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
+            <FaBell />
+          </Link>
+          <div className="header-text">
+            <h3>Davao de Oro</h3>
+            <p>Provincial Health Office</p>
           </div>
-          <div className="topbar-actions">
-            <div className="weather-pill">
-              ☁️ <span>27°C</span> · <span>78% RH</span>
-            </div>
-            <button type="button" className="topbar-btn" title="Alerts" aria-label="Alerts">
-              <IconBell />
-            </button>
-          </div>
-        </header>
+          <img src={logo} alt="logo" className="header-logo" />
+        </div>
+      </header>
 
+      <div className="rc-main">
         <div className="content">
           <div className="section-header">
-            <div>
-              <div className="section-title">Report Disease Case</div>
-              <div className="section-desc">
+            <div className="section-heading">
+              <h2 className="section-title">Report Disease Case</h2>
+              <p className="section-desc">
                 Enter case details accurately — this data feeds directly into the LSTM predictive model for outbreak
                 forecasting.
-              </div>
+              </p>
             </div>
-            <div>
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => setHistoryOpen(true)}>
-                <IconClock />
-                Recent Cases
-              </button>
-            </div>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm section-header-btn"
+              onClick={() => setHistoryOpen(true)}
+            >
+              <IconClock />
+              Recent Cases
+            </button>
           </div>
 
           <div className="step-bar" aria-hidden>
@@ -1375,7 +1441,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                       <div style={{ marginBottom: 18 }}>
                           <div
                             style={{
-                              fontSize: 11,
+                              fontSize: 13,
                               fontWeight: 700,
                               textTransform: "uppercase",
                               letterSpacing: "0.08em",
@@ -1421,7 +1487,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                       <div style={{ marginBottom: 18 }}>
                           <div
                             style={{
-                              fontSize: 11,
+                              fontSize: 13,
                               fontWeight: 700,
                               textTransform: "uppercase",
                               letterSpacing: "0.08em",
@@ -1453,7 +1519,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                       <div style={{ marginBottom: 18 }}>
                           <div
                             style={{
-                              fontSize: 11,
+                              fontSize: 13,
                               fontWeight: 700,
                               textTransform: "uppercase",
                               letterSpacing: "0.08em",
@@ -1495,10 +1561,11 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                     <div
                       style={{
                         marginTop: 4,
-                        padding: 14,
+                        padding: 16,
                         background: "var(--bg3)",
                         borderRadius: 10,
-                        fontSize: 12,
+                        fontSize: 14,
+                        lineHeight: 1.55,
                         color: "var(--text-dim)"
                       }}
                     >
@@ -1540,8 +1607,8 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                   <div className="panel-title">Case Summary</div>
                   <span className="tag">Live Preview</span>
                 </div>
-                <div className="panel-body" style={{ padding: 16 }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="panel-body" style={{ padding: 20 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     <div className="summary-item">
                       <div className="summary-label">Disease</div>
                       <div className="summary-value">
@@ -1594,15 +1661,15 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                 <div className="panel-header">
                   <div className="panel-title">Form Progress</div>
                 </div>
-                <div className="panel-body" style={{ padding: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 6 }}>
+                <div className="panel-body" style={{ padding: 20 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 15, marginBottom: 8 }}>
                     <span>Completion</span>
                     <span style={{ color: "var(--primary)", fontWeight: 600 }}>{progressPct}%</span>
                   </div>
                   <div className="progress-bar">
                     <div className="progress-fill" style={{ width: `${progressPct}%` }} />
                   </div>
-                  <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6, fontSize: 12 }}>
+                  <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8, fontSize: 15 }}>
                     {[
                       "Disease, dates & classification",
                       "Patient Demographics",
@@ -1633,8 +1700,8 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                     Brgy. {fields.barangay || "Cabuyuan"} · Week {fields.morbWeek || "—"}
                   </div>
                 </div>
-                <div className="panel-body" style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                <div className="panel-body" style={{ padding: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 15 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span
                         style={{
@@ -1649,7 +1716,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                     </span>
                     <strong style={{ color: "var(--dengue)" }}>3</strong>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 15 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span
                         style={{
@@ -1664,7 +1731,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                     </span>
                     <strong style={{ color: "var(--ili)" }}>7</strong>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 15 }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span
                         style={{
@@ -1680,11 +1747,11 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                     <strong style={{ color: "var(--awd)" }}>2</strong>
                   </div>
                   <hr className="divider" style={{ margin: "6px 0" }} />
-                  <div style={{ fontSize: 11, color: "var(--text-dim)" }}>Target this week: 40 cases reviewed</div>
+                  <div style={{ fontSize: 13, color: "var(--text-dim)" }}>Target this week: 40 cases reviewed</div>
                   <div className="progress-bar">
                     <div className="progress-fill" style={{ width: "30%", background: "var(--warning)" }} />
                   </div>
-                  <div style={{ fontSize: 11, color: "var(--warning)" }}>12 / 40 — 70% below target</div>
+                  <div style={{ fontSize: 13, color: "var(--warning)" }}>12 / 40 — 70% below target</div>
                 </div>
               </div>
 
@@ -1698,9 +1765,9 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                       style={{
                         background: "var(--primary-dim)",
                         color: "var(--primary)",
-                        padding: "1px 5px",
+                        padding: "2px 7px",
                         borderRadius: 4,
-                        fontSize: 10,
+                        fontSize: 12,
                         fontWeight: 600
                       }}
                     >
@@ -1719,18 +1786,18 @@ export default function ReportCaseForm({ user, onSubmitted }) {
         <div className="modal">
           <div style={{ textAlign: "center", padding: "8px 0" }}>
             <div className="success-check">✓</div>
-            <div id="success-title" style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 22, marginBottom: 8 }}>
+            <div id="success-title" style={{ fontFamily: "Syne, sans-serif", fontWeight: 800, fontSize: 26, marginBottom: 10 }}>
               Case Submitted!
             </div>
-            <div style={{ fontSize: 13, color: "var(--text-dim)", marginBottom: 20, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 15, color: "var(--text-dim)", marginBottom: 22, lineHeight: 1.6 }}>
               Your case report has been logged in the ALERTO provincial database.
               <br />
               The LSTM model will process this data in the next scheduled inference run.
             </div>
-            <div style={{ background: "var(--bg3)", borderRadius: 10, padding: 14, marginBottom: 20, textAlign: "left" }}>
+            <div style={{ background: "var(--bg3)", borderRadius: 10, padding: 18, marginBottom: 22, textAlign: "left" }}>
               <div
                 style={{
-                  fontSize: 11,
+                  fontSize: 13,
                   color: "var(--text-xs)",
                   marginBottom: 8,
                   textTransform: "uppercase",
@@ -1739,8 +1806,8 @@ export default function ReportCaseForm({ user, onSubmitted }) {
               >
                 Case Reference
               </div>
-              <div style={{ fontFamily: "monospace", fontSize: 14, color: "var(--primary)" }}>{caseRef}</div>
-              <div style={{ fontSize: 11, color: "var(--text-dim)", marginTop: 4 }}>
+              <div style={{ fontFamily: "monospace", fontSize: 16, color: "var(--primary)" }}>{caseRef}</div>
+              <div style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 6 }}>
                 Brgy. {fields.barangay} · {fields.muncity} · Week {fields.morbWeek}
               </div>
             </div>

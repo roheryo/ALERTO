@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiFetch } from "../lib/api";
 
+/** Dispatch on window after a new case is saved so lists refetch without a full reload. */
+export const PATIENTS_CHANGED_EVENT = "alerto:patients-changed";
+
 /**
  * Fetches case rows visible to the logged-in user (RBAC on the server).
  * @returns {{ patients: object[], loading: boolean, error: string | null, refetch: () => Promise<void> }}
@@ -34,6 +37,15 @@ export function usePatients() {
 
   useEffect(() => {
     refetch();
+  }, [refetch]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const onPatientsChanged = () => {
+      refetch();
+    };
+    window.addEventListener(PATIENTS_CHANGED_EVENT, onPatientsChanged);
+    return () => window.removeEventListener(PATIENTS_CHANGED_EVENT, onPatientsChanged);
   }, [refetch]);
 
   return { patients, loading, error, refetch };
