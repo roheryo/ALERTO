@@ -1,60 +1,22 @@
 .notify-page {
-  padding: 18px;
+  padding: 0;
   background: #f3f5f8;
   min-height: 100vh;
+  box-sizing: border-box;
 }
 
-.notify-header {
-  background: #ffffff;
-  border: 1px solid #dbe2ea;
-  border-radius: 12px;
-  padding: 14px 16px;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
+.notify-page .notify-header-lead {
+  min-width: 0;
 }
 
-.notify-header h2 {
-  margin: 0;
-  font-size: 20px;
-  color: #0f172a;
-}
-
-.notify-header p {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: #475569;
-}
-
-.notify-header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.header-text {
-  text-align: right;
-}
-
-.header-text h3 {
-  margin: 0;
-  font-size: 14px;
-}
-
-.header-text p {
-  margin: 0;
-  font-size: 11px;
-}
-
-.header-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+/* Padded column below the blue bar — header stays full width like Dashboard / Cases Logs */
+.notify-body {
+  box-sizing: border-box;
+  padding: 12px 22px 22px;
 }
 
 .notify-summary {
-  margin-top: 12px;
+  margin-top: 0;
   display: flex;
   gap: 8px;
   flex-wrap: wrap;

@@ -187,8 +187,11 @@ api.get("/patients", authMiddleware, async (req, res) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const [rows] = await pool.query(
-      `SELECT
+    const baseFrom = `FROM patients p
+        JOIN municipalities m ON m.id = p.municipality_id
+        JOIN barangays b ON b.id = p.barangay_id`;
+
+    const selectSqlWithCase = `SELECT
           p.id,
           p.name,
           p.age,
@@ -203,15 +206,47 @@ api.get("/patients", authMiddleware, async (req, res) => {
           p.purok,
           p.birthplace,
           p.disease_type AS diseaseType,
+          p.case_classification AS caseClassification,
+          p.case_status AS caseStatus,
           DATE_FORMAT(p.date_started, '%Y-%m-%d') AS dateStarted,
           p.created_at AS createdAt
-        FROM patients p
-        JOIN municipalities m ON m.id = p.municipality_id
-        JOIN barangays b ON b.id = p.barangay_id
+        ${baseFrom}
         ${where}
-        ORDER BY p.date_started DESC, p.id DESC`,
-      params
-    );
+        ORDER BY p.date_started DESC, p.id DESC`;
+
+    const selectSqlLegacy = `SELECT
+          p.id,
+          p.name,
+          p.age,
+          p.sex,
+          DATE_FORMAT(p.birthdate, '%Y-%m-%d') AS birthdate,
+          p.civil_status AS civilStatus,
+          p.province,
+          p.municipality_id AS municipalityId,
+          p.barangay_id AS barangayId,
+          m.name AS municipality,
+          b.name AS barangay,
+          p.purok,
+          p.birthplace,
+          p.disease_type AS diseaseType,
+          NULL AS caseClassification,
+          'active' AS caseStatus,
+          DATE_FORMAT(p.date_started, '%Y-%m-%d') AS dateStarted,
+          p.created_at AS createdAt
+        ${baseFrom}
+        ${where}
+        ORDER BY p.date_started DESC, p.id DESC`;
+
+    let rows;
+    try {
+      [rows] = await pool.query(selectSqlWithCase, params);
+    } catch (qErr) {
+      if (qErr?.code === "ER_BAD_FIELD_ERROR") {
+        [rows] = await pool.query(selectSqlLegacy, params);
+      } else {
+        throw qErr;
+      }
+    }
 
     return res.json({ patients: rows });
   } catch (err) {
@@ -219,6 +254,158 @@ api.get("/patients", authMiddleware, async (req, res) => {
     if (err?.code === "ER_NO_SUCH_TABLE") {
       return res.status(503).json({ error: "Database schema not installed (missing patients table)." });
     }
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+/**
+ * Create a new case (barangay / municipality / province — same geography rules as GET /patients).
+ */
+api.post("/patients", authMiddleware, async (req, res) => {
+  try {
+    const auth = req.auth;
+    const { role, provinceId, municipalityId, barangayId, sub: userId } = auth;
+    const b = req.body ?? {};
+
+    const name = String(b.name ?? "").trim();
+    if (!name) return res.status(400).json({ error: "Patient name is required" });
+
+    const diseaseType = String(b.diseaseType ?? "").trim();
+    if (!diseaseType) return res.status(400).json({ error: "Disease type is required" });
+
+    const dateStarted = String(b.dateStarted ?? "").trim();
+    if (!dateStarted) return res.status(400).json({ error: "Date started (onset) is required" });
+
+    let targetMunicipalityId;
+    let targetBarangayId;
+
+    if (role === "barangay") {
+      if (!barangayId) return res.status(403).json({ error: "Barangay scope missing" });
+      const [r0] = await pool.query(
+        `SELECT b.id AS bid, b.municipality_id AS mid FROM barangays b WHERE b.id = ? LIMIT 1`,
+        [barangayId]
+      );
+      const row0 = r0[0];
+      if (!row0) return res.status(403).json({ error: "Invalid account scope" });
+      targetBarangayId = row0.bid;
+      targetMunicipalityId = row0.mid;
+    } else if (role === "municipality") {
+      if (!municipalityId) return res.status(403).json({ error: "Municipality scope missing" });
+      const brgyName = String(b.barangay ?? "").trim();
+      if (!brgyName) return res.status(400).json({ error: "Barangay is required" });
+      const [r0] = await pool.query(
+        `SELECT b.id AS bid FROM barangays b WHERE b.municipality_id = ? AND b.name = ? LIMIT 1`,
+        [municipalityId, brgyName]
+      );
+      if (!r0[0]) return res.status(400).json({ error: "Barangay not found in your municipality" });
+      targetMunicipalityId = municipalityId;
+      targetBarangayId = r0[0].bid;
+    } else if (role === "province") {
+      if (!provinceId) return res.status(403).json({ error: "Province scope missing" });
+      const muniName = String(b.municipality ?? "").trim();
+      const brgyName = String(b.barangay ?? "").trim();
+      if (!muniName || !brgyName) {
+        return res.status(400).json({ error: "Municipality and barangay are required" });
+      }
+      const [r0] = await pool.query(
+        `SELECT b.id AS bid, m.id AS mid
+         FROM barangays b
+         JOIN municipalities m ON m.id = b.municipality_id
+         WHERE m.province_id = ? AND m.name = ? AND b.name = ?
+         LIMIT 1`,
+        [provinceId, muniName, brgyName]
+      );
+      if (!r0[0]) return res.status(400).json({ error: "Municipality/barangay not found in your province" });
+      targetMunicipalityId = r0[0].mid;
+      targetBarangayId = r0[0].bid;
+    } else {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const age = b.age != null && b.age !== "" ? String(b.age) : null;
+    const sexRaw = String(b.sex ?? "").trim();
+    const sex =
+      sexRaw === "M"
+        ? "Male"
+        : sexRaw === "F"
+          ? "Female"
+          : sexRaw === "Male" || sexRaw === "Female"
+            ? sexRaw
+            : sexRaw || null;
+    const birthdate = String(b.birthdate ?? "").trim() || null;
+    const civilStatus = String(b.civilStatus ?? "").trim() || null;
+    const province = String(b.province ?? "Davao de Oro").trim() || "Davao de Oro";
+    const purok = String(b.purok ?? "").trim() || null;
+    const birthplace = String(b.birthplace ?? "").trim() || null;
+    const caseClassification = String(b.caseClassification ?? "").trim().slice(0, 40) || null;
+    const outcome = String(b.outcome ?? "").trim();
+    const caseStatus =
+      outcome === "D" || String(b.caseStatus ?? "").toLowerCase() === "closed" ? "closed" : "active";
+
+    const insertParamsFull = [
+      name,
+      age,
+      sex,
+      birthdate,
+      civilStatus,
+      province,
+      targetMunicipalityId,
+      targetBarangayId,
+      purok,
+      birthplace,
+      diseaseType,
+      caseClassification,
+      caseStatus,
+      dateStarted,
+      userId
+    ];
+
+    const insertParamsLegacy = [
+      name,
+      age,
+      sex,
+      birthdate,
+      civilStatus,
+      province,
+      targetMunicipalityId,
+      targetBarangayId,
+      purok,
+      birthplace,
+      diseaseType,
+      dateStarted,
+      userId
+    ];
+
+    let ins;
+    try {
+      [ins] = await pool.query(
+        `INSERT INTO patients (
+        name, age, sex, birthdate, civil_status, province, municipality_id, barangay_id,
+        purok, birthplace, disease_type, case_classification, case_status, date_started, created_by
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        insertParamsFull
+      );
+    } catch (qErr) {
+      if (qErr?.code === "ER_BAD_FIELD_ERROR") {
+        [ins] = await pool.query(
+          `INSERT INTO patients (
+        name, age, sex, birthdate, civil_status, province, municipality_id, barangay_id,
+        purok, birthplace, disease_type, date_started, created_by
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          insertParamsLegacy
+        );
+      } else {
+        throw qErr;
+      }
+    }
+
+    const newId = ins.insertId;
+    const year = dateStarted.slice(0, 4) || String(new Date().getFullYear());
+    const caseRef = `DDO-${year}-${newId}`;
+
+    return res.status(201).json({ ok: true, id: newId, caseRef });
+  } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: "Server error" });
   }
 });

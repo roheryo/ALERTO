@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { FaBell } from "react-icons/fa";
+import "./Dashboard.css";
 import "./Notification.css";
 import logo from "../assets/images/ddoLOGO.jpg";
 import { fetchWeatherForMunicipality, WEATHER_MUNICIPALITY_NAMES } from "../lib/weatherClient";
@@ -331,21 +334,27 @@ function Notification() {
 
   return (
     <div className="notify-page">
-      <div className="notify-header">
-        <div>
-          <h2>Predictive Alerts and Notifications</h2>
-          <p>ALERTO Early Warning Center - proactive disease surveillance support for health officials</p>
+      <header className="dashboard-header">
+        <div className="notify-header-lead">
+          <h2 className="header-title">Predictive Alerts and Notifications</h2>
+          <p className="header-subline">
+            ALERTO Early Warning Center - proactive disease surveillance support for health officials
+          </p>
         </div>
-        <div className="notify-header-right">
+        <div className="header-right">
+          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
+            <FaBell />
+          </Link>
           <div className="header-text">
             <h3>Davao de Oro</h3>
             <p>Provincial Health Office</p>
           </div>
           <img src={logo} alt="logo" className="header-logo" />
         </div>
-      </div>
+      </header>
 
-      <div className="notify-summary">
+      <div className="notify-body">
+        <div className="notify-summary">
         <div className="pill high">High Risk: {counts.HIGH}</div>
         <div className="pill warning">Warning: {counts.WARNING}</div>
         <div className="pill info">Info: {counts.INFO}</div>
@@ -439,6 +448,7 @@ function Notification() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
