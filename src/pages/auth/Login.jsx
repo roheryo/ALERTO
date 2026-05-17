@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import "./Login.css";
 
-import logo from "../assets/images/ddoLOGO.JPG";
-import bgImage from "../assets/images/ddoBG.jpg";
+import logo from "@/assets/images/ddoLOGO.jpg";
+import bgImage from "@/assets/images/ddoBG.jpg";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { apiFetch } from "../lib/api";
+import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/lib/api";
 
 function Login() {
   const navigate = useNavigate();

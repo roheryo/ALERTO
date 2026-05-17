@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import "./Reports.css";
-import { useAuth } from "../context/AuthContext";
-import { sessionUserFromAuth } from "../lib/authUser";
-import { usePatients } from "../hooks/usePatients";
+import { useAuth } from "../../context/AuthContext";
+import { sessionUserFromAuth } from "../../lib/authUser";
+import { usePatients } from "../../hooks/usePatients";
 
 const MUNICIPALITY_DATA = {
   Compostela: [

@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { sessionUserFromAuth } from "../lib/authUser";
-import ReportCaseForm from "../components/report/ReportCaseForm";
+import { useAuth } from "../../context/AuthContext";
+import { sessionUserFromAuth } from "../../lib/authUser";
+import ReportCaseForm from "../../components/report/ReportCaseForm";
 import "./AddPatient.css";
 
 /**

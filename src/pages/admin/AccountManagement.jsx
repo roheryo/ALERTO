@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { apiFetch } from "../lib/api";
+import { useAuth } from "../../context/AuthContext";
+import { apiFetch } from "../../lib/api";
 import "./AccountManagement.css";
 
 function PasswordResetRow({ token, account, readOnly, onDone }) {
