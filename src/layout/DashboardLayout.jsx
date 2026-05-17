@@ -1,23 +1,20 @@
 import Sidebar from "../pages/Sidebar";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import "../pages/Dashboard.css";
 
 function DashboardLayout() {
-  return (
-    <div className="dashboard-layout">
+  const { pathname } = useLocation();
+  const isDashboardHome = pathname === "/dashboard" || pathname === "/dashboard/";
 
-      {/* Sidebar stays */}
+  return (
+    <div className={`dashboard-layout${isDashboardHome ? " dashboard-layout--home" : ""}`}>
       <Sidebar />
 
-      {/* Right side */}
       <div className="main-section">
-
-        {/* Only content changes here */}
         <div className="main-content">
           <Outlet />
         </div>
-
       </div>
-
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import "./Dashboard.css";
 
 import logo from "../assets/images/ddoLOGO.jpg";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
@@ -16,34 +16,11 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
-import { fetchWeatherForMunicipality } from "../lib/weatherClient";
-import { normalizeDisease } from "../lib/disease";
+import { filterConfirmedPatients, normalizeDisease } from "../lib/disease";
 import { usePatients } from "../hooks/usePatients";
+import { useAccountWeather } from "../hooks/useAccountWeather";
+import LiveWeatherCard from "../components/weather/LiveWeatherCard";
 import BarangayDashboard from "./dashboard/BarangayDashboard";
-
-const MUNICIPALITY_BARANGAYS = {
-  Nabunturan: ["Basak", "Bayabas", "Bukal", "Cabidianan", "Katipunan", "Magsaysay", "San Isidro", "San Vicente"],
-  Monkayo: ["Awao", "Babag", "Banlag", "Haguimitan", "Union", "Oro", "Poblacion"],
-  Compostela: ["Bagongon", "Gabi", "Lagab", "Mangayon", "Osmena", "Poblacion"],
-  Mawab: ["Andap", "Concepcion", "Nuevo Iloco", "Poblacion", "Salvacion"],
-  Maco: ["Anibongan", "Anislagan", "Bucana", "Calabcab", "Concepcion", "Dumlan", "Hijo", "Lapu-lapu", "Poblacion", "San Juan", "Taglawig"],
-  Maragusan: ["Bagong Silang", "Coronobe", "Katipunan", "Mahayahay", "New Albay", "Poblacion"],
-  Montevista: ["Banagbanag", "Banglasan", "Camansi", "Canidkid", "Concepcion", "Poblacion"],
-  Pantukan: ["Kingking", "Magnaga", "Napnapan", "Poblacion", "Tagdanua"],
-  NewBataan: ["Andap", "Cabinuangan", "Camanlangan", "Poblacion", "San Roque"],
-  Laak: ["Amorcruz", "Anitap", "Datu Ampunan", "Longanapan", "Poblacion"],
-  Mabini: ["Cadunan", "Golden Valley", "Pindasan", "San Antonio", "Tagnanan"]
-};
-
-function getWeatherIcon(condition) {
-  const c = String(condition || "").toLowerCase();
-  if (c.includes("thunder")) return "⛈";
-  if (c.includes("rain") || c.includes("drizzle")) return "🌧";
-  if (c.includes("fog") || c.includes("mist") || c.includes("haze")) return "🌫";
-  if (c.includes("cloud")) return "☁";
-  if (c.includes("clear") || c.includes("sun")) return "☀";
-  return "🌡";
-}
 
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -57,7 +34,7 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 function Dashboard() {
-  const { user: authUser } = useAuth();
+  const { user: authUser, token } = useAuth();
   const { patients, loading, error } = usePatients();
   const user = sessionUserFromAuth(authUser);
   const role = String(user?.role ?? "").toLowerCase();
@@ -75,7 +52,9 @@ function Dashboard() {
     return "provincial";
   })();
 
-  const municipalityName = String(user?.municipality ?? "").trim();
+  const accountMunicipality = String(user?.municipality ?? "").trim();
+  const accountBarangay = String(user?.barangay ?? "").trim();
+  const municipalityName = accountMunicipality;
 
   const awdChartTitle =
     roleKey === "provincial"
@@ -92,97 +71,37 @@ function Dashboard() {
       ? "Highest Municipalities with Dengue Cases"
       : `Highest Cases in Barangays in ${municipalityName || "Municipality"} (Dengue)`;
 
-  const [weather, setWeather] = useState({
-    municipality: "",
-    temperature: null,
-    humidity: null,
-    condition: "Loading...",
-    provider: ""
+  const { weather } = useAccountWeather({
+    municipality: accountMunicipality,
+    barangay: accountBarangay,
+    token
   });
-  const [selectedWeatherMunicipality, setSelectedWeatherMunicipality] = useState(
-    roleKey === "provincial" ? "Nabunturan" : municipalityName || "Nabunturan"
-  );
-  const [selectedWeatherBarangay, setSelectedWeatherBarangay] = useState(
-    roleKey === "barangay" ? String(user?.barangay ?? "").trim() : ""
-  );
-
-  useEffect(() => {
-    const weatherMunicipality =
-      roleKey === "provincial"
-        ? selectedWeatherMunicipality || "Nabunturan"
-        : municipalityName || "Nabunturan";
-    let cancelled = false;
-
-    fetchWeatherForMunicipality(weatherMunicipality)
-      .then((result) => {
-        if (cancelled) return;
-        if (!result.ok || result.error) {
-          setWeather({
-            municipality: weatherMunicipality,
-            temperature: null,
-            humidity: null,
-            condition: "Unavailable"
-          });
-          return;
-        }
-        const data = result.data;
-        setWeather({
-          municipality: data?.municipality || weatherMunicipality,
-          temperature: Number.isFinite(data?.temperature) ? data.temperature : null,
-          humidity: Number.isFinite(data?.humidity) ? data.humidity : null,
-          condition: data?.condition || "Unknown",
-          provider: String(data?.provider ?? "")
-        });
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setWeather({
-          municipality: weatherMunicipality,
-          temperature: null,
-          humidity: null,
-          condition: "Unavailable",
-          provider: ""
-        });
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedWeatherMunicipality, municipalityName, roleKey]);
-
-  const municipalityOptions = useMemo(() => Object.keys(MUNICIPALITY_BARANGAYS), []);
-  const barangayOptions = useMemo(() => {
-    if (roleKey === "barangay") return [String(user?.barangay ?? "").trim()].filter(Boolean);
-    const key =
-      roleKey === "provincial"
-        ? selectedWeatherMunicipality
-        : municipalityName;
-    return MUNICIPALITY_BARANGAYS[key] || [];
-  }, [roleKey, user?.barangay, selectedWeatherMunicipality, municipalityName]);
 
   const barangayPatients = useMemo(() => {
     if (!Array.isArray(patients)) return [];
     const b = String(user?.barangay ?? "").trim();
-    if (!b) return patients;
-    return patients.filter((p) => String(p?.barangay ?? "").trim() === b);
+    let list = patients;
+    if (b) list = list.filter((p) => String(p?.barangay ?? "").trim() === b);
+    return filterConfirmedPatients(list);
   }, [patients, user?.barangay]);
 
   const scopedPatients = useMemo(() => {
     if (!Array.isArray(patients)) return [];
     const municipality = String(user?.municipality ?? "").trim();
 
-    if (String(inferredRole).includes("provincial")) return patients;
+    let list = patients;
 
-    if (String(inferredRole).includes("barangay")) {
+    if (String(inferredRole).includes("provincial")) {
+      list = patients;
+    } else if (String(inferredRole).includes("barangay")) {
       return [];
+    } else if (String(inferredRole).includes("municipal")) {
+      list = municipality
+        ? patients.filter((p) => String(p?.municipality ?? "").trim() === municipality)
+        : patients;
     }
 
-    if (String(inferredRole).includes("municipal")) {
-      if (!municipality) return patients;
-      return patients.filter((p) => String(p?.municipality ?? "").trim() === municipality);
-    }
-
-    return patients;
+    return filterConfirmedPatients(list);
   }, [patients, inferredRole, user?.municipality]);
 
   const { totalAWD, totalILI, totalDengue, awdData, iliData, dengueData } = useMemo(() => {
@@ -267,101 +186,11 @@ function Dashboard() {
 
       <div className="content-area">
 
-        {/* ================= WEATHER ================= */}
-
-        <div className="weather-container">
-
-          <div className="weather-card">
-            <div className="weather-header">
-              <div className="weather-header-left">
-                <div className="weather-title">Live Weather</div>
-                <div className="weather-location">
-                  {weather.municipality}
-                  {selectedWeatherBarangay ? `, ${selectedWeatherBarangay}` : ""}
-                </div>
-              </div>
-
-              <div className="weather-header-right">
-                <span className="weather-pill" aria-label="Weather data source">
-                  {weather.provider === "openweathermap"
-                    ? "OpenWeather"
-                    : weather.provider
-                      ? String(weather.provider)
-                      : "Open‑Meteo"}
-                </span>
-              </div>
-            </div>
-
-            <div className="weather-controls weather-controls--pro">
-              <label>
-                Municipality
-                <select
-                  value={roleKey === "provincial" ? selectedWeatherMunicipality : municipalityName}
-                  onChange={(e) => {
-                    setSelectedWeatherMunicipality(e.target.value);
-                    if (roleKey !== "barangay") setSelectedWeatherBarangay("");
-                  }}
-                  disabled={roleKey !== "provincial"}
-                >
-                  {roleKey === "provincial"
-                    ? municipalityOptions.map((m) => (
-                        <option key={m} value={m}>
-                          {m}
-                        </option>
-                      ))
-                    : (
-                        <option value={municipalityName}>{municipalityName || "Municipality"}</option>
-                      )}
-                </select>
-              </label>
-
-              <label>
-                Barangay
-                <select
-                  value={roleKey === "barangay" ? String(user?.barangay ?? "").trim() : selectedWeatherBarangay}
-                  onChange={(e) => setSelectedWeatherBarangay(e.target.value)}
-                  disabled={roleKey === "barangay"}
-                >
-                  {roleKey !== "barangay" && <option value="">All Barangays</option>}
-                  {barangayOptions.map((b) => (
-                    <option key={b} value={b}>
-                      {b}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-
-            <div className="weather-main weather-main--pro">
-              <div className="weather-icon" aria-hidden="true">
-                {getWeatherIcon(weather.condition)}
-              </div>
-
-              <div className="weather-primary">
-                <div className="weather-stats weather-stats--pro">
-                  <div className="weather-stat weather-stat--primary">
-                    <div className="weather-stat-label">Temperature</div>
-                    <div className="weather-stat-value">
-                      {weather.temperature !== null ? `${weather.temperature.toFixed(1)}°C` : "—"}
-                    </div>
-                  </div>
-                  <div className="weather-stat">
-                    <div className="weather-stat-label">Condition</div>
-                    <div className="weather-stat-value">{weather.condition}</div>
-                  </div>
-                  <div className="weather-stat">
-                    <div className="weather-stat-label">Humidity</div>
-                    <div className="weather-stat-value">
-                      {weather.humidity !== null ? `${weather.humidity}%` : "—"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
+        <LiveWeatherCard
+          weather={weather}
+          municipalityLabel={accountMunicipality}
+          barangayLabel={accountBarangay}
+        />
 
         {roleKey === "barangay" ? (
           <>
@@ -376,6 +205,7 @@ function Dashboard() {
                 patients={barangayPatients}
                 barangayName={String(user?.barangay ?? "").trim()}
                 municipalityName={String(user?.municipality ?? "").trim()}
+                weather={weather}
               />
             ) : null}
           </>
@@ -399,7 +229,7 @@ function Dashboard() {
 
                 <h2>{totalAWD}</h2>
 
-                <p>New infections</p>
+                <p>Confirmed cases</p>
 
               </div>
 
@@ -409,7 +239,7 @@ function Dashboard() {
 
                 <h2>{totalILI}</h2>
 
-                <p>Total Cases</p>
+                <p>Confirmed cases</p>
 
               </div>
 
@@ -419,7 +249,7 @@ function Dashboard() {
 
                 <h2>{totalDengue}</h2>
 
-                <p>Cases</p>
+                <p>Confirmed cases</p>
 
               </div>
 
@@ -433,7 +263,7 @@ function Dashboard() {
 
                 <div className="chart-header">
                   <h3 className="chart-title">{awdChartTitle}</h3>
-                  <div className="chart-subtitle">Top 3 by cases</div>
+                  <div className="chart-subtitle">Top 3 · confirmed cases</div>
                 </div>
 
                 <ResponsiveContainer width="100%" height={250}>
@@ -486,7 +316,7 @@ function Dashboard() {
 
                 <div className="chart-header">
                   <h3 className="chart-title">{iliChartTitle}</h3>
-                  <div className="chart-subtitle">Top 3 by cases</div>
+                  <div className="chart-subtitle">Top 3 · confirmed cases</div>
                 </div>
 
                 <ResponsiveContainer width="100%" height={250}>
@@ -539,7 +369,7 @@ function Dashboard() {
 
                 <div className="chart-header">
                   <h3 className="chart-title">{dengueChartTitle}</h3>
-                  <div className="chart-subtitle">Top 3 by cases</div>
+                  <div className="chart-subtitle">Top 3 · confirmed cases</div>
                 </div>
 
                 <ResponsiveContainer width="100%" height={250}>

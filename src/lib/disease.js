@@ -1,3 +1,16 @@
+/** True when case_classification is Confirmed (dashboard surveillance counts). */
+export function isConfirmedCase(patient) {
+  return String(patient?.caseClassification ?? "")
+    .trim()
+    .toLowerCase() === "confirmed";
+}
+
+/** Keep only confirmed cases for dashboard KPIs and charts. */
+export function filterConfirmedPatients(patients) {
+  if (!Array.isArray(patients)) return [];
+  return patients.filter(isConfirmedCase);
+}
+
 /** Normalize free-text disease labels to AWD | ILI | DENGUE | other uppercase token. */
 export function normalizeDisease(raw) {
   const v = String(raw ?? "").trim().toLowerCase();

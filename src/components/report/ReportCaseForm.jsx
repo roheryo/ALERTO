@@ -4,9 +4,11 @@ import { FaBell } from "react-icons/fa";
 import logo from "../../assets/images/ddoLOGO.jpg";
 import "../../pages/Dashboard.css";
 import "./ReportCaseForm.css";
+import FormDateInput from "./FormDateInput";
 import { useAuth } from "../../context/AuthContext";
 import { apiFetch } from "../../lib/api";
 import { PATIENTS_CHANGED_EVENT } from "../../hooks/usePatients";
+import { BARANGAY_BY_MUNICIPALITY, barangaysForMunicipality } from "../../data/davaoDeOroGeography";
 
 function diseaseTypeForApi(code) {
   const c = String(code ?? "").toLowerCase();
@@ -35,20 +37,6 @@ const MONTH_OPTIONS = [
   { value: "11", label: "November" },
   { value: "12", label: "December" }
 ];
-
-const BARANGAY_MAP = {
-  Mabini: ["Cabuyuan", "Cadunán", "Del Pilar", "Pangibiran", "Pindasan", "Tagnanan", "Poblacion"],
-  Montevista: ["Linoan", "Camantangan", "San Jose", "Datu Ampuan", "Banawa", "Kapalong"],
-  Maragusan: ["Maragusan (Pob.)", "New Albay", "Coronobe", "Parasanon", "Paloc", "Mahayahay"],
-  Nabunturan: ["Mipangi", "San Roque", "San Vicente", "Poblacion", "Sto. Niño"],
-  Maco: ["Teresa", "Panibasan", "Nueva Visayas", "Baylo", "Concepcion"],
-  Mawab: ["Andili", "Bawani", "Concepcion", "Malinawon", "Nuevo Iloco", "Andili"],
-  Pantukan: ["Kingking (Pob.)", "Bongabong", "P. Fuentes", "San Jose"],
-  Laak: ["Laac", "Imelda", "Sabud", "Bullucan", "Kidawa", "Aguinaldo"],
-  Compostela: ["Gabi", "Maparat", "San Miguel", "Osmeña", "Poblacion"],
-  Monkayo: ["Pascian", "San Jose", "Rizal", "Union", "Baylo", "Poblacion"],
-  "New Bataan": ["Cabinuangan", "Panibasan", "San Isidro", "Magsaysay"]
-};
 
 function todayStr() {
   const d = new Date();
@@ -106,9 +94,10 @@ function IconCheck() {
 
 function defaultFields(user) {
   const muni = String(user?.municipality ?? "Mabini").trim() || "Mabini";
-  const brgyList = BARANGAY_MAP[muni] || BARANGAY_MAP.Mabini;
+  const brgyList = barangaysForMunicipality(muni);
+  const fallbackList = barangaysForMunicipality("Mabini");
   const brgy = String(user?.barangay ?? "").trim();
-  const barangay = brgy && brgyList.includes(brgy) ? brgy : brgyList[0] || "Cabuyuan";
+  const barangay = brgy && brgyList.includes(brgy) ? brgy : brgyList[0] || fallbackList[0] || "";
 
   return {
     disease: "",
@@ -123,7 +112,7 @@ function defaultFields(user) {
     ageDays: "",
     sex: "",
     dob: "",
-    muncity: muni,
+    municipality: muni,
     barangay,
     streetPurok: "",
     dOnset: "",
@@ -166,7 +155,10 @@ export default function ReportCaseForm({ user, onSubmitted }) {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
 
-  const barangayOptions = useMemo(() => BARANGAY_MAP[fields.muncity] || [], [fields.muncity]);
+  const barangayOptions = useMemo(
+    () => barangaysForMunicipality(fields.municipality),
+    [fields.municipality]
+  );
 
   useEffect(() => {
     setFields((f) => ({ ...f, dEntry: f.dEntry || todayStr(), morbWeek: f.morbWeek || String(getCurrentWeek()) }));
@@ -193,9 +185,9 @@ export default function ReportCaseForm({ user, onSubmitted }) {
 
   const topbarSub = useMemo(() => {
     const br = fields.barangay || user?.barangay || "—";
-    const mu = fields.muncity || user?.municipality || "—";
+    const mu = fields.municipality || user?.municipality || "—";
     return `BHU · Brgy. ${br}, ${mu} · Week ${fields.morbWeek || "—"}, ${fields.reportingYear || "—"}`;
-  }, [fields.barangay, fields.muncity, fields.morbWeek, fields.reportingYear, user]);
+  }, [fields.barangay, fields.municipality, fields.morbWeek, fields.reportingYear, user]);
 
   const progressPct = useMemo(() => {
     const done = stepsCompleted.slice(1).filter(Boolean).length;
@@ -224,7 +216,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
   const sumClass = fields.caseClass || null;
   const sumMorb =
     fields.morbWeek && monthLabel ? `Week ${fields.morbWeek} · ${monthLabel}` : null;
-  const sumMuni = fields.muncity || "Mabini";
+  const sumMuni = fields.municipality || "Mabini";
   const sumBrgy = fields.barangay || "Cabuyuan";
   const sumSex = fields.sex || null;
   const sumOnset = fields.dOnset || null;
@@ -259,8 +251,8 @@ export default function ReportCaseForm({ user, onSubmitted }) {
         err.sex = true;
         ok = false;
       }
-      if (!fields.muncity) {
-        err.muncity = true;
+      if (!fields.municipality) {
+        err.municipality = true;
         ok = false;
       }
       if (!fields.barangay) {
@@ -319,9 +311,9 @@ export default function ReportCaseForm({ user, onSubmitted }) {
 
   const updateBarangayOptions = useCallback((muni) => {
     setFields((f) => {
-      const list = BARANGAY_MAP[muni] || [];
+      const list = barangaysForMunicipality(muni);
       const nextBrgy = list.includes(f.barangay) ? f.barangay : list[0] || "";
-      return { ...f, muncity: muni, barangay: nextBrgy };
+      return { ...f, municipality: muni, barangay: nextBrgy };
     });
   }, []);
 
@@ -359,17 +351,22 @@ export default function ReportCaseForm({ user, onSubmitted }) {
         birthdate: fields.dob || null,
         civilStatus: null,
         province: user?.provinceName || user?.province || "Davao de Oro",
-        municipality: fields.muncity,
+        municipality: fields.municipality,
         barangay: fields.barangay,
         purok: fields.streetPurok || null,
         birthplace: null,
         diseaseType,
         dateStarted: fields.dOnset,
         caseClassification: fields.caseClass || null,
-        outcome: fields.outcome
+        outcome: fields.outcome,
+        patientNumber: (fields.patientNum || "").trim() || null
       };
 
       const data = await apiFetch("/patients", { token, method: "POST", body: payload });
+
+      if (!fields.patientNum.trim() && data?.patientNumber) {
+        setFields((f) => ({ ...f, patientNum: String(data.patientNumber) }));
+      }
 
       setStepsCompleted((s) => {
         const next = [...s];
@@ -561,13 +558,11 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                             Date of Onset <span className="req">*</span>
                             <span className="lbl-tag model">LSTM Input</span>
                           </label>
-                          <input
+                          <FormDateInput
                             id="dOnset"
-                            className={`form-input${fieldErr.dOnset ? " error" : ""}`}
-                            type="date"
                             value={fields.dOnset}
-                            onChange={(e) => {
-                              const v = e.target.value;
+                            error={!!fieldErr.dOnset}
+                            onChange={(v) => {
                               const w = getWeekNumberForIsoDate(v);
                               const mo = v ? String(new Date(`${v}T12:00:00`).getMonth() + 1) : fields.morbMonth;
                               const yr = v ? String(new Date(`${v}T12:00:00`).getFullYear()) : fields.reportingYear;
@@ -587,12 +582,10 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                             Date Admitted / Consulted
                             <span className="lbl-tag model">LSTM Input</span>
                           </label>
-                          <input
+                          <FormDateInput
                             id="dAdmit"
-                            className="form-input"
-                            type="date"
                             value={fields.dAdmit}
-                            onChange={(e) => setF({ dAdmit: e.target.value })}
+                            onChange={(v) => setF({ dAdmit: v })}
                           />
                           <div className="form-hint">DAdmit — leave blank if outpatient</div>
                         </div>
@@ -600,13 +593,12 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                           <label className="form-label" htmlFor="dEntry">
                             Date of Entry (Report) <span className="req">*</span>
                           </label>
-                          <input
+                          <FormDateInput
                             id="dEntry"
-                            className={`form-input${fieldErr.dEntry ? " error" : ""}`}
-                            type="date"
                             value={fields.dEntry}
-                            onChange={(e) => {
-                              setF({ dEntry: e.target.value });
+                            error={!!fieldErr.dEntry}
+                            onChange={(v) => {
+                              setF({ dEntry: v });
                               clearErr(["dEntry"]);
                             }}
                           />
@@ -950,27 +942,27 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                           />
                         </div>
                         <div className="form-group">
-                          <label className="form-label" htmlFor="muncity">
+                          <label className="form-label" htmlFor="municipality">
                             Municipality/City <span className="req">*</span>
                             <span className="lbl-tag model">LSTM Input</span>
                           </label>
                           <select
-                            id="muncity"
-                            className={`form-select${fieldErr.muncity ? " error" : ""}`}
-                            value={fields.muncity}
+                            id="municipality"
+                            className={`form-select${fieldErr.municipality ? " error" : ""}`}
+                            value={fields.municipality}
                             onChange={(e) => {
                               updateBarangayOptions(e.target.value);
-                              clearErr(["muncity", "barangay"]);
+                              clearErr(["municipality", "barangay"]);
                             }}
                           >
                             <option value="">— Select municipality —</option>
-                            {Object.keys(BARANGAY_MAP).map((m) => (
+                            {Object.keys(BARANGAY_BY_MUNICIPALITY).map((m) => (
                               <option key={m} value={m}>
                                 {m}
                               </option>
                             ))}
                           </select>
-                          <div className="form-hint">MuncityOfDRU / Muncity field</div>
+                          <div className="form-hint">MunicipalityOfDRU / Municipality field</div>
                         </div>
                         <div className="form-group">
                           <label className="form-label" htmlFor="barangay">
@@ -1508,7 +1500,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                             </div>
                             <div className="summary-item">
                               <div className="summary-label">Municipality</div>
-                              <div className="summary-value">{fields.muncity || "—"}</div>
+                              <div className="summary-value">{fields.municipality || "—"}</div>
                             </div>
                             <div className="summary-item">
                               <div className="summary-label">Barangay</div>
@@ -1571,7 +1563,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                     >
                       <strong style={{ color: "var(--text)" }}>Data certification:</strong> By submitting, I certify
                       that the information entered is accurate to the best of my knowledge and is based on actual
-                      clinical consultation at BHU Brgy. {fields.barangay || "Cabuyuan"}, {fields.muncity || "Mabini"}. This
+                      clinical consultation at BHU Brgy. {fields.barangay || "Cabuyuan"}, {fields.municipality || "Mabini"}. This
                       record will feed into the provincial ALERTO surveillance system.
                     </div>
 
@@ -1808,7 +1800,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
               </div>
               <div style={{ fontFamily: "monospace", fontSize: 16, color: "var(--primary)" }}>{caseRef}</div>
               <div style={{ fontSize: 13, color: "var(--text-dim)", marginTop: 6 }}>
-                Brgy. {fields.barangay} · {fields.muncity} · Week {fields.morbWeek}
+                Brgy. {fields.barangay} · {fields.municipality} · Week {fields.morbWeek}
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>

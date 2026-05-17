@@ -363,6 +363,116 @@
 .report-case-form .form-select.error:focus {
   box-shadow: 0 0 0 3px var(--danger-dim);
 }
+
+.report-case-form .form-date-field {
+  position: relative;
+  width: 100%;
+}
+.report-case-form .form-date-field .form-date-text {
+  padding-right: 48px;
+}
+.report-case-form .form-date-trigger {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-xs);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.report-case-form .form-date-trigger:hover {
+  background: var(--primary-dim);
+  color: var(--primary);
+}
+.report-case-form .form-date-trigger svg {
+  width: 18px;
+  height: 18px;
+}
+.report-case-form .form-date-popover {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(100%, 300px);
+  padding: 12px;
+  background: var(--bg);
+  border: 1.5px solid var(--border2);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+}
+.report-case-form .form-date-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.report-case-form .form-date-popover-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.report-case-form .form-date-nav {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.report-case-form .form-date-nav:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.report-case-form .form-date-weekdays,
+.report-case-form .form-date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.report-case-form .form-date-weekday {
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text-xs);
+  padding: 4px 0;
+}
+.report-case-form .form-date-day {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+}
+.report-case-form .form-date-day:hover {
+  background: var(--primary-dim);
+  color: var(--primary);
+}
+.report-case-form .form-date-day.outside {
+  color: var(--text-xs);
+  opacity: 0.55;
+}
+.report-case-form .form-date-day.selected {
+  background: var(--primary);
+  color: #fff;
+}
+.report-case-form .form-date-day.selected:hover {
+  background: var(--primary);
+  color: #fff;
+}
 .report-case-form .form-select {
   appearance: none;
   cursor: pointer;
