@@ -1,17 +1,47 @@
 import Sidebar from "./Sidebar";
 import { Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import "@/styles/dashboard-shell.css";
 
 function DashboardLayout() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
   const isDashboardHome = pathname === "/dashboard" || pathname === "/dashboard/";
+  const isMunicipalSurveillanceMap =
+    pathname === "/dashboard/surveillance-map" ||
+    pathname.startsWith("/dashboard/surveillance-map/");
+  const isMunicipalWide =
+    user?.role === "municipality" && (isDashboardHome || isMunicipalSurveillanceMap);
+
+  const isProvincialRoute =
+    pathname === "/dashboard" ||
+    pathname === "/dashboard/" ||
+    pathname.startsWith("/dashboard/province-");
+  const isProvincialWide = user?.role === "province" && isProvincialRoute;
+
+  const layoutClass = [
+    "dashboard-layout",
+    isDashboardHome ? "dashboard-layout--home" : "",
+    isMunicipalWide ? "dashboard-layout--municipal" : "",
+    isProvincialWide ? "dashboard-layout--provincial" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const mainContentClass = [
+    "main-content",
+    isMunicipalWide ? "main-content--municipal" : "",
+    isProvincialWide ? "main-content--provincial" : ""
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div className={`dashboard-layout${isDashboardHome ? " dashboard-layout--home" : ""}`}>
+    <div className={layoutClass}>
       <Sidebar />
 
       <div className="main-section">
-        <div className="main-content">
+        <div className={mainContentClass}>
           <Outlet />
         </div>
       </div>

@@ -14,6 +14,20 @@ Run scripts in numeric order on a fresh MySQL instance:
 | `07_patch_barangays_geography.sql` | Geography corrections |
 | `08_patients_case_fields.sql` | Case classification columns |
 | `09_patients_patient_number.sql` | Patient number column |
+| `10_users_username_from_fullname.sql` | Usernames derived from full name / place (existing DBs) |
+
+## ILI 2023 dataset (Excel import)
+
+Place `ILI-2023.xlsx` in `database/imports/` (included from provincial ILI 2023 surveillance export).
+
+From repo root (MySQL running, `backend/.env` configured):
+
+```bash
+npm run import:ili-2023:dry --prefix backend   # preview counts
+npm run import:ili-2023 --prefix backend      # load ~1,433 rows
+```
+
+Re-running replaces rows whose `patient_number` starts with `ILI23-`. Use `--no-replace` to append without deleting prior import.
 
 Example:
 

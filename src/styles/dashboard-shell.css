@@ -154,6 +154,27 @@ body {
 
 }
 
+.main-content--municipal .content-area,
+.content-area--municipal {
+  padding-top: 14px;
+  max-width: 1320px;
+}
+
+.content-area--municipal .dashboard-data-status {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-radius: var(--dash-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dash-muted);
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+}
+
+.dashboard-layout--municipal .main-section {
+  background: var(--dash-bg, #f6f8fc);
+}
+
 
 
 .content-wrapper {

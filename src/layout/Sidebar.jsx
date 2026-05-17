@@ -2,15 +2,19 @@ import { useMemo, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutGrid,
+  Map,
   UserPlus,
   Bell,
   ClipboardList,
   PieChart,
-  Users
+  Users,
+  TrendingUp,
+  Shield
 } from "lucide-react";
 
 import "./Sidebar.css";
 import { useAuth } from "../context/AuthContext";
+import { userCanReportCase } from "@/lib/authUser";
 import LogoutConfirmModal from "../components/common/LogoutConfirmModal";
 
 function initialsFromUser(user) {
@@ -34,13 +38,31 @@ function Sidebar() {
   const canManageAccounts =
     user?.role === "province" || user?.role === "municipality";
 
-  const canReportCase =
-    user?.role === "municipality" || user?.role === "barangay";
+  const canReportCase = userCanReportCase(user);
 
   const showExtendedNav =
     user?.role === "municipality" || user?.role === "province";
 
+  const isMunicipality = user?.role === "municipality";
+  const isProvince = user?.role === "province";
+
   const isDashboardActive = /^\/dashboard\/?$/.test(pathname);
+
+  const isProvinceRankingsActive =
+    pathname === "/dashboard/province-rankings" ||
+    pathname.startsWith("/dashboard/province-rankings/");
+
+  const isProvinceMapActive =
+    pathname === "/dashboard/province-map" ||
+    pathname.startsWith("/dashboard/province-map/");
+
+  const isProvinceCoordinationActive =
+    pathname === "/dashboard/province-coordination" ||
+    pathname.startsWith("/dashboard/province-coordination/");
+
+  const isSurveillanceMapActive =
+    pathname === "/dashboard/surveillance-map" ||
+    pathname.startsWith("/dashboard/surveillance-map/");
 
   const isReportCaseActive =
     pathname === "/dashboard/report-case" || pathname === "/dashboard/add-patient";
@@ -127,6 +149,50 @@ function Sidebar() {
               </Link>
             </li>
 
+            {isMunicipality ? (
+              <li>
+                <Link
+                  className={`sidebar-link${isSurveillanceMapActive ? " is-active" : ""}`}
+                  to="/dashboard/surveillance-map"
+                >
+                  <Map className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                  <span>Surveillance Map</span>
+                </Link>
+              </li>
+            ) : null}
+
+            {isProvince ? (
+              <>
+                <li>
+                  <Link
+                    className={`sidebar-link${isProvinceRankingsActive ? " is-active" : ""}`}
+                    to="/dashboard/province-rankings"
+                  >
+                    <TrendingUp className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                    <span>Rising rankings</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className={`sidebar-link${isProvinceMapActive ? " is-active" : ""}`}
+                    to="/dashboard/province-map"
+                  >
+                    <Map className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                    <span>Province map</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className={`sidebar-link${isProvinceCoordinationActive ? " is-active" : ""}`}
+                    to="/dashboard/province-coordination"
+                  >
+                    <Shield className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                    <span>PHO coordination</span>
+                  </Link>
+                </li>
+              </>
+            ) : null}
+
             {canReportCase ? (
               <li>
                 <Link
@@ -155,7 +221,7 @@ function Sidebar() {
                 to="/dashboard/cases"
               >
                 <ClipboardList className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
-                <span>Cases Logs</span>
+                <span>Case Logs</span>
               </Link>
             </li>
 

@@ -82,7 +82,7 @@ function Login() {
           <input
             id="login-username"
             type="text"
-            placeholder="e.g. ddo_province_admin or province.admin@alerto.local"
+            placeholder="e.g. compostela_municipality or province.admin@alerto.local"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"

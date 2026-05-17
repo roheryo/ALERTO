@@ -13,6 +13,10 @@ import Login from "@/pages/auth/Login";
 import DashboardLayout from "@/layout/DashboardLayout";
 
 import Dashboard from "@/pages/dashboard/Dashboard";
+import MunicipalSurveillanceMap from "@/pages/dashboard/MunicipalSurveillanceMap";
+import ProvincialRankings from "@/pages/dashboard/ProvincialRankings";
+import ProvincialMapPage from "@/pages/dashboard/ProvincialMapPage";
+import ProvincialCoordination from "@/pages/dashboard/ProvincialCoordination";
 import CasesLogs from "@/pages/cases/CasesLogs";
 import Reports from "@/pages/reports/Reports";
 import Notification from "@/pages/notifications/Notification";
@@ -38,8 +42,56 @@ function App() {
           >
             <Route index element={<Dashboard />} />
 
-            <Route path="add-patient" element={<AddPatient />} />
-            <Route path="report-case" element={<AddPatient />} />
+            <Route
+              path="surveillance-map"
+              element={(
+                <RoleRoute allow={["municipality"]}>
+                  <MunicipalSurveillanceMap />
+                </RoleRoute>
+              )}
+            />
+
+            <Route
+              path="province-rankings"
+              element={(
+                <RoleRoute allow={["province"]}>
+                  <ProvincialRankings />
+                </RoleRoute>
+              )}
+            />
+            <Route
+              path="province-map"
+              element={(
+                <RoleRoute allow={["province"]}>
+                  <ProvincialMapPage />
+                </RoleRoute>
+              )}
+            />
+            <Route
+              path="province-coordination"
+              element={(
+                <RoleRoute allow={["province"]}>
+                  <ProvincialCoordination />
+                </RoleRoute>
+              )}
+            />
+
+            <Route
+              path="add-patient"
+              element={(
+                <RoleRoute allow={["barangay"]}>
+                  <AddPatient />
+                </RoleRoute>
+              )}
+            />
+            <Route
+              path="report-case"
+              element={(
+                <RoleRoute allow={["barangay"]}>
+                  <AddPatient />
+                </RoleRoute>
+              )}
+            />
 
             <Route path="cases" element={<CasesLogs />} />
 

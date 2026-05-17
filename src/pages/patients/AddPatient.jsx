@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { sessionUserFromAuth } from "../../lib/authUser";
@@ -6,26 +6,12 @@ import ReportCaseForm from "../../components/report/ReportCaseForm";
 import "./AddPatient.css";
 
 /**
- * Report case route — hosts the multi-step wizard (reference layout lives in ReportCaseForm).
- * Provincial users are redirected to the dashboard; barangay/municipal users stay here.
+ * Report case route — barangay BHU encoding only (guarded by RoleRoute in App.jsx).
  */
 export default function AddPatient() {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const user = sessionUserFromAuth(authUser);
-
-  const role = String(user?.role ?? "").toLowerCase();
-  const roleKey = role.includes("barangay")
-    ? "barangay"
-    : role.includes("municipal")
-      ? "municipal"
-      : "provincial";
-
-  useEffect(() => {
-    if (roleKey === "provincial") {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [roleKey, navigate]);
 
   const formUser = useMemo(
     () => ({
