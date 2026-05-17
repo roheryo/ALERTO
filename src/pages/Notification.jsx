@@ -4,7 +4,7 @@ import { FaBell } from "react-icons/fa";
 import "./Dashboard.css";
 import "./Notification.css";
 import logo from "../assets/images/ddoLOGO.jpg";
-import { fetchWeatherForMunicipality, WEATHER_MUNICIPALITY_NAMES } from "../lib/weatherClient";
+import { fetchWeatherForLocation, WEATHER_MUNICIPALITY_NAMES } from "../lib/weatherClient";
 import { useAuth } from "../context/AuthContext";
 import { sessionUserFromAuth } from "../lib/authUser";
 
@@ -43,7 +43,7 @@ function daysAgo(days) {
 }
 
 function Notification() {
-  const { user: authUser } = useAuth();
+  const { user: authUser, token } = useAuth();
   const user = useMemo(() => sessionUserFromAuth(authUser), [authUser]);
   const roleRaw = String(user?.role ?? "").toLowerCase();
   const roleKey = roleRaw.includes("barangay")
@@ -78,16 +78,21 @@ function Notification() {
   }, [cases]);
 
   useEffect(() => {
-    const municipalities =
+    const locations =
       roleKey === "provincial"
-        ? municipalityOptions.length
-          ? municipalityOptions
-          : WEATHER_MUNICIPALITY_NAMES
+        ? (municipalityOptions.length ? municipalityOptions : WEATHER_MUNICIPALITY_NAMES).map(
+            (municipality) => ({ municipality, barangay: "" })
+          )
         : lockedMunicipality
-        ? [lockedMunicipality]
-        : [];
+          ? [
+              {
+                municipality: lockedMunicipality,
+                barangay: roleKey === "barangay" ? lockedBarangay : ""
+              }
+            ]
+          : [];
 
-    if (!municipalities.length) {
+    if (!locations.length) {
       setWeatherByMunicipality({});
       return;
     }
@@ -95,13 +100,13 @@ function Notification() {
     let cancelled = false;
 
     Promise.all(
-      municipalities.map(async (m) => {
+      locations.map(async ({ municipality, barangay }) => {
         try {
-          const result = await fetchWeatherForMunicipality(m);
-          if (!result.ok) return [m, null];
-          return [m, result.data];
+          const result = await fetchWeatherForLocation({ municipality, barangay, token });
+          if (!result.ok) return [municipality, null];
+          return [municipality, result.data];
         } catch {
-          return [m, null];
+          return [municipality, null];
         }
       })
     ).then((rows) => {
@@ -116,7 +121,7 @@ function Notification() {
     return () => {
       cancelled = true;
     };
-  }, [municipalityOptions, roleKey, lockedMunicipality]);
+  }, [municipalityOptions, roleKey, lockedMunicipality, lockedBarangay, token]);
 
   const scopedCases = useMemo(() => {
     const normalized = cases.map((c) => {

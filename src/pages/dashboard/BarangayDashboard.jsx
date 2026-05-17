@@ -2,11 +2,13 @@ import { useMemo } from "react";
 import Chart from "react-apexcharts";
 
 import {
+  filterConfirmedPatients,
   getLastFourWeekBuckets,
   normalizeDisease,
   syntheticWeeklyFromTotals,
   weeklyDiseaseCounts
 } from "../../lib/disease";
+import { formatWeatherProvider, getWeatherIcon } from "../../lib/weatherDisplay";
 
 import "./BarangayDashboard.css";
 
@@ -26,23 +28,24 @@ function countByDisease(patients) {
 
 /**
  * Barangay-scoped dashboard: KPI totals and 4-week disease trend.
- * `patients` is expected to already be filtered to the logged-in barangay.
+ * Only confirmed cases are counted (Suspect/Probable excluded for surveillance accuracy).
  */
-function BarangayDashboard({ patients = [], barangayName = "", municipalityName = "" }) {
-  const kpis = useMemo(() => countByDisease(patients), [patients]);
+function BarangayDashboard({ patients = [], barangayName = "", municipalityName = "", weather = null }) {
+  const confirmedPatients = useMemo(() => filterConfirmedPatients(patients), [patients]);
+  const kpis = useMemo(() => countByDisease(confirmedPatients), [confirmedPatients]);
 
   const weekBuckets = useMemo(() => getLastFourWeekBuckets(), []);
   const weekLabels = useMemo(() => weekBuckets.map((b) => b.label), [weekBuckets]);
 
   const weeklySeries = useMemo(() => {
-    const dated = weeklyDiseaseCounts(patients, weekBuckets);
+    const dated = weeklyDiseaseCounts(confirmedPatients, weekBuckets);
     const hasDated =
       dated.dengue.some((n) => n > 0) ||
       dated.ili.some((n) => n > 0) ||
       dated.awd.some((n) => n > 0);
     if (hasDated) return dated;
     return syntheticWeeklyFromTotals(kpis.dengue, kpis.ili, kpis.awd, weekBuckets.length);
-  }, [patients, weekBuckets, kpis.dengue, kpis.ili, kpis.awd]);
+  }, [confirmedPatients, weekBuckets, kpis.dengue, kpis.ili, kpis.awd]);
 
   const chartSeries = useMemo(
     () => [
@@ -134,6 +137,11 @@ function BarangayDashboard({ patients = [], barangayName = "", municipalityName 
   );
 
   const scopeLine = [municipalityName, barangayName].filter(Boolean).join(" · ");
+  const hasWeather =
+    weather &&
+    !weather.loading &&
+    weather.condition !== "Unavailable" &&
+    (weather.temperature !== null || weather.humidity !== null);
 
   return (
     <section className="barangay-dash" aria-labelledby="barangay-dash-title">
@@ -142,34 +150,55 @@ function BarangayDashboard({ patients = [], barangayName = "", municipalityName 
           Barangay overview
         </h2>
         {scopeLine ? (
-          <p className="barangay-dash-scope">{scopeLine}</p>
+          <p className="barangay-dash-scope">
+            {scopeLine} · Confirmed cases only
+          </p>
         ) : (
-          <p className="barangay-dash-scope">Case counts for your barangay (scoped data)</p>
+          <p className="barangay-dash-scope">Confirmed cases only · real-time surveillance</p>
         )}
       </div>
+
+      {hasWeather ? (
+        <div className="barangay-dash-weather" aria-label="Current weather summary">
+          <span className="barangay-dash-weather-icon" aria-hidden="true">
+            {getWeatherIcon(weather.condition)}
+          </span>
+          <div className="barangay-dash-weather-body">
+            <span className="barangay-dash-weather-temp">
+              {weather.temperature !== null ? `${weather.temperature.toFixed(1)}°C` : "—"}
+            </span>
+            <span className="barangay-dash-weather-meta">
+              {weather.condition}
+              {weather.humidity !== null ? ` · ${weather.humidity}% humidity` : ""}
+              {" · "}
+              {formatWeatherProvider(weather.provider)}
+            </span>
+          </div>
+        </div>
+      ) : null}
 
       <div className="barangay-dash-kpis" role="list">
         <article className="barangay-kpi barangay-kpi--dengue" role="listitem">
           <p className="barangay-kpi-label">Dengue</p>
           <p className="barangay-kpi-value">{kpis.dengue.toLocaleString()}</p>
-          <p className="barangay-kpi-hint">Current cases</p>
+          <p className="barangay-kpi-hint">Confirmed cases</p>
         </article>
         <article className="barangay-kpi barangay-kpi--ili" role="listitem">
           <p className="barangay-kpi-label">ILI</p>
           <p className="barangay-kpi-value">{kpis.ili.toLocaleString()}</p>
-          <p className="barangay-kpi-hint">Current cases</p>
+          <p className="barangay-kpi-hint">Confirmed cases</p>
         </article>
         <article className="barangay-kpi barangay-kpi--awd" role="listitem">
           <p className="barangay-kpi-label">AWD</p>
           <p className="barangay-kpi-value">{kpis.awd.toLocaleString()}</p>
-          <p className="barangay-kpi-hint">Current cases</p>
+          <p className="barangay-kpi-hint">Confirmed cases</p>
         </article>
       </div>
 
       <div className="barangay-dash-chart-wrap">
         <div className="barangay-dash-chart-head">
           <h3 className="barangay-dash-chart-title">Weekly case trend</h3>
-          <p className="barangay-dash-chart-sub">Last four weeks · Dengue, ILI, and AWD</p>
+          <p className="barangay-dash-chart-sub">Last four weeks · confirmed cases only</p>
         </div>
         <div className="barangay-dash-chart" role="img" aria-label="Weekly case trend chart">
           <Chart options={chartOptions} series={chartSeries} type="area" height={320} />

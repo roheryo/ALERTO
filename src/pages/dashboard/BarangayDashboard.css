@@ -23,6 +23,40 @@
   font-weight: 500;
 }
 
+.barangay-dash-weather {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.barangay-dash-weather-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.barangay-dash-weather-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.barangay-dash-weather-temp {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.barangay-dash-weather-meta {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
 .barangay-dash-kpis {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

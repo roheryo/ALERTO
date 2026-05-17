@@ -6,8 +6,9 @@ import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
 import { useAuth } from "../context/AuthContext";
 import { sessionUserFromAuth } from "../lib/authUser";
-import { usePatients } from "../hooks/usePatients";
+import { usePatients, PATIENTS_CHANGED_EVENT } from "../hooks/usePatients";
 import { normalizeDisease } from "../lib/disease";
+import { apiFetch } from "../lib/api";
 
 const MUNICIPALITY_DATA = {
   Nabunturan: ["Basak", "Bayabas", "Bukal", "Cabidianan", "Katipunan", "Magsaysay", "San Isidro", "San Vicente"],
@@ -36,10 +37,28 @@ function diseaseLabel(token) {
   return token || "—";
 }
 
-function caseStatusLabel(raw) {
-  const s = String(raw ?? "active").trim().toLowerCase();
-  if (s === "closed") return "Closed";
-  return "Active";
+function displayPatientId(patient) {
+  const n = String(patient?.patientNumber ?? "").trim();
+  if (n) return n;
+  if (patient?.id != null) return String(patient.id).padStart(6, "0");
+  return "—";
+}
+
+/** Case Status column — same values as Report Case caseClass (Suspect / Probable / Confirmed). */
+function caseStatusDisplay(raw) {
+  const t = String(raw ?? "").trim();
+  if (!t) return "—";
+  const s = t.toLowerCase();
+  if (s === "suspect") return "Suspect";
+  if (s === "probable") return "Probable";
+  if (s === "confirmed") return "Confirmed";
+  return t;
+}
+
+/** Value for case classification select (Report Case caseClass options). */
+function caseClassSelectValue(raw) {
+  const d = caseStatusDisplay(raw);
+  return d === "—" ? "" : d;
 }
 
 function CasesLogs() {
@@ -60,9 +79,12 @@ function CasesLogs() {
   const [showView, setShowView] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
-  const [editData, setEditData] = useState(null);
+  const [editPatient, setEditPatient] = useState(null);
+  const [editCaseClass, setEditCaseClass] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState(null);
 
-  const { user: authUser } = useAuth();
+  const { user: authUser, token } = useAuth();
   const user = sessionUserFromAuth(authUser);
   const roleRaw = String(user?.role ?? "").toLowerCase();
 
@@ -97,20 +119,8 @@ function CasesLogs() {
     }
   }, [roleKey, lockedMunicipality, lockedBarangay]);
 
-  const scopedPatients = useMemo(() => {
-    let list = Array.isArray(patients) ? [...patients] : [];
-    if (roleKey === "barangay") {
-      const m = norm(lockedMunicipality);
-      const b = norm(lockedBarangay);
-      if (m && b) {
-        list = list.filter((p) => norm(p.municipality) === m && norm(p.barangay) === b);
-      }
-    } else if (roleKey === "municipal") {
-      const m = norm(lockedMunicipality);
-      if (m) list = list.filter((p) => norm(p.municipality) === m);
-    }
-    return list;
-  }, [patients, roleKey, lockedMunicipality, lockedBarangay]);
+  /** API applies RBAC (including cases the user submitted via Report Case). */
+  const scopedPatients = useMemo(() => (Array.isArray(patients) ? [...patients] : []), [patients]);
 
   const visiblePatients = useMemo(() => {
     let list = scopedPatients;
@@ -127,18 +137,21 @@ function CasesLogs() {
       list = list.filter((p) => normalizeDisease(p.diseaseType) === selectedDisease);
     }
 
-    if (statusFilter === "suspected") {
+    if (statusFilter === "suspect") {
       list = list.filter((p) => norm(p.caseClassification) === "suspect");
-    } else if (statusFilter === "active") {
-      list = list.filter((p) => {
-        const s = String(p.caseStatus ?? "active").trim().toLowerCase();
-        return s === "active" || s === "";
-      });
+    } else if (statusFilter === "probable") {
+      list = list.filter((p) => norm(p.caseClassification) === "probable");
+    } else if (statusFilter === "confirmed") {
+      list = list.filter((p) => norm(p.caseClassification) === "confirmed");
     }
 
     const q = searchTerm.trim().toLowerCase();
     if (q) {
-      list = list.filter((p) => String(p.name ?? "").toLowerCase().includes(q));
+      list = list.filter((p) => {
+        const name = String(p.name ?? "").toLowerCase();
+        const pid = displayPatientId(p).toLowerCase();
+        return name.includes(q) || pid.includes(q);
+      });
     }
 
     return list;
@@ -192,8 +205,17 @@ function CasesLogs() {
   };
 
   const handleEdit = (p) => {
-    setEditData({ ...p });
+    setEditPatient(p);
+    setEditCaseClass(caseClassSelectValue(p.caseClassification));
+    setEditError(null);
     setShowEdit(true);
+  };
+
+  const closeEdit = () => {
+    setShowEdit(false);
+    setEditPatient(null);
+    setEditCaseClass("");
+    setEditError(null);
   };
 
   const handleDelete = (id) => {
@@ -201,10 +223,33 @@ function CasesLogs() {
     setPatients((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleUpdate = () => {
-    if (!editData) return;
-    setPatients((prev) => prev.map((p) => (p.id === editData.id ? { ...p, ...editData } : p)));
-    setShowEdit(false);
+  const handleUpdate = async () => {
+    if (!editPatient?.id || !token) return;
+    if (!editCaseClass) {
+      setEditError("Select a case classification (Suspect, Probable, or Confirmed).");
+      return;
+    }
+    setEditSaving(true);
+    setEditError(null);
+    try {
+      const data = await apiFetch(`/patients/${editPatient.id}`, {
+        token,
+        method: "PATCH",
+        body: { caseClassification: editCaseClass }
+      });
+      const saved = data?.caseClassification ?? editCaseClass;
+      setPatients((prev) =>
+        prev.map((p) => (p.id === editPatient.id ? { ...p, caseClassification: saved } : p))
+      );
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(PATIENTS_CHANGED_EVENT));
+      }
+      closeEdit();
+    } catch (e) {
+      setEditError(e?.message ?? "Failed to save case classification");
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   return (
@@ -254,7 +299,7 @@ function CasesLogs() {
           <div className="caseslogs-toolbar-left">
             <input
               type="search"
-              placeholder="Search by patient name…"
+              placeholder="Search by patient ID or name…"
               className="caseslogs-search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -315,9 +360,10 @@ function CasesLogs() {
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
-              <option value="">All case types</option>
-              <option value="suspected">Suspected (classification)</option>
-              <option value="active">Active cases only</option>
+              <option value="">Filter by case status</option>
+              <option value="suspect">Suspect</option>
+              <option value="probable">Probable</option>
+              <option value="confirmed">Confirmed</option>
             </select>
           </div>
         </div>
@@ -338,22 +384,19 @@ function CasesLogs() {
               <table className="caseslogs-table">
                 <thead>
                   <tr>
-                    <th>Patient</th>
-                    <th>Age</th>
-                    <th>Sex</th>
+                    <th>Patient ID/No.</th>
                     <th>Disease</th>
-                    <th>Classification</th>
-                    <th>Case status</th>
+                    <th>Date of Onset</th>
+                    <th>Case Classification</th>
                     <th>Municipality</th>
                     <th>Barangay</th>
-                    <th>Date started</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visiblePatients.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="caseslogs-empty">
+                      <td colSpan={7} className="caseslogs-empty">
                         <strong>No cases match your filters</strong>
                         Try clearing filters (disease, status, search) or choose another municipality.
                       </td>
@@ -363,17 +406,14 @@ function CasesLogs() {
                       const dTok = normalizeDisease(p.diseaseType);
                       return (
                         <tr key={p.id}>
-                          <td>{p.name ?? "—"}</td>
-                          <td className="num">{p.age ?? "—"}</td>
-                          <td>{p.sex ?? "—"}</td>
+                          <td className="num">{displayPatientId(p)}</td>
                           <td>
                             <span className="caseslogs-disease-pill">{diseaseLabel(dTok)}</span>
                           </td>
-                          <td>{p.caseClassification ?? "—"}</td>
-                          <td>{caseStatusLabel(p.caseStatus)}</td>
+                          <td className="num">{p.dateStarted ?? "—"}</td>
+                          <td>{caseStatusDisplay(p.caseClassification)}</td>
                           <td>{p.municipality ?? "—"}</td>
                           <td>{p.barangay ?? "—"}</td>
-                          <td className="num">{p.dateStarted ?? "—"}</td>
                           <td>
                             <div className="caseslogs-actions">
                               <button type="button" className="caseslogs-btn-ghost" onClick={() => handleView(p)}>
@@ -403,6 +443,8 @@ function CasesLogs() {
           <div className="caseslogs-modal">
             <h3 id="cases-view-title">Case details</h3>
             <dl className="caseslogs-modal-dl">
+              <dt>Patient ID/No.</dt>
+              <dd>{displayPatientId(selectedPatient)}</dd>
               <dt>Name</dt>
               <dd>{selectedPatient.name}</dd>
               <dt>Age</dt>
@@ -411,10 +453,8 @@ function CasesLogs() {
               <dd>{selectedPatient.sex}</dd>
               <dt>Disease</dt>
               <dd>{diseaseLabel(normalizeDisease(selectedPatient.diseaseType))}</dd>
-              <dt>Classification</dt>
-              <dd>{selectedPatient.caseClassification ?? "—"}</dd>
-              <dt>Case status</dt>
-              <dd>{caseStatusLabel(selectedPatient.caseStatus)}</dd>
+              <dt>Case Classification</dt>
+              <dd>{caseStatusDisplay(selectedPatient.caseClassification)}</dd>
               <dt>Municipality</dt>
               <dd>{selectedPatient.municipality}</dd>
               <dt>Barangay</dt>
@@ -427,7 +467,7 @@ function CasesLogs() {
               <dd>{selectedPatient.civilStatus ?? "—"}</dd>
               <dt>Birthplace</dt>
               <dd>{selectedPatient.birthplace ?? "—"}</dd>
-              <dt>Date started</dt>
+              <dt>Date of Onset</dt>
               <dd>{selectedPatient.dateStarted ?? "—"}</dd>
             </dl>
             <div className="caseslogs-modal-actions">
@@ -439,48 +479,56 @@ function CasesLogs() {
         </div>
       ) : null}
 
-      {showEdit && editData ? (
+      {showEdit && editPatient ? (
         <div className="caseslogs-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cases-edit-title">
           <div className="caseslogs-modal">
-            <h3 id="cases-edit-title">Edit case (local)</h3>
-            <label className="caseslogs-scope-title" htmlFor="edit-name">
-              Name
-            </label>
-            <input
-              id="edit-name"
-              value={editData.name ?? ""}
-              onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-            />
-            <label className="caseslogs-scope-title" htmlFor="edit-age">
-              Age
-            </label>
-            <input
-              id="edit-age"
-              value={editData.age ?? ""}
-              onChange={(e) => setEditData({ ...editData, age: e.target.value })}
-            />
-            <label className="caseslogs-scope-title" htmlFor="edit-sex">
-              Sex
-            </label>
-            <input
-              id="edit-sex"
-              value={editData.sex ?? ""}
-              onChange={(e) => setEditData({ ...editData, sex: e.target.value })}
-            />
-            <label className="caseslogs-scope-title" htmlFor="edit-disease">
-              Disease
-            </label>
-            <input
-              id="edit-disease"
-              value={editData.diseaseType ?? ""}
-              onChange={(e) => setEditData({ ...editData, diseaseType: e.target.value })}
-            />
+            <h3 id="cases-edit-title">Edit case classification</h3>
+            <dl className="caseslogs-modal-dl caseslogs-modal-dl--readonly">
+              <dt>Patient ID/No.</dt>
+              <dd>{displayPatientId(editPatient)}</dd>
+              <dt>Name</dt>
+              <dd>{editPatient.name ?? "—"}</dd>
+              <dt>Disease</dt>
+              <dd>{diseaseLabel(normalizeDisease(editPatient.diseaseType))}</dd>
+              <dt>Date of Onset</dt>
+              <dd>{editPatient.dateStarted ?? "—"}</dd>
+              <dt>Municipality</dt>
+              <dd>{editPatient.municipality ?? "—"}</dd>
+              <dt>Barangay</dt>
+              <dd>{editPatient.barangay ?? "—"}</dd>
+            </dl>
+            <div className="caseslogs-edit-field">
+              <label className="caseslogs-edit-label" htmlFor="edit-caseClass">
+                Case Classification <span className="caseslogs-req">*</span>
+              </label>
+              <select
+                id="edit-caseClass"
+                className={`caseslogs-modal-select${editError && !editCaseClass ? " error" : ""}`}
+                value={editCaseClass}
+                onChange={(e) => {
+                  setEditCaseClass(e.target.value);
+                  setEditError(null);
+                }}
+                disabled={editSaving}
+              >
+                <option value="">— Select classification —</option>
+                <option value="Suspect">Suspect</option>
+                <option value="Probable">Probable</option>
+                <option value="Confirmed">Confirmed</option>
+              </select>
+              <p className="caseslogs-edit-hint">Based on clinical and lab criteria (CASECLASS field)</p>
+            </div>
+            {editError ? (
+              <p className="caseslogs-edit-error" role="alert">
+                {editError}
+              </p>
+            ) : null}
             <div className="caseslogs-modal-actions">
-              <button type="button" className="caseslogs-btn-ghost" onClick={() => setShowEdit(false)}>
+              <button type="button" className="caseslogs-btn-ghost" onClick={closeEdit} disabled={editSaving}>
                 Cancel
               </button>
-              <button type="button" className="caseslogs-btn-primary" onClick={handleUpdate}>
-                Save
+              <button type="button" className="caseslogs-btn-primary" onClick={handleUpdate} disabled={editSaving}>
+                {editSaving ? "Saving…" : "Save"}
               </button>
             </div>
           </div>
