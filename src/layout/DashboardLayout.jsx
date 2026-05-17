@@ -1,6 +1,6 @@
-import Sidebar from "../pages/Sidebar";
+import Sidebar from "./Sidebar";
 import { Outlet, useLocation } from "react-router-dom";
-import "../pages/Dashboard.css";
+import "@/styles/dashboard-shell.css";
 
 function DashboardLayout() {
   const { pathname } = useLocation();

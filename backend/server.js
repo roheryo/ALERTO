@@ -1,12 +1,19 @@
 import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { pool } from "./db.js";
-import { getWeatherForLocation } from "./weatherService.js";
+import { pool } from "./config/db.js";
+import { authMiddleware, signToken } from "./middleware/auth.js";
+import {
+  bootstrapSchema,
+  formatAutoPatientNumber,
+  normalizeCaseClassification,
+  persistCaseClassification,
+  persistPatientNumber
+} from "./bootstrap/schema.js";
+import { createWeatherRouter } from "./routes/weather.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -23,111 +30,6 @@ app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "64kb" }));
 
 const api = express.Router();
-
-/** Zero-padded incremental patient number when the form field is left blank. */
-function formatAutoPatientNumber(id) {
-  return String(id).padStart(6, "0");
-}
-
-/** Ensure patient_number exists (idempotent; matches database/09_patients_patient_number.sql). */
-async function ensurePatientNumberColumn() {
-  try {
-    await pool.query(
-      `ALTER TABLE patients ADD COLUMN patient_number VARCHAR(40) NULL DEFAULT NULL AFTER name`
-    );
-    await pool.query(
-      `UPDATE patients SET patient_number = LPAD(id, 6, '0')
-       WHERE patient_number IS NULL OR patient_number = ''`
-    );
-  } catch (err) {
-    if (err?.code !== "ER_DUP_FIELDNAME") {
-      console.warn("[ALERTO API] patient_number column check:", err.message);
-    }
-  }
-}
-
-async function persistPatientNumber(patientId, patientNumber) {
-  try {
-    await pool.query(`UPDATE patients SET patient_number = ? WHERE id = ?`, [patientNumber, patientId]);
-    return true;
-  } catch (err) {
-    if (err?.code === "ER_BAD_FIELD_ERROR") return false;
-    throw err;
-  }
-}
-
-/** Normalize Report Case caseClass to Suspect | Probable | Confirmed. */
-function normalizeCaseClassification(raw) {
-  const s = String(raw ?? "").trim().toLowerCase();
-  if (s === "suspect") return "Suspect";
-  if (s === "probable") return "Probable";
-  if (s === "confirmed") return "Confirmed";
-  const t = String(raw ?? "").trim();
-  return t ? t.slice(0, 40) : null;
-}
-
-/** Ensure case_classification exists (idempotent; matches database/08_patients_case_fields.sql). */
-async function ensureCaseClassificationColumn() {
-  try {
-    await pool.query(
-      `ALTER TABLE patients ADD COLUMN case_classification VARCHAR(40) NULL DEFAULT NULL AFTER disease_type`
-    );
-  } catch (err) {
-    if (err?.code !== "ER_DUP_FIELDNAME") {
-      console.warn("[ALERTO API] case_classification column check:", err.message);
-    }
-  }
-  try {
-    await pool.query(
-      `ALTER TABLE patients ADD COLUMN case_status VARCHAR(20) NOT NULL DEFAULT 'active' AFTER case_classification`
-    );
-  } catch (err) {
-    if (err?.code !== "ER_DUP_FIELDNAME") {
-      console.warn("[ALERTO API] case_status column check:", err.message);
-    }
-  }
-}
-
-async function persistCaseClassification(patientId, caseClassification) {
-  if (!caseClassification) return false;
-  try {
-    await pool.query(`UPDATE patients SET case_classification = ? WHERE id = ?`, [
-      caseClassification,
-      patientId
-    ]);
-    return true;
-  } catch (err) {
-    if (err?.code === "ER_BAD_FIELD_ERROR") return false;
-    throw err;
-  }
-}
-
-function signToken(userRow) {
-  return jwt.sign(
-    {
-      sub: userRow.id,
-      role: userRow.role,
-      provinceId: userRow.province_id,
-      municipalityId: userRow.municipality_id,
-      barangayId: userRow.barangay_id
-    },
-    JWT_SECRET,
-    { expiresIn: "12h" }
-  );
-}
-
-function authMiddleware(req, res, next) {
-  const h = req.headers.authorization ?? "";
-  const m = /^Bearer\s+(.+)$/i.exec(h);
-  if (!m) return res.status(401).json({ error: "Missing bearer token" });
-  try {
-    const payload = jwt.verify(m[1], JWT_SECRET);
-    req.auth = payload;
-    return next();
-  } catch {
-    return res.status(401).json({ error: "Invalid or expired token" });
-  }
-}
 
 api.post("/auth/login", async (req, res) => {
   try {
@@ -182,7 +84,7 @@ api.post("/auth/login", async (req, res) => {
     if (err?.code === "ER_BAD_DB_ERROR") {
       return res.status(503).json({
         error:
-          `Database "${process.env.DB_NAME ?? "ALERTO"}" does not exist. Create it and run the SQL scripts in database/.`
+          `Database "${process.env.DB_NAME ?? "ALERTO"}" does not exist. Create it and run the SQL scripts in database/migrations/.`
       });
     }
     if (err?.code === "ECONNREFUSED") {
@@ -237,31 +139,7 @@ api.get("/admin/barangay-accounts", authMiddleware, async (req, res) => {
   }
 });
 
-/**
- * Current weather for a municipality/barangay (proxied, cached server-side).
- * Set OPENWEATHER_API_KEY in backend/.env for OpenWeatherMap; otherwise Open-Meteo.
- */
-api.get("/weather", authMiddleware, async (req, res) => {
-  try {
-    const municipality = String(req.query.municipality ?? "").trim();
-    const barangay = String(req.query.barangay ?? "").trim();
-    if (!municipality) {
-      return res.status(400).json({ error: "Query parameter municipality is required" });
-    }
-
-    const result = await getWeatherForLocation({
-      municipality,
-      barangay: barangay || undefined
-    });
-    if (!result.ok) {
-      return res.status(result.status ?? 502).json({ error: result.error });
-    }
-    return res.json({ weather: result.data });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
+api.use("/weather", createWeatherRouter(authMiddleware));
 
 /**
  * Case log rows for dashboard / cases / reports (RBAC).
@@ -754,7 +632,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: "Server error" });
 });
 
-Promise.all([ensurePatientNumberColumn(), ensureCaseClassificationColumn()]).catch((err) => {
+bootstrapSchema().catch((err) => {
   console.warn("[ALERTO API] Schema bootstrap:", err.message);
 });
 

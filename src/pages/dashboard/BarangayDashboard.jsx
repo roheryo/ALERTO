@@ -8,8 +8,6 @@ import {
   syntheticWeeklyFromTotals,
   weeklyDiseaseCounts
 } from "../../lib/disease";
-import { formatWeatherProvider, getWeatherIcon } from "../../lib/weatherDisplay";
-
 import "./BarangayDashboard.css";
 
 function countByDisease(patients) {
@@ -30,7 +28,7 @@ function countByDisease(patients) {
  * Barangay-scoped dashboard: KPI totals and 4-week disease trend.
  * Only confirmed cases are counted (Suspect/Probable excluded for surveillance accuracy).
  */
-function BarangayDashboard({ patients = [], barangayName = "", municipalityName = "", weather = null }) {
+function BarangayDashboard({ patients = [], barangayName = "", municipalityName = "" }) {
   const confirmedPatients = useMemo(() => filterConfirmedPatients(patients), [patients]);
   const kpis = useMemo(() => countByDisease(confirmedPatients), [confirmedPatients]);
 
@@ -137,11 +135,6 @@ function BarangayDashboard({ patients = [], barangayName = "", municipalityName 
   );
 
   const scopeLine = [municipalityName, barangayName].filter(Boolean).join(" · ");
-  const hasWeather =
-    weather &&
-    !weather.loading &&
-    weather.condition !== "Unavailable" &&
-    (weather.temperature !== null || weather.humidity !== null);
 
   return (
     <section className="barangay-dash" aria-labelledby="barangay-dash-title">
@@ -157,25 +150,6 @@ function BarangayDashboard({ patients = [], barangayName = "", municipalityName 
           <p className="barangay-dash-scope">Confirmed cases only · real-time surveillance</p>
         )}
       </div>
-
-      {hasWeather ? (
-        <div className="barangay-dash-weather" aria-label="Current weather summary">
-          <span className="barangay-dash-weather-icon" aria-hidden="true">
-            {getWeatherIcon(weather.condition)}
-          </span>
-          <div className="barangay-dash-weather-body">
-            <span className="barangay-dash-weather-temp">
-              {weather.temperature !== null ? `${weather.temperature.toFixed(1)}°C` : "—"}
-            </span>
-            <span className="barangay-dash-weather-meta">
-              {weather.condition}
-              {weather.humidity !== null ? ` · ${weather.humidity}% humidity` : ""}
-              {" · "}
-              {formatWeatherProvider(weather.provider)}
-            </span>
-          </div>
-        </div>
-      ) : null}
 
       <div className="barangay-dash-kpis" role="list">
         <article className="barangay-kpi barangay-kpi--dengue" role="listitem">

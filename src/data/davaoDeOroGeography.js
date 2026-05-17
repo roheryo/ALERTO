@@ -1,6 +1,6 @@
 /**
  * Municipality → barangay names for Davao de Oro.
- * Mirrors database/02_seed_geography.sql (+ database/07_patch_barangays_geography.sql).
+ * Mirrors database/migrations/02_seed_geography.sql (+ 07_patch_barangays_geography.sql).
  */
 export const BARANGAY_BY_MUNICIPALITY = {
   Compostela: [

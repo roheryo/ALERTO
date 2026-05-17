@@ -1,11 +1,11 @@
-import "./Dashboard.css";
+import "@/styles/dashboard-shell.css";
 
-import logo from "../assets/images/ddoLOGO.jpg";
+import logo from "@/assets/images/ddoLOGO.jpg";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
-import { useAuth } from "../context/AuthContext";
-import { sessionUserFromAuth } from "../lib/authUser";
+import { useAuth } from "@/context/AuthContext";
+import { sessionUserFromAuth } from "@/lib/authUser";
 
 import {
   BarChart,
@@ -16,11 +16,11 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
-import { filterConfirmedPatients, normalizeDisease } from "../lib/disease";
-import { usePatients } from "../hooks/usePatients";
-import { useAccountWeather } from "../hooks/useAccountWeather";
-import LiveWeatherCard from "../components/weather/LiveWeatherCard";
-import BarangayDashboard from "./dashboard/BarangayDashboard";
+import { filterConfirmedPatients, normalizeDisease } from "@/lib/disease";
+import { usePatients } from "@/hooks/usePatients";
+import { useAccountWeather } from "@/hooks/useAccountWeather";
+import LiveWeatherCard from "@/components/weather/LiveWeatherCard";
+import BarangayDashboard from "./BarangayDashboard";
 
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
@@ -205,7 +205,6 @@ function Dashboard() {
                 patients={barangayPatients}
                 barangayName={String(user?.barangay ?? "").trim()}
                 municipalityName={String(user?.municipality ?? "").trim()}
-                weather={weather}
               />
             ) : null}
           </>

@@ -1,14 +1,14 @@
 import "./CasesLogs.css";
-import "./Dashboard.css";
-import logo from "../assets/images/ddoLOGO.JPG";
+import "@/styles/dashboard-shell.css";
+import logo from "@/assets/images/ddoLOGO.jpg";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
-import { useAuth } from "../context/AuthContext";
-import { sessionUserFromAuth } from "../lib/authUser";
-import { usePatients, PATIENTS_CHANGED_EVENT } from "../hooks/usePatients";
-import { normalizeDisease } from "../lib/disease";
-import { apiFetch } from "../lib/api";
+import { useAuth } from "@/context/AuthContext";
+import { sessionUserFromAuth } from "@/lib/authUser";
+import { usePatients, PATIENTS_CHANGED_EVENT } from "@/hooks/usePatients";
+import { normalizeDisease } from "@/lib/disease";
+import { apiFetch } from "@/lib/api";
 
 const MUNICIPALITY_DATA = {
   Nabunturan: ["Basak", "Bayabas", "Bukal", "Cabidianan", "Katipunan", "Magsaysay", "San Isidro", "San Vicente"],

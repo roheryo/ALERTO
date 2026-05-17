@@ -4,7 +4,8 @@ import dotenv from "dotenv";
 import mysql from "mysql2/promise";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, ".env") });
+// .env lives in backend/ (one level up from config/)
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 function createPool(password) {
   return mysql.createPool({

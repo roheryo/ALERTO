@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
-import "./Dashboard.css";
+import "@/styles/dashboard-shell.css";
 import "./Notification.css";
-import logo from "../assets/images/ddoLOGO.jpg";
-import { fetchWeatherForLocation, WEATHER_MUNICIPALITY_NAMES } from "../lib/weatherClient";
-import { useAuth } from "../context/AuthContext";
-import { sessionUserFromAuth } from "../lib/authUser";
+import logo from "@/assets/images/ddoLOGO.jpg";
+import { fetchWeatherForLocation, WEATHER_MUNICIPALITY_NAMES } from "@/lib/weatherClient";
+import { useAuth } from "@/context/AuthContext";
+import { sessionUserFromAuth } from "@/lib/authUser";
 
 const RISK_THRESHOLD = {
   Dengue: 10,

@@ -1,5 +1,5 @@
 -- Facility patient number / ID from report case form (PatientNumber field).
--- Run once on existing DB: mysql ... < database/09_patients_patient_number.sql
+-- Run once on existing DB: mysql ... < database/migrations/09_patients_patient_number.sql
 
 USE ALERTO;
 

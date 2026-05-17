@@ -11,7 +11,7 @@ import {
 
 import "./Sidebar.css";
 import { useAuth } from "../context/AuthContext";
-import LogoutConfirmModal from "../components/LogoutConfirmModal";
+import LogoutConfirmModal from "../components/common/LogoutConfirmModal";
 
 function initialsFromUser(user) {
   const name = String(user?.fullName ?? user?.username ?? "U").trim();

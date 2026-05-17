@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
-import logo from "../../assets/images/ddoLOGO.jpg";
-import "../../pages/Dashboard.css";
+import logo from "@/assets/images/ddoLOGO.jpg";
+import "@/styles/dashboard-shell.css";
 import "./ReportCaseForm.css";
 import FormDateInput from "./FormDateInput";
 import { useAuth } from "../../context/AuthContext";
