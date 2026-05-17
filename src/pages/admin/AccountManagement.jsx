@@ -1,6 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
-import { useAuth } from "../../context/AuthContext";
-import { apiFetch } from "../../lib/api";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { FaBell } from "react-icons/fa";
+
+import logo from "@/assets/images/ddoLOGO.jpg";
+import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/lib/api";
+import "@/styles/dashboard-shell.css";
 import "./AccountManagement.css";
 
 function PasswordResetRow({ token, account, readOnly, onDone }) {
@@ -35,31 +40,72 @@ function PasswordResetRow({ token, account, readOnly, onDone }) {
 
   return (
     <tr>
-      <td>{account.username}</td>
+      <td className="am-cell-username">{account.username}</td>
       <td>{account.fullName}</td>
       <td>{account.municipalityName ?? "—"}</td>
       <td>{account.barangayName ?? "—"}</td>
-      <td>
+      <td className="am-cell-password">
         {readOnly ? (
-          <span className="am-readonly">View only</span>
+          <span className="am-badge am-badge--muted">View only</span>
         ) : (
           <form className="am-reset-form" onSubmit={submit}>
             <input
               type="password"
               autoComplete="new-password"
               placeholder="New password"
+              className="am-reset-input"
               value={pw}
               onChange={(e) => setPw(e.target.value)}
               disabled={busy}
+              aria-label={`New password for ${account.username}`}
             />
-            <button type="submit" disabled={busy}>
-              {busy ? "…" : "Save"}
+            <button type="submit" className="am-reset-btn" disabled={busy}>
+              {busy ? "Saving…" : "Save"}
             </button>
-            {msg ? <span className="am-msg">{msg}</span> : null}
+            {msg ? (
+              <span className={`am-msg${msg.includes("updated") ? " am-msg--ok" : " am-msg--err"}`}>
+                {msg}
+              </span>
+            ) : null}
           </form>
         )}
       </td>
     </tr>
+  );
+}
+
+function AccountTable({ accounts, token, readOnly, onDone, emptyMessage }) {
+  if (!accounts.length) {
+    return <p className="am-empty">{emptyMessage}</p>;
+  }
+
+  return (
+    <div className="am-table-card">
+      <div className="am-table-scroll">
+        <table className="am-table">
+          <thead>
+            <tr>
+              <th scope="col">Username</th>
+              <th scope="col">Display name</th>
+              <th scope="col">Municipality</th>
+              <th scope="col">Barangay</th>
+              <th scope="col">Password</th>
+            </tr>
+          </thead>
+          <tbody>
+            {accounts.map((a) => (
+              <PasswordResetRow
+                key={a.id}
+                token={token}
+                account={a}
+                readOnly={readOnly}
+                onDone={onDone}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -77,13 +123,10 @@ export default function AccountManagement() {
     setLoadError("");
     try {
       if (user.role === "province") {
-        const [mun, brgy] = await Promise.all([
-          apiFetch("/admin/municipality-accounts", { token }),
-          apiFetch("/admin/barangay-accounts", { token })
-        ]);
+        const mun = await apiFetch("/admin/municipality-accounts", { token });
         setMuniAccounts(mun.accounts ?? []);
-        setBrgyAccounts(brgy.accounts ?? []);
-        setBrgyReadOnly(Boolean(brgy.readOnly));
+        setBrgyAccounts([]);
+        setBrgyReadOnly(false);
       } else if (user.role === "municipality") {
         const brgy = await apiFetch("/admin/barangay-accounts", { token });
         setMuniAccounts([]);
@@ -101,92 +144,130 @@ export default function AccountManagement() {
     load();
   }, [load]);
 
-  const title =
-    user?.role === "province"
-      ? "Account management (Province)"
-      : "Account management (Municipality)";
+  const isProvince = user?.role === "province";
+  const officeLabel = isProvince ? "Provincial Health Office" : "Municipal Health Office";
+
+  const headerSubline = isProvince
+    ? "Province · rotate municipality account passwords in Davao de Oro"
+    : "Municipality · rotate barangay BHU passwords in your jurisdiction";
+
+  const kpis = useMemo(
+    () => ({
+      municipalities: muniAccounts.length,
+      barangays: brgyAccounts.length
+    }),
+    [muniAccounts.length, brgyAccounts.length]
+  );
 
   return (
     <div className="am-page">
-      <div className="am-header">
-        <h2>{title}</h2>
-        <p className="am-sub">
-          Accounts are not self-registered. Use this screen only to rotate passwords for
-          accounts in your jurisdiction.
-        </p>
+      <header className="dashboard-header">
+        <div>
+          <h2 className="header-title">Account management</h2>
+          <p className="header-subline">{headerSubline}</p>
+        </div>
+        <div className="header-right">
+          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
+            <FaBell />
+          </Link>
+          <div className="header-text">
+            <h3>Davao de Oro</h3>
+            <p>{officeLabel}</p>
+          </div>
+          <img src={logo} alt="Davao de Oro logo" className="header-logo" />
+        </div>
+      </header>
+
+      <div className="am-main">
+        <section className="am-scope" aria-label="Account management overview">
+          <div className="am-scope-copy">
+            <p className="am-scope-title">Jurisdiction</p>
+            <p className="am-scope-value">
+              {isProvince ? "Davao de Oro Province" : String(user?.municipalityName ?? "Municipality").trim()}
+            </p>
+            <p className="am-scope-hint">
+              Accounts are not self-registered. Use this screen only to rotate passwords for accounts in
+              your jurisdiction.
+            </p>
+          </div>
+          <div className="am-kpis" aria-label="Account counts">
+            {isProvince ? (
+              <div className="am-kpi">
+                <div className="am-kpi-label">Municipalities</div>
+                <div className="am-kpi-value">{loading ? "—" : kpis.municipalities}</div>
+              </div>
+            ) : (
+              <div className="am-kpi">
+                <div className="am-kpi-label">Barangays</div>
+                <div className="am-kpi-value">{loading ? "—" : kpis.barangays}</div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {loading ? (
+          <p className="am-status" role="status">
+            Loading accounts…
+          </p>
+        ) : null}
+
+        {loadError ? (
+          <p className="am-status am-status--error" role="alert">
+            {loadError}
+          </p>
+        ) : null}
+
+        {isProvince && !loading && !loadError ? (
+          <section className="am-section" aria-labelledby="am-muni-heading">
+            <div className="am-section-head">
+              <div>
+                <h3 id="am-muni-heading" className="am-section-title">
+                  Municipality accounts
+                </h3>
+                <p className="am-section-hint">
+                  Reset passwords for municipality accounts in Davao de Oro. Barangay passwords are
+                  managed by each municipality.
+                </p>
+              </div>
+              <span className="am-section-count">{muniAccounts.length} accounts</span>
+            </div>
+            <AccountTable
+              accounts={muniAccounts}
+              token={token}
+              readOnly={false}
+              onDone={load}
+              emptyMessage="No municipality accounts found."
+            />
+          </section>
+        ) : null}
+
+        {!loading && !loadError && user?.role === "municipality" ? (
+          <section className="am-section" aria-labelledby="am-brgy-heading">
+            <div className="am-section-head">
+              <div>
+                <h3 id="am-brgy-heading" className="am-section-title">
+                  Barangay accounts
+                </h3>
+                <p className="am-section-hint">
+                  One account exists per barangay. Set a new password when a barangay user is locked out
+                  or rotated.
+                </p>
+              </div>
+              <span className="am-section-count">
+                {brgyAccounts.length} accounts
+                {brgyReadOnly ? " · read-only" : ""}
+              </span>
+            </div>
+            <AccountTable
+              accounts={brgyAccounts}
+              token={token}
+              readOnly={brgyReadOnly}
+              onDone={load}
+              emptyMessage="No barangay accounts found."
+            />
+          </section>
+        ) : null}
       </div>
-
-      {loading ? <p className="am-muted">Loading…</p> : null}
-      {loadError ? <p className="am-error">{loadError}</p> : null}
-
-      {user?.role === "province" && !loading ? (
-        <section className="am-section">
-          <h3>Municipality accounts</h3>
-          <p className="am-hint">
-            You may reset passwords for municipality accounts in Davao de Oro. Barangay
-            passwords are managed by each municipality.
-          </p>
-          <div className="am-table-wrap">
-            <table className="am-table">
-              <thead>
-                <tr>
-                  <th>Username</th>
-                  <th>Display name</th>
-                  <th>Municipality</th>
-                  <th>Barangay</th>
-                  <th>Password</th>
-                </tr>
-              </thead>
-              <tbody>
-                {muniAccounts.map((a) => (
-                  <PasswordResetRow
-                    key={a.id}
-                    token={token}
-                    account={a}
-                    readOnly={false}
-                    onDone={load}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ) : null}
-
-      {!loading && (user?.role === "municipality" || user?.role === "province") ? (
-        <section className="am-section">
-          <h3>Barangay accounts</h3>
-          <p className="am-hint">
-            {brgyReadOnly
-              ? "Province oversight: read-only list of all barangay logins in the province."
-              : "One account exists per barangay. Set a new password when a barangay user is locked out or rotated."}
-          </p>
-          <div className="am-table-wrap">
-            <table className="am-table">
-              <thead>
-                <tr>
-                  <th>Username</th>
-                  <th>Display name</th>
-                  <th>Municipality</th>
-                  <th>Barangay</th>
-                  <th>Password</th>
-                </tr>
-              </thead>
-              <tbody>
-                {brgyAccounts.map((a) => (
-                  <PasswordResetRow
-                    key={a.id}
-                    token={token}
-                    account={a}
-                    readOnly={brgyReadOnly}
-                    onDone={load}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }

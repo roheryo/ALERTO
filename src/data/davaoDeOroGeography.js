@@ -276,9 +276,32 @@ export const BARANGAY_BY_MUNICIPALITY = {
   ]
 };
 
+/** Match municipality name to a key in BARANGAY_BY_MUNICIPALITY (case-insensitive). */
+export function resolveMunicipalityKey(municipality) {
+  const n = String(municipality ?? "").trim();
+  if (!n) return "";
+  const exact = Object.keys(BARANGAY_BY_MUNICIPALITY).find(
+    (k) => k.toLowerCase() === n.toLowerCase()
+  );
+  return exact ?? n;
+}
+
+/** All municipality names in Davao de Oro (sorted). */
+export function listProvinceMunicipalities() {
+  return Object.keys(BARANGAY_BY_MUNICIPALITY).sort((a, b) =>
+    a.localeCompare(b, "en", { sensitivity: "base" })
+  );
+}
+
+/** Total barangay count across the province. */
+export function provinceBarangayCount() {
+  return Object.values(BARANGAY_BY_MUNICIPALITY).reduce((n, list) => n + list.length, 0);
+}
+
 /** Barangay names for a municipality (sorted for stable dropdown order). */
 export function barangaysForMunicipality(municipality) {
-  const list = BARANGAY_BY_MUNICIPALITY[String(municipality ?? "").trim()];
+  const key = resolveMunicipalityKey(municipality);
+  const list = BARANGAY_BY_MUNICIPALITY[key];
   if (!list?.length) return [];
   return [...list].sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }));
 }

@@ -5,6 +5,8 @@
 -- re-run it after the geography patch to insert only missing municipality /
 -- barangay users without duplicating the province admin.
 --
+-- Usernames are derived from full_name / place names (see 10_users_username_from_fullname.sql).
+--
 -- Default password for ALL seeded accounts: password
 -- bcrypt hash below is generated with bcryptjs (same library as backend) — bcrypt.compare('password', hash) === true.
 -- Replace hashes and rotate credentials before production.
@@ -22,14 +24,14 @@ SELECT
   'Davao de Oro Province Administrator',
   'province.admin@alerto.local',
   '09170000000',
-  'ddo_province_admin',
+  'davao_de_oro_province_administrator',
   @hash,
   'province',
   NULL,
   (SELECT id FROM provinces WHERE name = 'Davao de Oro' LIMIT 1),
   NULL,
   NULL
-WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'ddo_province_admin');
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE role = 'province');
 
 -- One municipality account per municipality (managed by province user)
 INSERT INTO users (
@@ -40,10 +42,22 @@ SELECT
   CONCAT(m.name, ' — Municipality'),
   CONCAT('muni.', m.id, '@alerto.local'),
   '09170000000',
-  CONCAT('muni_', m.id),
+  CONCAT(
+    LOWER(
+      TRIM(
+        BOTH '_'
+        FROM REGEXP_REPLACE(
+          REGEXP_REPLACE(m.name, '[^a-zA-Z0-9]+', '_'),
+          '_+',
+          '_'
+        )
+      )
+    ),
+    '_municipality'
+  ),
   @hash,
   'municipality',
-  (SELECT id FROM users WHERE username = 'ddo_province_admin' LIMIT 1),
+  (SELECT id FROM users WHERE role = 'province' LIMIT 1),
   m.province_id,
   m.id,
   NULL
@@ -63,7 +77,29 @@ SELECT
   CONCAT(b.name, ' — Barangay'),
   CONCAT('brgy.', b.id, '@alerto.local'),
   '09990000000',
-  CONCAT('brgy_', b.id),
+  CONCAT(
+    LOWER(
+      TRIM(
+        BOTH '_'
+        FROM REGEXP_REPLACE(
+          REGEXP_REPLACE(mun.name, '[^a-zA-Z0-9]+', '_'),
+          '_+',
+          '_'
+        )
+      )
+    ),
+    '_',
+    LOWER(
+      TRIM(
+        BOTH '_'
+        FROM REGEXP_REPLACE(
+          REGEXP_REPLACE(b.name, '[^a-zA-Z0-9]+', '_'),
+          '_+',
+          '_'
+        )
+      )
+    )
+  ),
   @hash,
   'barangay',
   mu.id,

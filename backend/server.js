@@ -280,7 +280,7 @@ api.get("/patients", authMiddleware, async (req, res) => {
 });
 
 /**
- * Create a new case (barangay / municipality / province — same geography rules as GET /patients).
+ * Create a new case (barangay BHU encoding only).
  */
 api.post("/patients", authMiddleware, async (req, res) => {
   try {
@@ -303,8 +303,8 @@ api.post("/patients", authMiddleware, async (req, res) => {
       return res.status(400).json({ error: "Municipality and barangay are required" });
     }
 
-    if (role !== "barangay" && role !== "municipality" && role !== "province") {
-      return res.status(403).json({ error: "Forbidden" });
+    if (role !== "barangay") {
+      return res.status(403).json({ error: "Only barangay accounts can report new cases" });
     }
 
     let scopeProvinceId = provinceId;
@@ -534,6 +534,60 @@ api.patch("/patients/:id", authMiddleware, async (req, res) => {
     }
 
     return res.json({ ok: true, id: patientId, caseClassification });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+/**
+ * Permanently delete a case (same RBAC scope as GET /patients).
+ */
+api.delete("/patients/:id", authMiddleware, async (req, res) => {
+  try {
+    const patientId = Number(req.params.id);
+    if (!Number.isFinite(patientId) || patientId < 1) {
+      return res.status(400).json({ error: "Invalid patient id" });
+    }
+
+    const { role, provinceId, municipalityId, barangayId, sub: userId } = req.auth;
+
+    let scopeWhere = "WHERE p.id = ?";
+    const scopeParams = [patientId];
+
+    if (role === "barangay") {
+      if (!barangayId) return res.status(403).json({ error: "Barangay scope missing" });
+      scopeWhere += " AND (p.barangay_id = ? OR p.created_by = ?)";
+      scopeParams.push(barangayId, userId);
+    } else if (role === "municipality") {
+      if (!municipalityId) return res.status(403).json({ error: "Municipality scope missing" });
+      scopeWhere += " AND (p.municipality_id = ? OR p.created_by = ?)";
+      scopeParams.push(municipalityId, userId);
+    } else if (role === "province") {
+      if (!provinceId) return res.status(403).json({ error: "Province scope missing" });
+      scopeWhere += " AND m.province_id = ?";
+      scopeParams.push(provinceId);
+    } else {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT p.id
+       FROM patients p
+       JOIN municipalities m ON m.id = p.municipality_id
+       JOIN barangays b ON b.id = p.barangay_id
+       ${scopeWhere}
+       LIMIT 1`,
+      scopeParams
+    );
+    if (!rows[0]) return res.status(404).json({ error: "Case not found" });
+
+    const [result] = await pool.query("DELETE FROM patients WHERE id = ?", [patientId]);
+    if (!result.affectedRows) {
+      return res.status(404).json({ error: "Case not found" });
+    }
+
+    return res.json({ ok: true, id: patientId });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Server error" });

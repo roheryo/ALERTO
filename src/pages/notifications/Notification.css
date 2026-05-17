@@ -9,7 +9,7 @@
   min-width: 0;
 }
 
-/* Padded column below the blue bar — header stays full width like Dashboard / Cases Logs */
+/* Padded column below the blue bar — header stays full width like Dashboard / Case Logs */
 .notify-body {
   box-sizing: border-box;
   padding: 12px 22px 22px;

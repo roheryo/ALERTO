@@ -61,6 +61,49 @@ function caseClassSelectValue(raw) {
   return d === "—" ? "" : d;
 }
 
+function dateSortTime(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s || s === "—") return null;
+  const t = new Date(s).getTime();
+  return Number.isFinite(t) ? t : null;
+}
+
+function comparePatientIds(a, b) {
+  const av = displayPatientId(a);
+  const bv = displayPatientId(b);
+  const aEmpty = av === "—";
+  const bEmpty = bv === "—";
+  if (aEmpty && bEmpty) return 0;
+  if (aEmpty) return 1;
+  if (bEmpty) return -1;
+  const an = Number(a?.id);
+  const bn = Number(b?.id);
+  if (!a?.patientNumber?.trim() && !b?.patientNumber?.trim() && Number.isFinite(an) && Number.isFinite(bn)) {
+    return an - bn;
+  }
+  return av.localeCompare(bv, "en", { sensitivity: "base", numeric: true });
+}
+
+function compareDates(a, b) {
+  const at = dateSortTime(a);
+  const bt = dateSortTime(b);
+  if (at == null && bt == null) return 0;
+  if (at == null) return 1;
+  if (bt == null) return -1;
+  return at - bt;
+}
+
+function compareStrings(a, b) {
+  const av = String(a ?? "").trim();
+  const bv = String(b ?? "").trim();
+  const aEmpty = !av || av === "—";
+  const bEmpty = !bv || bv === "—";
+  if (aEmpty && bEmpty) return 0;
+  if (aEmpty) return 1;
+  if (bEmpty) return -1;
+  return av.localeCompare(bv, "en", { sensitivity: "base" });
+}
+
 function CasesLogs() {
   const [selectedMunicipality, setSelectedMunicipality] = useState("");
   const [barangayOptions, setBarangayOptions] = useState([]);
@@ -68,6 +111,8 @@ function CasesLogs() {
   const [selectedDisease, setSelectedDisease] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortKey, setSortKey] = useState(null);
+  const [sortDir, setSortDir] = useState("asc");
 
   const { patients: remotePatients, loading, error, refetch } = usePatients();
   const [patients, setPatients] = useState([]);
@@ -83,6 +128,9 @@ function CasesLogs() {
   const [editCaseClass, setEditCaseClass] = useState("");
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [deleteError, setDeleteError] = useState(null);
 
   const { user: authUser, token } = useAuth();
   const user = sessionUserFromAuth(authUser);
@@ -157,6 +205,47 @@ function CasesLogs() {
     return list;
   }, [scopedPatients, roleKey, selectedMunicipality, selectedBarangay, selectedDisease, statusFilter, searchTerm]);
 
+  const sortedPatients = useMemo(() => {
+    if (!sortKey) return visiblePatients;
+    const list = [...visiblePatients];
+    const dir = sortDir === "asc" ? 1 : -1;
+    list.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "patientId") cmp = comparePatientIds(a, b);
+      else if (sortKey === "dateStarted") cmp = compareDates(a.dateStarted, b.dateStarted);
+      else if (sortKey === "municipality") cmp = compareStrings(a.municipality, b.municipality);
+      else if (sortKey === "barangay") cmp = compareStrings(a.barangay, b.barangay);
+      return dir * cmp;
+    });
+    return list;
+  }, [visiblePatients, sortKey, sortDir]);
+
+  const toggleSort = useCallback((key) => {
+    const defaultDir = key === "dateStarted" ? "desc" : "asc";
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(defaultDir);
+    }
+  }, [sortKey]);
+
+  const sortIndicator = useCallback(
+    (key) => {
+      if (sortKey !== key) return "";
+      return sortDir === "asc" ? " ↑" : " ↓";
+    },
+    [sortKey, sortDir]
+  );
+
+  const sortAria = useCallback(
+    (key) => {
+      if (sortKey !== key) return "none";
+      return sortDir === "asc" ? "ascending" : "descending";
+    },
+    [sortKey, sortDir]
+  );
+
   const kpi = useMemo(() => {
     let d = 0;
     let i = 0;
@@ -218,9 +307,45 @@ function CasesLogs() {
     setEditError(null);
   };
 
-  const handleDelete = (id) => {
-    if (!window.confirm("Are you sure you want to delete this case from the list?")) return;
-    setPatients((prev) => prev.filter((p) => p.id !== id));
+  const openDeleteConfirm = (patient) => {
+    if (patient?.id == null) return;
+    setDeleteTarget(patient);
+    setDeleteError(null);
+  };
+
+  const closeDeleteConfirm = () => {
+    if (deletingId != null) return;
+    setDeleteTarget(null);
+    setDeleteError(null);
+  };
+
+  const confirmDelete = async () => {
+    const patient = deleteTarget;
+    const id = patient?.id;
+    if (id == null || !token) return;
+
+    setDeletingId(id);
+    setDeleteError(null);
+    try {
+      await apiFetch(`/patients/${id}`, { token, method: "DELETE" });
+      setPatients((prev) => prev.filter((p) => p.id !== id));
+      if (selectedPatient?.id === id) {
+        setShowView(false);
+        setSelectedPatient(null);
+      }
+      if (editPatient?.id === id) {
+        closeEdit();
+      }
+      setDeleteTarget(null);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event(PATIENTS_CHANGED_EVENT));
+      }
+      await refetch();
+    } catch (e) {
+      setDeleteError(e?.message ?? "Failed to delete case");
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const handleUpdate = async () => {
@@ -255,7 +380,7 @@ function CasesLogs() {
   return (
     <div className="caseslogs-page">
       <header className="dashboard-header">
-        <h2 className="header-title">Cases Logs</h2>
+        <h2 className="header-title">Case Logs</h2>
         <div className="header-right">
           <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
             <FaBell />
@@ -377,24 +502,55 @@ function CasesLogs() {
             </button>
           </div>
         ) : null}
-
         {!loading && !error ? (
           <div className="caseslogs-table-card">
             <div className="caseslogs-table-scroll">
               <table className="caseslogs-table">
                 <thead>
                   <tr>
-                    <th>Patient ID/No.</th>
+                    <th aria-sort={sortAria("patientId")}>
+                      <button
+                        type="button"
+                        className="caseslogs-sort-btn"
+                        onClick={() => toggleSort("patientId")}
+                      >
+                        Patient ID/No.{sortIndicator("patientId")}
+                      </button>
+                    </th>
                     <th>Disease</th>
-                    <th>Date of Onset</th>
+                    <th aria-sort={sortAria("dateStarted")}>
+                      <button
+                        type="button"
+                        className="caseslogs-sort-btn"
+                        onClick={() => toggleSort("dateStarted")}
+                      >
+                        Date of Onset{sortIndicator("dateStarted")}
+                      </button>
+                    </th>
                     <th>Case Classification</th>
-                    <th>Municipality</th>
-                    <th>Barangay</th>
+                    <th aria-sort={sortAria("municipality")}>
+                      <button
+                        type="button"
+                        className="caseslogs-sort-btn"
+                        onClick={() => toggleSort("municipality")}
+                      >
+                        Municipality{sortIndicator("municipality")}
+                      </button>
+                    </th>
+                    <th aria-sort={sortAria("barangay")}>
+                      <button
+                        type="button"
+                        className="caseslogs-sort-btn"
+                        onClick={() => toggleSort("barangay")}
+                      >
+                        Barangay{sortIndicator("barangay")}
+                      </button>
+                    </th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {visiblePatients.length === 0 ? (
+                  {sortedPatients.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="caseslogs-empty">
                         <strong>No cases match your filters</strong>
@@ -402,7 +558,7 @@ function CasesLogs() {
                       </td>
                     </tr>
                   ) : (
-                    visiblePatients.map((p) => {
+                    sortedPatients.map((p) => {
                       const dTok = normalizeDisease(p.diseaseType);
                       return (
                         <tr key={p.id}>
@@ -422,7 +578,12 @@ function CasesLogs() {
                               <button type="button" className="caseslogs-btn-ghost" onClick={() => handleEdit(p)}>
                                 Edit
                               </button>
-                              <button type="button" className="caseslogs-btn-danger" onClick={() => handleDelete(p.id)}>
+                              <button
+                                type="button"
+                                className="caseslogs-btn-danger"
+                                onClick={() => openDeleteConfirm(p)}
+                                disabled={deletingId === p.id}
+                              >
                                 Delete
                               </button>
                             </div>
@@ -473,6 +634,62 @@ function CasesLogs() {
             <div className="caseslogs-modal-actions">
               <button type="button" className="caseslogs-btn-primary" onClick={() => setShowView(false)}>
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div
+          className="caseslogs-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cases-delete-title"
+          onClick={closeDeleteConfirm}
+        >
+          <div
+            className="caseslogs-modal caseslogs-modal--delete"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="cases-delete-title">Delete case permanently?</h3>
+            <p className="caseslogs-delete-lead">
+              This removes the reported case from the database. It cannot be undone and will disappear from
+              dashboards and surveillance views.
+            </p>
+            <dl className="caseslogs-modal-dl caseslogs-modal-dl--readonly">
+              <dt>Patient ID/No.</dt>
+              <dd>{displayPatientId(deleteTarget)}</dd>
+              <dt>Name</dt>
+              <dd>{deleteTarget.name ?? "—"}</dd>
+              <dt>Disease</dt>
+              <dd>{diseaseLabel(normalizeDisease(deleteTarget.diseaseType))}</dd>
+              <dt>Municipality</dt>
+              <dd>{deleteTarget.municipality ?? "—"}</dd>
+              <dt>Barangay</dt>
+              <dd>{deleteTarget.barangay ?? "—"}</dd>
+            </dl>
+            {deleteError ? (
+              <p className="caseslogs-edit-error" role="alert">
+                {deleteError}
+              </p>
+            ) : null}
+            <div className="caseslogs-modal-actions">
+              <button
+                type="button"
+                className="caseslogs-btn-ghost"
+                onClick={closeDeleteConfirm}
+                disabled={deletingId != null}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="caseslogs-btn-danger caseslogs-btn-danger--confirm"
+                onClick={confirmDelete}
+                disabled={deletingId != null}
+              >
+                {deletingId != null ? "Deleting…" : "Delete permanently"}
               </button>
             </div>
           </div>
