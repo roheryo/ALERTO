@@ -7,3 +7,8 @@ export function sessionUserFromAuth(user) {
     barangay: user.barangayName ?? user.barangay ?? ""
   };
 }
+
+/** Report Case encoding is limited to barangay BHU accounts. */
+export function userCanReportCase(user) {
+  return user?.role === "barangay";
+}
