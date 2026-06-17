@@ -11,9 +11,11 @@ import {
   formatAutoPatientNumber,
   normalizeCaseClassification,
   persistCaseClassification,
+  persistCaseEnvironment,
   persistPatientNumber
 } from "./bootstrap/schema.js";
 import { createWeatherRouter } from "./routes/weather.js";
+import { createForecastsRouter } from "./routes/forecasts.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -140,6 +142,7 @@ api.get("/admin/barangay-accounts", authMiddleware, async (req, res) => {
 });
 
 api.use("/weather", createWeatherRouter(authMiddleware));
+api.use("/forecasts", createForecastsRouter(authMiddleware));
 
 /**
  * Case log rows for dashboard / cases / reports (RBAC).
@@ -469,6 +472,10 @@ api.post("/patients", authMiddleware, async (req, res) => {
     }
     await persistCaseClassification(newId, caseClassification);
 
+    if (b.environment && typeof b.environment === "object") {
+      await persistCaseEnvironment(newId, b.environment);
+    }
+
     const year = dateStarted.slice(0, 4) || String(new Date().getFullYear());
     const caseRef = `DDO-${year}-${newId}`;
 
@@ -531,6 +538,10 @@ api.patch("/patients/:id", authMiddleware, async (req, res) => {
     const saved = await persistCaseClassification(patientId, caseClassification);
     if (!saved) {
       return res.status(503).json({ error: "Case classification could not be saved (database schema)" });
+    }
+
+    if (req.body?.environment && typeof req.body.environment === "object") {
+      await persistCaseEnvironment(patientId, req.body.environment);
     }
 
     return res.json({ ok: true, id: patientId, caseClassification });
