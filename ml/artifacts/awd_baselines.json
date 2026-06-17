@@ -1,0 +1,160 @@
+{
+  "disease": "AWD",
+  "test_rows": 286,
+  "naive": {
+    "mape": 0.0,
+    "rmse": 0.0,
+    "mae": 0.0,
+    "per_horizon": [
+      {
+        "step": 1,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 2,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 3,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 4,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      }
+    ]
+  },
+  "ridge": {
+    "mape": 0.0,
+    "rmse": 0.0,
+    "mae": 0.0,
+    "per_horizon": [
+      {
+        "step": 1,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 2,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 3,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 4,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      }
+    ]
+  },
+  "svr": {
+    "mape": 0.0,
+    "rmse": 0.0,
+    "mae": 0.0,
+    "per_horizon": [
+      {
+        "step": 1,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 2,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 3,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 4,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      }
+    ]
+  },
+  "arima": {
+    "mape": 0.0,
+    "rmse": 0.0,
+    "mae": 0.0,
+    "per_horizon": [
+      {
+        "step": 1,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 2,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 3,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 4,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      }
+    ],
+    "rows": 286
+  },
+  "lstm": {
+    "mape": 0.0,
+    "rmse": 0.0,
+    "mae": 0.0,
+    "per_horizon": [
+      {
+        "step": 1,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 2,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 3,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      },
+      {
+        "step": 4,
+        "mape": 0.0,
+        "rmse": 0.0,
+        "mae": 0.0
+      }
+    ]
+  }
+}

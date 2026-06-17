@@ -1,0 +1,26 @@
+# ALERTO ML stack (PyTorch — Python 3.11+ on Windows/Linux).
+# The repo's ml/.venv is already provisioned with these; this file lets
+# collaborators reproduce the environment via `pip install -r requirements.txt`.
+
+# Core deep learning
+torch>=2.2
+
+# Data + numerics
+numpy>=1.26
+pandas>=2.1
+
+# Scaler + classical baselines (Ridge, SVR)
+scikit-learn>=1.4
+joblib>=1.3
+
+# Config
+PyYAML>=6.0
+
+# Inference service
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.5
+
+# Optional: ARIMA baseline (thesis §2.5). evaluate_baselines.py auto-skips
+# when missing, but installing it gives a full benchmark table.
+statsmodels>=0.14
