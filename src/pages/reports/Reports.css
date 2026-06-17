@@ -135,8 +135,25 @@
   cursor: pointer;
 }
 
-.toolbar-btn:hover {
+.toolbar-btn:hover:not(:disabled) {
   filter: brightness(0.95);
+}
+
+.toolbar-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.toolbar-export {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.toolbar-btn--excel {
+  border-color: #166534;
+  background: #15803d;
 }
 
 .toolbar-dates .toolbar-field:nth-child(2) input,

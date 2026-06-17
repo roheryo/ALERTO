@@ -70,8 +70,8 @@ export default function MunicipalForecastCard({ diseaseFilter = "DENGUE" }) {
   if (skip) {
     return (
       <section className="muni-panel muni-forecast" aria-label="LSTM forecast">
-        <header className="muni-section-head muni-section-head--compact">
-          <div>
+        <header className="muni-section-head muni-section-head--compact muni-section-head--centered">
+          <div className="muni-section-head-copy">
             <p className="muni-section-kicker">LSTM forecast · 4-week horizon</p>
             <h3>Outbreak forecast</h3>
             <p className="muni-section-sub">
@@ -85,16 +85,12 @@ export default function MunicipalForecastCard({ diseaseFilter = "DENGUE" }) {
 
   return (
     <section className="muni-panel muni-forecast" aria-label="LSTM forecast">
-      <header className="muni-section-head muni-section-head--compact">
-        <div>
+      <header className="muni-section-head muni-section-head--compact muni-section-head--centered">
+        <div className="muni-section-head-copy">
           <p className="muni-section-kicker">LSTM forecast · 4-week horizon</p>
           <h3>{niceDisease} outlook</h3>
-          <p className="muni-section-sub">
-            Predicted weekly confirmed cases for your municipality. Decision support — not a
-            substitute for clinical diagnostics.
-          </p>
         </div>
-        <div className="muni-forecast-meta">
+        <div className="muni-forecast-meta muni-forecast-meta--anchored">
           {asOfWeek ? <span className="muni-forecast-asof">As of week of {asOfWeek}</span> : null}
           <button
             type="button"

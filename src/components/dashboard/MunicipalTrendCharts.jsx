@@ -49,7 +49,6 @@ function MunicipalTrendCharts({ municipalityTrend = [], diseaseFilter = "DENGUE"
     <div className="muni-trends">
       <section className="muni-trends-main" aria-labelledby="muni-trend-muni-title">
         <h3 id="muni-trend-muni-title">Municipality trends</h3>
-        <p className="muni-trends-sub">Weekly confirmed cases · raw counts (no population adjustment)</p>
         <ResponsiveContainer width="100%" height={260}>
           <AreaChart data={municipalityTrend} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid stroke="rgba(15, 23, 42, 0.06)" vertical={false} />

@@ -14,6 +14,7 @@ import {
 
 import "./Sidebar.css";
 import { useAuth } from "../context/AuthContext";
+import { useAlertSummary } from "@/hooks/useAlerts";
 import { userCanReportCase } from "@/lib/authUser";
 import LogoutConfirmModal from "../components/common/LogoutConfirmModal";
 
@@ -30,8 +31,12 @@ function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { summary: alertSummary } = useAlertSummary();
   const [logoutOpen, setLogoutOpen] = useState(false);
   const closeLogoutModal = useCallback(() => setLogoutOpen(false), []);
+
+  const alertCount = alertSummary.total;
+  const hasHighAlerts = alertSummary.bySeverity.high > 0;
 
   const pathname = location.pathname;
 
@@ -212,6 +217,14 @@ function Sidebar() {
               >
                 <Bell className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
                 <span>Alerts</span>
+                {alertCount > 0 ? (
+                  <span
+                    className={`sidebar-badge${hasHighAlerts ? " sidebar-badge--high" : ""}`}
+                    aria-label={`${alertCount} active alert${alertCount === 1 ? "" : "s"}`}
+                  >
+                    {alertCount > 99 ? "99+" : alertCount}
+                  </span>
+                ) : null}
               </Link>
             </li>
 

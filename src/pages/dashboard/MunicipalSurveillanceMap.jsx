@@ -1,6 +1,6 @@
 import { useMemo, useState, useDeferredValue, startTransition } from "react";
 import { Link } from "react-router-dom";
-import { FaBell } from "react-icons/fa";
+import { FaBell, FaMapMarkedAlt } from "react-icons/fa";
 
 import logo from "@/assets/images/ddoLOGO.jpg";
 import MunicipalBarangayMap from "@/components/dashboard/MunicipalBarangayMap";
@@ -19,10 +19,15 @@ import "@/styles/dashboard-shell.css";
 import "./MunicipalDashboard.css";
 
 const DISEASE_OPTIONS = [
-  { value: "DENGUE", label: "Dengue" },
-  { value: "ILI", label: "ILI" },
-  { value: "AWD", label: "AWD" },
-  { value: "ALL", label: "All diseases" }
+  { value: "DENGUE", label: "Dengue", buttonClass: "muni-disease-btn--dengue" },
+  { value: "ILI", label: "Influenza-like illness", buttonClass: "muni-disease-btn--ili" },
+  { value: "AWD", label: "Acute watery diarrhea", buttonClass: "muni-disease-btn--awd" },
+  { value: "ALL", label: "All diseases", buttonClass: "muni-disease-btn--all" }
+];
+
+const METRIC_OPTIONS = [
+  { value: "count", label: "Case count" },
+  { value: "velocity", label: "Change (Δ)" }
 ];
 
 const FIXED_WINDOW_WEEKS = 4;
@@ -37,6 +42,10 @@ function deltaClass(delta) {
   if (delta > 0) return "muni-kpi-delta--up";
   if (delta < 0) return "muni-kpi-delta--down";
   return "muni-kpi-delta--flat";
+}
+
+function diseaseLabel(value) {
+  return DISEASE_OPTIONS.find((o) => o.value === value)?.label ?? value;
 }
 
 /**
@@ -121,6 +130,16 @@ function MunicipalSurveillanceMap() {
     [velocityRows, selectedBarangayKey]
   );
 
+  const mapSummary = useMemo(() => {
+    const total = velocityRows.reduce((sum, row) => sum + (row.current || 0), 0);
+    const active = velocityRows.filter((row) => row.current > 0).length;
+    const hotspot = velocityRows.reduce(
+      (best, row) => (!best || row.current > best.current ? row : best),
+      null
+    );
+    return { total, active, hotspot, barangays: velocityRows.length };
+  }, [velocityRows]);
+
   const headerSubline = municipalityName
     ? `${municipalityName} · Barangay-level case distribution`
     : null;
@@ -153,47 +172,103 @@ function MunicipalSurveillanceMap() {
         ) : null}
 
         {!loading && !error ? (
-          <div className="muni-dash muni-dash--map-only">
-            <section className="muni-dash-time" aria-label="Map time and disease filters">
-              <div className="muni-dash-time-copy">
-                <h3>Map period</h3>
-                <p className="muni-dash-period-caption">{periodCaption}</p>
-                <p className="muni-dash-raw-note">
-                  Fixed 4-week window · raw case counts by barangay until population data is available.
+          <div className={`muni-dash muni-dash--map-only${isFilterPending ? " muni-dash--pending" : ""}`}>
+            <section className="muni-panel muni-map-filters" aria-label="Map time and disease filters">
+              <div className="muni-dash-period-info">
+                <p className="muni-section-kicker">Surveillance window</p>
+                <h3 className="muni-dash-period-title">Last 4 weeks</h3>
+                <p className="muni-dash-period-dates">{periodCaption}</p>
+                <p className="muni-dash-period-note">
+                  Raw case counts by barangay · population rates when census data is available
                 </p>
               </div>
-              <div className="muni-dash-time-controls">
-                <label className="muni-dash-control">
-                  <span>Disease</span>
-                  <select
-                    value={diseaseFilter}
-                    onChange={(e) => handleDiseaseChange(e.target.value)}
-                    aria-busy={isFilterPending}
-                  >
-                    {DISEASE_OPTIONS.map((o) => (
-                      <option key={o.value} value={o.value}>
+
+              <div className="muni-map-filter-groups">
+                <div
+                  className="muni-dash-disease-buttons"
+                  role="group"
+                  aria-label="Choose a disease to view"
+                  aria-busy={isFilterPending}
+                >
+                  {DISEASE_OPTIONS.map((o) => {
+                    const isActive = diseaseFilter === o.value;
+                    return (
+                      <button
+                        key={o.value}
+                        type="button"
+                        className={[
+                          "muni-disease-btn",
+                          o.buttonClass,
+                          isActive ? "muni-disease-btn--active" : ""
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        aria-pressed={isActive}
+                        onClick={() => handleDiseaseChange(o.value)}
+                      >
                         {o.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="muni-dash-control">
-                  <span>Map metric</span>
-                  <select value={mapMetric} onChange={(e) => handleMapMetricChange(e.target.value)}>
-                    <option value="count">Rolling count</option>
-                    <option value="velocity">Velocity (Δ)</option>
-                  </select>
-                </label>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="muni-map-metric-toggle" role="group" aria-label="Map metric">
+                  <span className="muni-map-metric-label">Display</span>
+                  <div className="muni-map-metric-buttons">
+                    {METRIC_OPTIONS.map((o) => {
+                      const isActive = mapMetric === o.value;
+                      return (
+                        <button
+                          key={o.value}
+                          type="button"
+                          className={`muni-map-metric-btn${isActive ? " muni-map-metric-btn--active" : ""}`}
+                          aria-pressed={isActive}
+                          onClick={() => handleMapMetricChange(o.value)}
+                        >
+                          {o.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </section>
 
+            <div className="muni-map-summary" aria-label="Map summary statistics">
+              <article className="muni-map-stat">
+                <span className="muni-map-stat-label">Cases this period</span>
+                <strong className="muni-map-stat-value">{mapSummary.total.toLocaleString()}</strong>
+              </article>
+              <article className="muni-map-stat">
+                <span className="muni-map-stat-label">Barangays with cases</span>
+                <strong className="muni-map-stat-value">
+                  {mapSummary.active}
+                  <span className="muni-map-stat-sub"> / {mapSummary.barangays}</span>
+                </strong>
+              </article>
+              <article className="muni-map-stat muni-map-stat--hotspot">
+                <span className="muni-map-stat-label">Highest activity</span>
+                <strong className="muni-map-stat-value">
+                  {mapSummary.hotspot?.barangay ?? "—"}
+                  {mapSummary.hotspot ? (
+                    <span className="muni-map-stat-sub"> · {mapSummary.hotspot.current} cases</span>
+                  ) : null}
+                </strong>
+              </article>
+            </div>
+
             <section className="muni-dash-map-section muni-dash-map-section--primary" aria-labelledby="muni-map-title">
               <div className="muni-dash-map-head">
-                <div>
+                <span className="muni-section-badge muni-dash-map-badge">
+                  {mapMetric === "velocity" ? "Velocity mode" : "Count mode"}
+                </span>
+                <div className="muni-dash-map-head-copy">
+                  <p className="muni-section-kicker">Geographic view</p>
                   <h3 id="muni-map-title">Barangay surveillance map</h3>
                   <p className="muni-dash-risers-sub">
-                    Bubble size reflects case volume · color reflects{" "}
-                    {mapMetric === "velocity" ? "change (Δ)" : "rolling count"} · click a barangay for details
+                    Bubble size reflects volume · color reflects{" "}
+                    {mapMetric === "velocity" ? "period-over-period change" : "rolling case count"} ·
+                    select a barangay for details
                   </p>
                 </div>
               </div>
@@ -209,36 +284,56 @@ function MunicipalSurveillanceMap() {
                   }
                 />
                 {selectedRow ? (
-                  <aside className="muni-barangay-panel" aria-label="Selected barangay details">
-                    <button
-                      type="button"
-                      className="muni-barangay-panel-close"
-                      onClick={() => setSelectedBarangayKey(null)}
-                      aria-label="Close barangay details"
-                    >
-                      ×
-                    </button>
-                    <h4>{selectedRow.barangay}</h4>
+                  <aside className="muni-barangay-panel muni-barangay-panel--selected" aria-label="Selected barangay details">
+                    <div className="muni-barangay-panel-head">
+                      <div>
+                        <p className="muni-section-kicker">Selected barangay</p>
+                        <h4>{selectedRow.barangay}</h4>
+                      </div>
+                      <button
+                        type="button"
+                        className="muni-barangay-panel-close"
+                        onClick={() => setSelectedBarangayKey(null)}
+                        aria-label="Close barangay details"
+                      >
+                        ×
+                      </button>
+                    </div>
+
+                    <div className="muni-barangay-panel-stats">
+                      <div className="muni-barangay-stat">
+                        <span>Current period</span>
+                        <strong>{selectedRow.current}</strong>
+                      </div>
+                      <div className="muni-barangay-stat">
+                        <span>Prior period</span>
+                        <strong>{selectedRow.prior}</strong>
+                      </div>
+                      <div className={`muni-barangay-stat muni-barangay-stat--delta ${deltaClass(selectedRow.delta)}`}>
+                        <span>Change</span>
+                        <strong>
+                          {selectedRow.delta > 0 ? "+" : ""}
+                          {selectedRow.delta} ({fmtPct(selectedRow.pctChange)})
+                        </strong>
+                      </div>
+                    </div>
+
                     <dl className="muni-barangay-panel-dl">
-                      <dt>Current period</dt>
-                      <dd>{selectedRow.current} cases</dd>
-                      <dt>Prior period</dt>
-                      <dd>{selectedRow.prior} cases</dd>
-                      <dt>Change</dt>
-                      <dd className={deltaClass(selectedRow.delta)}>
-                        {selectedRow.delta > 0 ? "+" : ""}
-                        {selectedRow.delta} ({fmtPct(selectedRow.pctChange)})
-                      </dd>
                       <dt>Disease filter</dt>
-                      <dd>{selectedRow.disease}</dd>
+                      <dd>{diseaseLabel(selectedRow.disease)}</dd>
+                      <dt>Reporting window</dt>
+                      <dd>{periodCaption}</dd>
                     </dl>
+
                     <p className="muni-barangay-panel-hint">
                       Click the bubble again or close to deselect. View trends on the Dashboard.
                     </p>
                   </aside>
                 ) : (
                   <aside className="muni-barangay-panel muni-barangay-panel--empty">
-                    <p>Select a barangay on the map to view period counts and percent change.</p>
+                    <FaMapMarkedAlt className="muni-barangay-panel-icon" aria-hidden />
+                    <p className="muni-barangay-panel-empty-title">No barangay selected</p>
+                    <p>Select a bubble on the map to inspect period counts and percent change.</p>
                   </aside>
                 )}
               </div>

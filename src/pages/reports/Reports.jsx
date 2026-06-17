@@ -3,6 +3,7 @@ import "./Reports.css";
 import { useAuth } from "../../context/AuthContext";
 import { sessionUserFromAuth } from "../../lib/authUser";
 import { usePatients } from "../../hooks/usePatients";
+import { exportReportExcel } from "../../lib/exportReportExcel";
 
 const MUNICIPALITY_DATA = {
   Compostela: [
@@ -120,6 +121,25 @@ function dateKey(d) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function matchesLocationScope(
+  p,
+  { roleKey, lockedMunicipality, lockedBarangay, selectedMunicipality, selectedBarangay }
+) {
+  const municipality = String(p?.municipality ?? "").trim();
+  const barangay = String(p?.barangay ?? "").trim();
+  const municipalityScope =
+    roleKey === "barangay" || roleKey === "municipal" ? lockedMunicipality : selectedMunicipality;
+  const barangayScope = roleKey === "barangay" ? lockedBarangay : selectedBarangay;
+
+  if (municipalityScope && normalizePlaceKey(municipality) !== normalizePlaceKey(municipalityScope)) {
+    return false;
+  }
+  if (barangayScope && normalizePlaceKey(barangay) !== normalizePlaceKey(barangayScope)) {
+    return false;
+  }
+  return true;
+}
+
 function Reports() {
   const { user: authUser } = useAuth();
   const user = useMemo(() => sessionUserFromAuth(authUser), [authUser]);
@@ -160,6 +180,7 @@ function Reports() {
   const [reportType, setReportType] = useState("ALL"); // ALL | Dengue | ILI | AWD
   const [selectedMunicipality, setSelectedMunicipality] = useState("");
   const [selectedBarangay, setSelectedBarangay] = useState("");
+  const [exportingExcel, setExportingExcel] = useState(false);
   const { patients, loading, error } = usePatients();
   useEffect(() => {
     if (roleKey === "municipal") {
@@ -255,6 +276,34 @@ function Reports() {
     dateMode
   ]);
 
+  const scopedPatients = useMemo(() => {
+    return (patients ?? [])
+      .filter((p) =>
+        matchesLocationScope(p, {
+          roleKey,
+          lockedMunicipality,
+          lockedBarangay,
+          selectedMunicipality,
+          selectedBarangay
+        })
+      )
+      .sort((a, b) => {
+        const da = safeDate(a?.dateStarted) ?? safeDate(a?.createdAt);
+        const db = safeDate(b?.dateStarted) ?? safeDate(b?.createdAt);
+        if (!da && !db) return (b?.id ?? 0) - (a?.id ?? 0);
+        if (!da) return 1;
+        if (!db) return -1;
+        return db - da;
+      });
+  }, [
+    patients,
+    roleKey,
+    lockedMunicipality,
+    lockedBarangay,
+    selectedMunicipality,
+    selectedBarangay
+  ]);
+
   const summary = useMemo(() => {
     const counts = { total: 0, dengue: 0, ili: 0, awd: 0 };
     for (const c of filtered) {
@@ -342,6 +391,32 @@ function Reports() {
     if (municipalityScope) return municipalityScope;
     return "Province-wide";
   }, [roleKey, lockedMunicipality, lockedBarangay, selectedMunicipality, selectedBarangay]);
+
+  const excelDisabled =
+    loading || exportingExcel || (dateMode === "CUSTOM" && !range);
+
+  function handleExportExcel() {
+    if (excelDisabled) return;
+    setExportingExcel(true);
+    try {
+      exportReportExcel({
+        reportTitle,
+        titleRange,
+        coverageLabel,
+        generatedBy,
+        reportType,
+        summary,
+        municipalityRows,
+        cases: filtered,
+        allPatients: scopedPatients,
+        remarks
+      });
+    } catch (err) {
+      window.alert(err?.message ?? "Failed to export Excel report.");
+    } finally {
+      setExportingExcel(false);
+    }
+  }
 
   return (
     <div className="report-page">
@@ -458,9 +533,19 @@ function Reports() {
             </label>
           </div>
 
-          <button type="button" className="toolbar-btn" onClick={() => window.print()}>
-            Export to PDF
-          </button>
+          <div className="toolbar-export">
+            <button type="button" className="toolbar-btn" onClick={() => window.print()}>
+              Export to PDF
+            </button>
+            <button
+              type="button"
+              className="toolbar-btn toolbar-btn--excel"
+              onClick={handleExportExcel}
+              disabled={excelDisabled}
+            >
+              {exportingExcel ? "Exporting…" : "Export to Excel"}
+            </button>
+          </div>
         </div>
       </div>
 

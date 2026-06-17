@@ -179,18 +179,8 @@ export default function AccountManagement() {
       </header>
 
       <div className="am-main">
-        <section className="am-scope" aria-label="Account management overview">
-          <div className="am-scope-copy">
-            <p className="am-scope-title">Jurisdiction</p>
-            <p className="am-scope-value">
-              {isProvince ? "Davao de Oro Province" : String(user?.municipalityName ?? "Municipality").trim()}
-            </p>
-            <p className="am-scope-hint">
-              Accounts are not self-registered. Use this screen only to rotate passwords for accounts in
-              your jurisdiction.
-            </p>
-          </div>
-          <div className="am-kpis" aria-label="Account counts">
+        <section className="am-intro" aria-label="Account management overview">
+          <div className="am-intro-kpi" aria-label="Account counts">
             {isProvince ? (
               <div className="am-kpi">
                 <div className="am-kpi-label">Municipalities</div>
@@ -202,6 +192,48 @@ export default function AccountManagement() {
                 <div className="am-kpi-value">{loading ? "—" : kpis.barangays}</div>
               </div>
             )}
+          </div>
+
+          <div className="am-intro-copy">
+            <p className="am-scope-title">Jurisdiction</p>
+            <p className="am-scope-value">
+              {isProvince ? "Davao de Oro Province" : String(user?.municipalityName ?? "Municipality").trim()}
+            </p>
+            <p className="am-scope-hint">
+              Accounts are not self-registered. Use this screen only to rotate passwords for accounts in
+              your jurisdiction.
+            </p>
+
+            {isProvince ? (
+              <>
+                <h3 id="am-muni-heading" className="am-section-title">
+                  Municipality accounts
+                </h3>
+                <p className="am-section-hint">
+                  Reset passwords for municipality accounts in Davao de Oro. Barangay passwords are
+                  managed by each municipality.
+                </p>
+              </>
+            ) : (
+              <>
+                <h3 id="am-brgy-heading" className="am-section-title">
+                  Barangay accounts
+                </h3>
+                <p className="am-section-hint">
+                  One account exists per barangay. Set a new password when a barangay user is locked out
+                  or rotated.
+                </p>
+              </>
+            )}
+          </div>
+
+          <div className="am-intro-count">
+            {!loading && !loadError ? (
+              <span className="am-section-count">
+                {isProvince ? muniAccounts.length : brgyAccounts.length} accounts
+                {!isProvince && brgyReadOnly ? " · read-only" : ""}
+              </span>
+            ) : null}
           </div>
         </section>
 
@@ -219,18 +251,6 @@ export default function AccountManagement() {
 
         {isProvince && !loading && !loadError ? (
           <section className="am-section" aria-labelledby="am-muni-heading">
-            <div className="am-section-head">
-              <div>
-                <h3 id="am-muni-heading" className="am-section-title">
-                  Municipality accounts
-                </h3>
-                <p className="am-section-hint">
-                  Reset passwords for municipality accounts in Davao de Oro. Barangay passwords are
-                  managed by each municipality.
-                </p>
-              </div>
-              <span className="am-section-count">{muniAccounts.length} accounts</span>
-            </div>
             <AccountTable
               accounts={muniAccounts}
               token={token}
@@ -243,21 +263,6 @@ export default function AccountManagement() {
 
         {!loading && !loadError && user?.role === "municipality" ? (
           <section className="am-section" aria-labelledby="am-brgy-heading">
-            <div className="am-section-head">
-              <div>
-                <h3 id="am-brgy-heading" className="am-section-title">
-                  Barangay accounts
-                </h3>
-                <p className="am-section-hint">
-                  One account exists per barangay. Set a new password when a barangay user is locked out
-                  or rotated.
-                </p>
-              </div>
-              <span className="am-section-count">
-                {brgyAccounts.length} accounts
-                {brgyReadOnly ? " · read-only" : ""}
-              </span>
-            </div>
             <AccountTable
               accounts={brgyAccounts}
               token={token}

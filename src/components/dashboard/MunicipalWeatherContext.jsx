@@ -1,4 +1,4 @@
-import { formatWeatherProvider, getWeatherIcon } from "@/lib/weatherDisplay";
+import { formatWeatherProvider } from "@/lib/weatherDisplay";
 
 function rainFromCondition(condition) {
   const c = String(condition ?? "").toLowerCase();
@@ -45,16 +45,7 @@ export default function MunicipalWeatherContext({ weather, municipalityName = ""
       <header className="muni-section-head muni-section-head--env">
         <div className="muni-env-head-copy">
           <p className="muni-section-kicker">Multivariate context</p>
-          <div className="muni-env-title-row">
-            <span className="muni-env-title-icon" aria-hidden="true">
-              {getWeatherIcon(weather?.condition)}
-            </span>
-            <h3 id="muni-env-title">Environmental context</h3>
-          </div>
-          <p className="muni-section-sub muni-env-head-sub">
-            Temperature, humidity, and rainfall support interpretation alongside case trends — not a
-            diagnosis of outbreak cause.
-          </p>
+          <h3 id="muni-env-title">Environmental context</h3>
         </div>
         <span className="muni-env-pill">{formatWeatherProvider(weather?.provider) || "Weather API"}</span>
       </header>

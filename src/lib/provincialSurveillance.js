@@ -13,12 +13,10 @@ import {
   normalizePlaceKey,
   resolveSurveillanceWindows
 } from "@/lib/surveillance";
+import { COUNT_THRESHOLDS, VELOCITY_MIN_DELTA, VELOCITY_MIN_PCT } from "@/lib/riskConfig";
 
-/** Provincial cross-municipality alert thresholds (kept here after the
- *  municipal early-warning module was retired). */
-const COUNT_THRESHOLDS = { DENGUE: 10, ILI: 14, AWD: 8 };
-const VELOCITY_MIN_DELTA = 2;
-const VELOCITY_MIN_PCT = 40;
+/** Provincial cross-municipality alert thresholds derive from the shared risk
+ *  config (COUNT_THRESHOLDS, VELOCITY_MIN_DELTA, VELOCITY_MIN_PCT imported above). */
 
 export { listProvinceMunicipalities, provinceBarangayCount };
 

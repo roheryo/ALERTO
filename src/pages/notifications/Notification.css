@@ -81,11 +81,103 @@
   padding: 0 10px;
 }
 
+.notify-feed {
+  margin-top: 4px;
+}
+
+.notify-section {
+  margin-top: 16px;
+}
+
+.notify-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.notify-section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .notify-grid {
-  margin-top: 12px;
+  margin-top: 8px;
   display: grid;
   grid-template-columns: repeat(2, minmax(280px, 1fr));
   gap: 12px;
+}
+
+.alert-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.alert-btn {
+  flex: 1;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.alert-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.alert-btn--ack {
+  background: #2563eb;
+  color: #fff;
+}
+
+.alert-btn--ack:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.alert-btn--dismiss {
+  background: #fff;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.alert-btn--dismiss:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.alert-btn--declare {
+  flex-basis: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.35);
+  color: #1d4ed8;
+}
+
+.alert-btn--declare:hover {
+  background: rgba(37, 99, 235, 0.15);
+}
+
+.alert-action-error {
+  margin: 8px 0 0;
+  color: #b91c1c;
+  font-size: 12px;
 }
 
 .alert-card {

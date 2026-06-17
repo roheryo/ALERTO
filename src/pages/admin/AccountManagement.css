@@ -31,20 +31,57 @@
   padding: 20px 22px 32px;
 }
 
-/* Scope banner + KPIs (Case Logs pattern) */
+/* Intro panel — KPI | copy | count */
+
+.am-intro {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-areas: "kpi copy count";
+  align-items: center;
+  gap: 16px 24px;
+  width: 100%;
+  margin: 0 auto 24px;
+  padding: 20px 16px 18px;
+}
+
+.am-intro-kpi {
+  grid-area: kpi;
+  justify-self: start;
+}
+
+.am-intro-copy {
+  grid-area: copy;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 36rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.am-intro-count {
+  grid-area: count;
+  justify-self: end;
+}
 
 .am-scope {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
   gap: 14px;
   margin-bottom: 22px;
+  text-align: center;
 }
 
 .am-scope-copy {
-  flex: 1;
+  flex: 1 1 100%;
   min-width: 0;
+  max-width: 40rem;
+  margin: 0 auto;
+  text-align: center;
 }
 
 .am-scope-title {
@@ -54,6 +91,8 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--am-muted);
+  text-align: center;
+  width: 100%;
 }
 
 .am-scope-value {
@@ -62,21 +101,20 @@
   font-weight: 800;
   color: var(--am-text);
   line-height: 1.35;
+  text-align: center;
+  width: 100%;
 }
 
 .am-scope-hint {
-  margin: 6px 0 0;
+  margin: 8px auto 0;
   font-size: 13px;
   color: var(--am-muted);
-  max-width: 56ch;
-  line-height: 1.45;
+  max-width: 34rem;
+  line-height: 1.5;
+  text-align: center;
+  width: 100%;
 }
 
-.am-kpis {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
 
 .am-kpi {
   background: var(--am-surface);
@@ -131,25 +169,36 @@
 .am-section-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
   gap: 10px;
   margin-bottom: 12px;
+  text-align: center;
+}
+
+.am-section-head > div {
+  flex: 1 1 100%;
+  max-width: 40rem;
+  margin: 0 auto;
 }
 
 .am-section-title {
-  margin: 0 0 4px;
+  margin: 20px 0 6px;
   font-size: 16px;
   font-weight: 800;
   color: var(--am-text);
+  text-align: center;
+  width: 100%;
 }
 
 .am-section-hint {
-  margin: 0;
+  margin: 0 auto;
   font-size: 13px;
   color: var(--am-muted);
-  max-width: 62ch;
-  line-height: 1.45;
+  max-width: 34rem;
+  line-height: 1.5;
+  text-align: center;
+  width: 100%;
 }
 
 .am-section-count {
@@ -163,6 +212,9 @@
   border-radius: 999px;
   background: var(--am-surface);
   border: 1px solid var(--am-border);
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .am-empty {
@@ -329,6 +381,18 @@
 @media (max-width: 720px) {
   .am-main {
     padding: 16px 14px 28px;
+  }
+
+  .am-intro {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "kpi count"
+      "copy copy";
+    gap: 12px 16px;
+  }
+
+  .am-intro-copy {
+    max-width: none;
   }
 
   .am-cell-password {

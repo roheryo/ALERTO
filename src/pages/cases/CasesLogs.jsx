@@ -3,7 +3,7 @@ import "@/styles/dashboard-shell.css";
 import logo from "@/assets/images/ddoLOGO.jpg";
 import { useMemo, useState, useEffect, useCallback, useDeferredValue, startTransition } from "react";
 import { Link } from "react-router-dom";
-import { FaBell } from "react-icons/fa";
+import { FaBell, FaClipboardList, FaMapMarkerAlt, FaUser } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
 import { sessionUserFromAuth } from "@/lib/authUser";
 import { usePatients, PATIENTS_CHANGED_EVENT } from "@/hooks/usePatients";
@@ -25,6 +25,24 @@ const MUNICIPALITY_DATA = {
 };
 
 const PAGE_SIZE = 100;
+
+const CASE_CLASS_OPTIONS = [
+  {
+    value: "Suspect",
+    label: "Suspect",
+    hint: "Meets initial clinical criteria for the disease."
+  },
+  {
+    value: "Probable",
+    label: "Probable",
+    hint: "Strong clinical evidence without full lab confirmation."
+  },
+  {
+    value: "Confirmed",
+    label: "Confirmed",
+    hint: "Laboratory or definitive confirmation is available."
+  }
+];
 
 function norm(s) {
   return String(s ?? "")
@@ -61,6 +79,26 @@ function caseStatusDisplay(raw) {
 function caseClassSelectValue(raw) {
   const d = caseStatusDisplay(raw);
   return d === "—" ? "" : d;
+}
+
+function diseaseBadgeClass(token) {
+  if (token === "DENGUE") return "caseslogs-badge--dengue";
+  if (token === "ILI") return "caseslogs-badge--ili";
+  if (token === "AWD") return "caseslogs-badge--awd";
+  return "caseslogs-badge--default";
+}
+
+function caseStatusBadgeClass(raw) {
+  const status = caseStatusDisplay(raw).toLowerCase();
+  if (status === "suspect") return "caseslogs-badge--suspect";
+  if (status === "probable") return "caseslogs-badge--probable";
+  if (status === "confirmed") return "caseslogs-badge--confirmed";
+  return "caseslogs-badge--default";
+}
+
+function displayValue(value) {
+  const text = String(value ?? "").trim();
+  return text || "—";
 }
 
 function dateSortTime(raw) {
@@ -341,6 +379,11 @@ function CasesLogs() {
     setShowView(true);
   };
 
+  const closeView = () => {
+    setShowView(false);
+    setSelectedPatient(null);
+  };
+
   const handleEdit = (p) => {
     setEditPatient(p);
     setEditCaseClass(caseClassSelectValue(p.caseClassification));
@@ -396,6 +439,13 @@ function CasesLogs() {
     }
   };
 
+  const openEditFromView = () => {
+    if (!selectedPatient) return;
+    const patient = selectedPatient;
+    closeView();
+    handleEdit(patient);
+  };
+
   const handleUpdate = async () => {
     if (!editPatient?.id || !token) return;
     if (!editCaseClass) {
@@ -442,31 +492,32 @@ function CasesLogs() {
       </header>
 
       <div className="caseslogs-main">
-        <div className="caseslogs-scope">
+        <section className="caseslogs-scope-panel" aria-label="Case log scope and summary">
           <div className="caseslogs-scope-copy">
             <p className="caseslogs-scope-title">{scopeBanner.title}</p>
-            <p className="caseslogs-scope-value">{scopeBanner.value}</p>
+            <h2 className="caseslogs-scope-value">{scopeBanner.value}</h2>
             <p className="caseslogs-scope-hint">{scopeBanner.hint}</p>
           </div>
+
           <div className="caseslogs-kpis" aria-label="Case counts for current filters">
-            <div className="caseslogs-kpi">
-              <div className="caseslogs-kpi-label">Showing</div>
-              <div className="caseslogs-kpi-value">{kpi.total}</div>
-            </div>
-            <div className="caseslogs-kpi">
-              <div className="caseslogs-kpi-label">Dengue</div>
-              <div className="caseslogs-kpi-value">{kpi.dengue}</div>
-            </div>
-            <div className="caseslogs-kpi">
-              <div className="caseslogs-kpi-label">ILI</div>
-              <div className="caseslogs-kpi-value">{kpi.ili}</div>
-            </div>
-            <div className="caseslogs-kpi">
-              <div className="caseslogs-kpi-label">AWD</div>
-              <div className="caseslogs-kpi-value">{kpi.awd}</div>
-            </div>
+            <article className="caseslogs-kpi caseslogs-kpi--total">
+              <span className="caseslogs-kpi-label">Showing</span>
+              <strong className="caseslogs-kpi-value">{kpi.total.toLocaleString()}</strong>
+            </article>
+            <article className="caseslogs-kpi caseslogs-kpi--dengue">
+              <span className="caseslogs-kpi-label">Dengue</span>
+              <strong className="caseslogs-kpi-value">{kpi.dengue.toLocaleString()}</strong>
+            </article>
+            <article className="caseslogs-kpi caseslogs-kpi--ili">
+              <span className="caseslogs-kpi-label">ILI</span>
+              <strong className="caseslogs-kpi-value">{kpi.ili.toLocaleString()}</strong>
+            </article>
+            <article className="caseslogs-kpi caseslogs-kpi--awd">
+              <span className="caseslogs-kpi-label">AWD</span>
+              <strong className="caseslogs-kpi-value">{kpi.awd.toLocaleString()}</strong>
+            </article>
           </div>
-        </div>
+        </section>
 
         <div className="caseslogs-toolbar">
           <div className="caseslogs-toolbar-left">
@@ -694,42 +745,131 @@ function CasesLogs() {
       </div>
 
       {showView && selectedPatient ? (
-        <div className="caseslogs-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cases-view-title">
-          <div className="caseslogs-modal">
-            <h3 id="cases-view-title">Case details</h3>
-            <dl className="caseslogs-modal-dl">
-              <dt>Patient ID/No.</dt>
-              <dd>{displayPatientId(selectedPatient)}</dd>
-              <dt>Name</dt>
-              <dd>{selectedPatient.name}</dd>
-              <dt>Age</dt>
-              <dd>{selectedPatient.age}</dd>
-              <dt>Sex</dt>
-              <dd>{selectedPatient.sex}</dd>
-              <dt>Disease</dt>
-              <dd>{diseaseLabel(normalizeDisease(selectedPatient.diseaseType))}</dd>
-              <dt>Case Classification</dt>
-              <dd>{caseStatusDisplay(selectedPatient.caseClassification)}</dd>
-              <dt>Municipality</dt>
-              <dd>{selectedPatient.municipality}</dd>
-              <dt>Barangay</dt>
-              <dd>{selectedPatient.barangay}</dd>
-              <dt>Purok</dt>
-              <dd>{selectedPatient.purok ?? "—"}</dd>
-              <dt>Birthdate</dt>
-              <dd>{selectedPatient.birthdate ?? "—"}</dd>
-              <dt>Civil status</dt>
-              <dd>{selectedPatient.civilStatus ?? "—"}</dd>
-              <dt>Birthplace</dt>
-              <dd>{selectedPatient.birthplace ?? "—"}</dd>
-              <dt>Date of Onset</dt>
-              <dd>{selectedPatient.dateStarted ?? "—"}</dd>
-            </dl>
-            <div className="caseslogs-modal-actions">
-              <button type="button" className="caseslogs-btn-primary" onClick={() => setShowView(false)}>
+        <div
+          className="caseslogs-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cases-view-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeView();
+          }}
+        >
+          <div className="caseslogs-modal caseslogs-modal--view" onClick={(e) => e.stopPropagation()}>
+            <header className="caseslogs-modal-header">
+              <div className="caseslogs-modal-header-copy">
+                <p className="caseslogs-modal-kicker">Patient record</p>
+                <h3 id="cases-view-title">{displayValue(selectedPatient.name)}</h3>
+                <p className="caseslogs-modal-subid">ID {displayPatientId(selectedPatient)}</p>
+                <div className="caseslogs-modal-badges">
+                  <span
+                    className={`caseslogs-badge ${diseaseBadgeClass(normalizeDisease(selectedPatient.diseaseType))}`}
+                  >
+                    {diseaseLabel(normalizeDisease(selectedPatient.diseaseType))}
+                  </span>
+                  <span className={`caseslogs-badge ${caseStatusBadgeClass(selectedPatient.caseClassification)}`}>
+                    {caseStatusDisplay(selectedPatient.caseClassification)}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="caseslogs-modal-close"
+                onClick={closeView}
+                aria-label="Close patient details"
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="caseslogs-modal-body">
+              <section className="caseslogs-modal-section" aria-labelledby="cases-view-identification">
+                <h4 id="cases-view-identification">
+                  <FaUser aria-hidden />
+                  Identification
+                </h4>
+                <div className="caseslogs-field-grid">
+                  <div className="caseslogs-field">
+                    <span>Patient ID/No.</span>
+                    <strong>{displayPatientId(selectedPatient)}</strong>
+                  </div>
+                  <div className="caseslogs-field">
+                    <span>Full name</span>
+                    <strong>{displayValue(selectedPatient.name)}</strong>
+                  </div>
+                  <div className="caseslogs-field">
+                    <span>Age</span>
+                    <strong>{displayValue(selectedPatient.age)}</strong>
+                  </div>
+                  <div className="caseslogs-field">
+                    <span>Sex</span>
+                    <strong>{displayValue(selectedPatient.sex)}</strong>
+                  </div>
+                  <div className="caseslogs-field">
+                    <span>Birthdate</span>
+                    <strong>{displayValue(selectedPatient.birthdate)}</strong>
+                  </div>
+                  <div className="caseslogs-field">
+                    <span>Civil status</span>
+                    <strong>{displayValue(selectedPatient.civilStatus)}</strong>
+                  </div>
+                  <div className="caseslogs-field caseslogs-field--wide">
+                    <span>Birthplace</span>
+                    <strong>{displayValue(selectedPatient.birthplace)}</strong>
+                  </div>
+                </div>
+              </section>
+
+              <section className="caseslogs-modal-section" aria-labelledby="cases-view-case">
+                <h4 id="cases-view-case">
+                  <FaClipboardList aria-hidden />
+                  Case details
+                </h4>
+                <div className="caseslogs-field-grid">
+                  <div className="caseslogs-field">
+                    <span>Disease</span>
+                    <strong>{diseaseLabel(normalizeDisease(selectedPatient.diseaseType))}</strong>
+                  </div>
+                  <div className="caseslogs-field">
+                    <span>Classification</span>
+                    <strong>{caseStatusDisplay(selectedPatient.caseClassification)}</strong>
+                  </div>
+                  <div className="caseslogs-field">
+                    <span>Date of onset</span>
+                    <strong>{displayValue(selectedPatient.dateStarted)}</strong>
+                  </div>
+                </div>
+              </section>
+
+              <section className="caseslogs-modal-section" aria-labelledby="cases-view-location">
+                <h4 id="cases-view-location">
+                  <FaMapMarkerAlt aria-hidden />
+                  Location
+                </h4>
+                <div className="caseslogs-field-grid">
+                  <div className="caseslogs-field">
+                    <span>Municipality</span>
+                    <strong>{displayValue(selectedPatient.municipality)}</strong>
+                  </div>
+                  <div className="caseslogs-field">
+                    <span>Barangay</span>
+                    <strong>{displayValue(selectedPatient.barangay)}</strong>
+                  </div>
+                  <div className="caseslogs-field">
+                    <span>Purok</span>
+                    <strong>{displayValue(selectedPatient.purok)}</strong>
+                  </div>
+                </div>
+              </section>
+            </div>
+
+            <footer className="caseslogs-modal-footer">
+              <button type="button" className="caseslogs-btn-ghost" onClick={closeView}>
                 Close
               </button>
-            </div>
+              <button type="button" className="caseslogs-btn-primary caseslogs-btn-primary--blue" onClick={openEditFromView}>
+                Edit classification
+              </button>
+            </footer>
           </div>
         </div>
       ) : null}
@@ -791,57 +931,116 @@ function CasesLogs() {
       ) : null}
 
       {showEdit && editPatient ? (
-        <div className="caseslogs-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cases-edit-title">
-          <div className="caseslogs-modal">
-            <h3 id="cases-edit-title">Edit case classification</h3>
-            <dl className="caseslogs-modal-dl caseslogs-modal-dl--readonly">
-              <dt>Patient ID/No.</dt>
-              <dd>{displayPatientId(editPatient)}</dd>
-              <dt>Name</dt>
-              <dd>{editPatient.name ?? "—"}</dd>
-              <dt>Disease</dt>
-              <dd>{diseaseLabel(normalizeDisease(editPatient.diseaseType))}</dd>
-              <dt>Date of Onset</dt>
-              <dd>{editPatient.dateStarted ?? "—"}</dd>
-              <dt>Municipality</dt>
-              <dd>{editPatient.municipality ?? "—"}</dd>
-              <dt>Barangay</dt>
-              <dd>{editPatient.barangay ?? "—"}</dd>
-            </dl>
-            <div className="caseslogs-edit-field">
-              <label className="caseslogs-edit-label" htmlFor="edit-caseClass">
-                Case Classification <span className="caseslogs-req">*</span>
-              </label>
-              <select
-                id="edit-caseClass"
-                className={`caseslogs-modal-select${editError && !editCaseClass ? " error" : ""}`}
-                value={editCaseClass}
-                onChange={(e) => {
-                  setEditCaseClass(e.target.value);
-                  setEditError(null);
-                }}
+        <div
+          className="caseslogs-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cases-edit-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !editSaving) closeEdit();
+          }}
+        >
+          <div className="caseslogs-modal caseslogs-modal--edit" onClick={(e) => e.stopPropagation()}>
+            <header className="caseslogs-modal-header">
+              <div className="caseslogs-modal-header-copy">
+                <p className="caseslogs-modal-kicker">Update case</p>
+                <h3 id="cases-edit-title">Edit case classification</h3>
+                <p className="caseslogs-modal-subid">
+                  {displayValue(editPatient.name)} · ID {displayPatientId(editPatient)}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="caseslogs-modal-close"
+                onClick={closeEdit}
                 disabled={editSaving}
+                aria-label="Close edit form"
               >
-                <option value="">— Select classification —</option>
-                <option value="Suspect">Suspect</option>
-                <option value="Probable">Probable</option>
-                <option value="Confirmed">Confirmed</option>
-              </select>
-              <p className="caseslogs-edit-hint">Based on clinical and lab criteria (CASECLASS field)</p>
+                ×
+              </button>
+            </header>
+
+            <div className="caseslogs-modal-body">
+              <section className="caseslogs-modal-section caseslogs-modal-section--summary" aria-label="Case summary">
+                <div className="caseslogs-summary-grid">
+                  <div className="caseslogs-summary-card">
+                    <span>Disease</span>
+                    <strong>{diseaseLabel(normalizeDisease(editPatient.diseaseType))}</strong>
+                  </div>
+                  <div className="caseslogs-summary-card">
+                    <span>Date of onset</span>
+                    <strong>{displayValue(editPatient.dateStarted)}</strong>
+                  </div>
+                  <div className="caseslogs-summary-card">
+                    <span>Municipality</span>
+                    <strong>{displayValue(editPatient.municipality)}</strong>
+                  </div>
+                  <div className="caseslogs-summary-card">
+                    <span>Barangay</span>
+                    <strong>{displayValue(editPatient.barangay)}</strong>
+                  </div>
+                </div>
+              </section>
+
+              <section className="caseslogs-modal-section caseslogs-modal-section--editable" aria-labelledby="cases-edit-classification">
+                <h4 id="cases-edit-classification">Case classification</h4>
+                <p className="caseslogs-edit-lead">
+                  Choose the current classification based on clinical findings and laboratory results.
+                </p>
+                <div
+                  className="caseslogs-class-options"
+                  role="radiogroup"
+                  aria-label="Case classification"
+                  aria-invalid={Boolean(editError && !editCaseClass)}
+                >
+                  {CASE_CLASS_OPTIONS.map((option) => {
+                    const selected = editCaseClass === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        className={[
+                          "caseslogs-class-option",
+                          `caseslogs-class-option--${option.value.toLowerCase()}`,
+                          selected ? "is-selected" : "",
+                          editError && !editCaseClass ? "is-invalid" : ""
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        onClick={() => {
+                          setEditCaseClass(option.value);
+                          setEditError(null);
+                        }}
+                        disabled={editSaving}
+                      >
+                        <span className="caseslogs-class-option-top">
+                          <span className="caseslogs-class-option-label">{option.label}</span>
+                          {selected ? <span className="caseslogs-class-option-check">Selected</span> : null}
+                        </span>
+                        <span className="caseslogs-class-option-hint">{option.hint}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="caseslogs-edit-hint">Maps to the CASECLASS field used in surveillance reporting.</p>
+                {editError ? (
+                  <p className="caseslogs-edit-error" role="alert">
+                    {editError}
+                  </p>
+                ) : null}
+              </section>
             </div>
-            {editError ? (
-              <p className="caseslogs-edit-error" role="alert">
-                {editError}
-              </p>
-            ) : null}
-            <div className="caseslogs-modal-actions">
+
+            <footer className="caseslogs-modal-footer">
               <button type="button" className="caseslogs-btn-ghost" onClick={closeEdit} disabled={editSaving}>
                 Cancel
               </button>
-              <button type="button" className="caseslogs-btn-primary" onClick={handleUpdate} disabled={editSaving}>
-                {editSaving ? "Saving…" : "Save"}
+              <button type="button" className="caseslogs-btn-primary caseslogs-btn-primary--blue" onClick={handleUpdate} disabled={editSaving}>
+                {editSaving ? "Saving…" : "Save changes"}
               </button>
-            </div>
+            </footer>
           </div>
         </div>
       ) : null}

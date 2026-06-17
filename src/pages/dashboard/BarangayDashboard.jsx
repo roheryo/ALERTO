@@ -144,7 +144,7 @@ function BarangayDashboard({ patients = [], barangayName = "", municipalityName 
         </h2>
         {scopeLine ? (
           <p className="barangay-dash-scope">
-            {scopeLine} · Confirmed cases only
+            {scopeLine}
           </p>
         ) : (
           <p className="barangay-dash-scope">Confirmed cases only · real-time surveillance</p>
@@ -172,7 +172,7 @@ function BarangayDashboard({ patients = [], barangayName = "", municipalityName 
       <div className="barangay-dash-chart-wrap">
         <div className="barangay-dash-chart-head">
           <h3 className="barangay-dash-chart-title">Weekly case trend</h3>
-          <p className="barangay-dash-chart-sub">Last four weeks · confirmed cases only</p>
+          <p className="barangay-dash-chart-sub">Last four weeks</p>
         </div>
         <div className="barangay-dash-chart" role="img" aria-label="Weekly case trend chart">
           <Chart options={chartOptions} series={chartSeries} type="area" height={320} />
