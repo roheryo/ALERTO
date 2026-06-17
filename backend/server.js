@@ -16,6 +16,10 @@ import {
 } from "./bootstrap/schema.js";
 import { createWeatherRouter } from "./routes/weather.js";
 import { createForecastsRouter } from "./routes/forecasts.js";
+import { createAlertsRouter } from "./routes/alerts.js";
+import { createDeclarationsRouter } from "./routes/declarations.js";
+import { riskConfigPayload } from "./lib/riskConfig.js";
+import { scheduleMunicipalityEvaluation, startAlertScheduler } from "./jobs/evaluateAlerts.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -141,8 +145,15 @@ api.get("/admin/barangay-accounts", authMiddleware, async (req, res) => {
   }
 });
 
+/** Shared risk-indicator config (thresholds, weights, bands) for the UI. */
+api.get("/risk-config", authMiddleware, (_req, res) => {
+  return res.json(riskConfigPayload());
+});
+
 api.use("/weather", createWeatherRouter(authMiddleware));
 api.use("/forecasts", createForecastsRouter(authMiddleware));
+api.use("/alerts", createAlertsRouter(authMiddleware));
+api.use("/declarations", createDeclarationsRouter(authMiddleware));
 
 /**
  * Case log rows for dashboard / cases / reports (RBAC).
@@ -476,6 +487,10 @@ api.post("/patients", authMiddleware, async (req, res) => {
       await persistCaseEnvironment(newId, b.environment);
     }
 
+    // Fire-and-forget: re-evaluate this municipality's Early-Warning alerts.
+    // Debounced so a burst of submissions collapses into one evaluation.
+    scheduleMunicipalityEvaluation(targetMunicipalityId);
+
     const year = dateStarted.slice(0, 4) || String(new Date().getFullYear());
     const caseRef = `DDO-${year}-${newId}`;
 
@@ -703,6 +718,7 @@ bootstrapSchema().catch((err) => {
 
 const server = app.listen(PORT, () => {
   console.log(`ALERTO API listening on http://localhost:${PORT}`);
+  startAlertScheduler();
 });
 
 server.on("error", (err) => {

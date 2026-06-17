@@ -7,7 +7,13 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "import:ili-2023": "node scripts/import-ili-2023.mjs",
-    "import:ili-2023:dry": "node scripts/import-ili-2023.mjs --dry-run"
+    "import:ili-2023:dry": "node scripts/import-ili-2023.mjs --dry-run",
+    "import:dengue": "node scripts/import-dengue-csv.mjs",
+    "import:dengue:dry": "node scripts/import-dengue-csv.mjs --dry-run",
+    "import:surveillance": "node scripts/import-ili-2023.mjs && node scripts/import-dengue-csv.mjs",
+    "seed:jun2026-week": "node scripts/generate-jun2026-week-cases.mjs --purge",
+    "seed:jun2026-week:dry": "node scripts/generate-jun2026-week-cases.mjs --dry-run",
+    "evaluate:alerts": "node jobs/evaluateAlerts.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

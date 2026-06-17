@@ -26,6 +26,12 @@
  *   Pass `--include-imported` to relax rule (2) temporarily (e.g. to sanity-
  *   check the pipeline against the 2023 ILI archive). Rule (1) is always on.
  *
+ *   Pass `--exclude-synthetic` to additionally drop statistically-generated
+ *   `SYN-%` rows produced by generate-synthetic-cases.mjs. The weekly automated
+ *   retraining pipeline (ml/retrain.py) always sets this so the production
+ *   model is fit ONLY on actual recorded cases — never on synthetic or
+ *   model-generated data.
+ *
  * Other notes:
  *   - Time split is chronological (not random): train -> val -> test.
  *   - Run `node backend/scripts/fetch-weather-history.mjs` first if the
@@ -62,7 +68,12 @@ function parseArgs(argv) {
     // formOnly=true (default) → only train on cases that came through
     // POST /api/patients (created_by IS NOT NULL). Set --include-imported
     // to also include legacy seed / 2023 ILI Excel rows.
-    formOnly: true
+    formOnly: true,
+    // excludeSynthetic=false (default) keeps the SYN-* statistically-generated
+    // corpus used while BHU form adoption ramps up. The weekly automated
+    // retraining pipeline (ml/retrain.py) passes --exclude-synthetic so the
+    // production model is only ever fit on actual, recorded case data.
+    excludeSynthetic: false
   };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -83,6 +94,10 @@ function parseArgs(argv) {
       opts.formOnly = false;
     } else if (arg === "--form-only") {
       opts.formOnly = true;
+    } else if (arg === "--exclude-synthetic") {
+      opts.excludeSynthetic = true;
+    } else if (arg === "--include-synthetic") {
+      opts.excludeSynthetic = false;
     }
   }
   return opts;
@@ -181,9 +196,19 @@ async function fetchMunicipalities() {
  * report-case form (`patients.created_by IS NOT NULL`) so that historical
  * Excel-imported rows and seeded sample data are excluded from training. Pass
  * `formOnly=false` (via `--include-imported`) to relax the second rule.
+ *
+ * When `excludeSynthetic` is true (set by the weekly retraining pipeline via
+ * `--exclude-synthetic`), rows whose `patient_number` matches the synthetic
+ * generator pattern `SYN-%` are dropped as well. Those rows are produced by
+ * `generate-synthetic-cases.mjs` via a statistical (NegativeBinomial) model and
+ * are NOT actual recorded cases, so the production model must never train on
+ * them.
  */
-async function fetchConfirmedCases({ formOnly } = { formOnly: true }) {
+async function fetchConfirmedCases({ formOnly, excludeSynthetic } = { formOnly: true, excludeSynthetic: false }) {
   const sourceClause = formOnly ? "AND p.created_by IS NOT NULL" : "";
+  const syntheticClause = excludeSynthetic
+    ? "AND (p.patient_number IS NULL OR p.patient_number NOT LIKE 'SYN-%')"
+    : "";
   const [rows] = await pool.query(
     `SELECT
         p.id,
@@ -203,7 +228,8 @@ async function fetchConfirmedCases({ formOnly } = { formOnly: true }) {
       JOIN municipalities m ON m.id = p.municipality_id
       JOIN barangays b ON b.id = p.barangay_id
       WHERE LOWER(TRIM(COALESCE(p.case_classification, ''))) = 'confirmed'
-        ${sourceClause}`
+        ${sourceClause}
+        ${syntheticClause}`
   );
   return rows;
 }
@@ -214,7 +240,10 @@ async function fetchConfirmedCases({ formOnly } = { formOnly: true }) {
  * confirmed cases above. Silently returns [] if migration 14 hasn't been run
  * yet (table missing).
  */
-async function fetchCaseEnvironment() {
+async function fetchCaseEnvironment({ excludeSynthetic } = { excludeSynthetic: false }) {
+  const syntheticClause = excludeSynthetic
+    ? "WHERE (p.patient_number IS NULL OR p.patient_number NOT LIKE 'SYN-%')"
+    : "";
   try {
     const [rows] = await pool.query(
       `SELECT
@@ -229,7 +258,8 @@ async function fetchCaseEnvironment() {
           ce.flood_history_4wk     AS floodHistory,
           ce.drought_water_shortage AS droughtHistory
         FROM case_environmental ce
-        JOIN patients p ON p.id = ce.patient_id`
+        JOIN patients p ON p.id = ce.patient_id
+        ${syntheticClause}`
     );
     return rows;
   } catch (err) {
@@ -783,12 +813,13 @@ async function main() {
   console.log("[build] Loading municipalities + cases from MySQL…");
   console.log(
     `[build]   source policy: confirmed = YES, form-submitted only = ` +
-      `${opts.formOnly ? "YES" : "NO (--include-imported)"}`
+      `${opts.formOnly ? "YES" : "NO (--include-imported)"}, ` +
+      `synthetic excluded = ${opts.excludeSynthetic ? "YES (--exclude-synthetic)" : "NO"}`
   );
   const [municipalities, cases, envRows] = await Promise.all([
     fetchMunicipalities(),
-    fetchConfirmedCases({ formOnly: opts.formOnly }),
-    fetchCaseEnvironment()
+    fetchConfirmedCases({ formOnly: opts.formOnly, excludeSynthetic: opts.excludeSynthetic }),
+    fetchCaseEnvironment({ excludeSynthetic: opts.excludeSynthetic })
   ]);
   console.log(
     `[build]   ${municipalities.length} municipalities, ${cases.length} eligible cases, ` +

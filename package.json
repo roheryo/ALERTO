@@ -12,6 +12,9 @@
     "preview": "vite preview",
     "ml:serve": "cd ml && .venv\\Scripts\\python.exe -m uvicorn serve.main:app --host 127.0.0.1 --port 5050",
     "ml:train": "ml\\.venv\\Scripts\\python.exe ml/train.py --disease all",
+    "ml:retrain": "ml\\.venv\\Scripts\\python.exe ml/retrain.py --disease all",
+    "ml:retrain:reuse": "ml\\.venv\\Scripts\\python.exe ml/retrain.py --disease all --skip-build",
+    "ml:schedule": "ml\\.venv\\Scripts\\python.exe ml/scheduler.py --day mon --time 02:00",
     "ml:eval": "ml\\.venv\\Scripts\\python.exe ml/evaluate_baselines.py --disease all && ml\\.venv\\Scripts\\python.exe scripts/show-baselines.py",
     "ml:fetch-weather": "node backend/scripts/fetch-weather-history.mjs",
     "ml:build-dataset": "node backend/scripts/build-ml-datasets.mjs",
@@ -36,10 +39,10 @@
     "react-dom": "^19.2.4",
     "react-icons": "^5.6.0",
     "react-router-dom": "^7.15.0",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "xlsx": "^0.18.5",
     "@eslint/js": "^9.39.4",
     "@tailwindcss/vite": "^4.3.0",
     "@types/react": "^19.2.14",
