@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   Area,
   AreaChart,
@@ -24,7 +24,7 @@ function TrendTooltip({ active, payload, label }) {
 }
 
 /** Municipality-wide weekly trend (disease filter applied). */
-export default function MunicipalTrendCharts({ municipalityTrend = [], diseaseFilter = "DENGUE" }) {
+function MunicipalTrendCharts({ municipalityTrend = [], diseaseFilter = "DENGUE" }) {
   const showAllDiseases = diseaseFilter === "ALL";
 
   const chartSeries = useMemo(() => {
@@ -86,3 +86,5 @@ export default function MunicipalTrendCharts({ municipalityTrend = [], diseaseFi
     </div>
   );
 }
+
+export default memo(MunicipalTrendCharts);

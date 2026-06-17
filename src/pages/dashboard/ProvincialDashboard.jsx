@@ -5,6 +5,10 @@ import ProvincialProvinceTrend from "@/components/provincial/ProvincialProvinceT
 import { useProvincialSurveillance } from "@/hooks/useProvincialSurveillance";
 import "./ProvincialDashboard.css";
 
+function shortPeriodLabel(windowLabel) {
+  return windowLabel ? `Last 4 weeks (${windowLabel})` : "Last 4 weeks";
+}
+
 export default function ProvincialDashboard() {
   const {
     loading,
@@ -12,20 +16,14 @@ export default function ProvincialDashboard() {
     lastSyncedAt,
     filters,
     patchFilters,
-    windows,
-    periodCaption,
+    windowLabel,
     kpis,
     syncHealth,
     provinceTrend
   } = useProvincialSurveillance();
 
   return (
-    <ProvincialPageShell
-      title="Provincial surveillance"
-      subline="Province-wide overview — use sidebar for rankings, map, and coordination"
-      lastSyncedAt={lastSyncedAt}
-      loading={loading}
-    >
+    <ProvincialPageShell title="Provincial overview" lastSyncedAt={lastSyncedAt} loading={loading}>
       {loading ? <p className="prov-status">Loading case data…</p> : null}
       {error ? (
         <p className="prov-status prov-status--error" role="alert">
@@ -35,21 +33,10 @@ export default function ProvincialDashboard() {
 
       {!loading && !error ? (
         <div className="prov-dash">
-          <ProvincialFilters
-            filters={filters}
-            patchFilters={patchFilters}
-            periodCaption={periodCaption}
-            windows={windows}
-            showMunicipalityFilter={false}
-          />
-
           <ProvincialKpiCards kpis={kpis} />
 
-          <section className="prov-panel prov-sync" aria-label="Data integration health">
-            <h3>Surveillance integration</h3>
-            <p className="prov-sub">
-              Data flows from barangay BHU encoding across the province — sync health for PHO oversight.
-            </p>
+          <section className="prov-panel prov-sync" aria-label="Barangay reporting status">
+            <h3>Barangay reporting</h3>
             <div className="prov-sync-grid">
               <article className="prov-sync-card">
                 <span className="prov-sync-label">Barangays reporting</span>
@@ -58,7 +45,7 @@ export default function ProvincialDashboard() {
                 </strong>
               </article>
               <article className="prov-sync-card">
-                <span className="prov-sync-label">Last encode</span>
+                <span className="prov-sync-label">Last case report</span>
                 <strong>
                   {syncHealth.lastEncode
                     ? `${syncHealth.lastEncode.barangay}, ${syncHealth.lastEncode.municipality}`
@@ -77,6 +64,13 @@ export default function ProvincialDashboard() {
               </article>
             </div>
           </section>
+
+          <ProvincialFilters
+            filters={filters}
+            patchFilters={patchFilters}
+            periodCaption={shortPeriodLabel(windowLabel)}
+            showMunicipalityFilter={false}
+          />
 
           <ProvincialProvinceTrend provinceTrend={provinceTrend} diseaseFilter={filters.diseaseFilter} />
         </div>

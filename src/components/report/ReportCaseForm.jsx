@@ -359,7 +359,17 @@ export default function ReportCaseForm({ user, onSubmitted }) {
         dateStarted: fields.dOnset,
         caseClassification: fields.caseClass || null,
         outcome: fields.outcome,
-        patientNumber: (fields.patientNum || "").trim() || null
+        patientNumber: (fields.patientNum || "").trim() || null,
+        environment: {
+          stagnantWater: !!fields.stagnantWater,
+          recentRain: !!fields.recentRain,
+          crowding: !!fields.crowding,
+          washWater: fields.washWater || null,
+          washSanitation: fields.washSanitation || null,
+          floodHistory: !!fields.floodHistory,
+          droughtHistory: !!fields.droughtHistory,
+          exposureNotes: (fields.notes || "").trim() || null
+        }
       };
 
       const data = await apiFetch("/patients", { token, method: "POST", body: payload });

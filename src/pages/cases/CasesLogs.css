@@ -492,6 +492,43 @@
   cursor: not-allowed;
 }
 
+.caseslogs-page--pending .caseslogs-table-card,
+.caseslogs-page--pending .caseslogs-kpis {
+  opacity: 0.72;
+  transition: opacity 0.15s ease;
+}
+
+.caseslogs-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--cl-border);
+  background: #f8fafc;
+}
+
+.caseslogs-pagination-meta {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.caseslogs-pagination-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.caseslogs-pagination-page {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  padding: 0 4px;
+}
+
 @media (max-width: 720px) {
   .caseslogs-modal-dl {
     grid-template-columns: 1fr;

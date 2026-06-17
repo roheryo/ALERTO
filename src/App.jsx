@@ -6,6 +6,7 @@ import {
 } from "react-router-dom";
 
 import { AuthProvider } from "@/context/AuthContext";
+import { PatientsProvider } from "@/context/PatientsContext";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import RoleRoute from "@/components/auth/RoleRoute";
 
@@ -27,7 +28,8 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
+        <PatientsProvider>
+          <Routes>
           <Route path="/" element={<Login />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Navigate to="/login" replace />} />
@@ -109,6 +111,7 @@ function App() {
             />
           </Route>
         </Routes>
+        </PatientsProvider>
       </AuthProvider>
     </Router>
   );

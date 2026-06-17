@@ -4,11 +4,32 @@ import ProvincialVelocityTable from "@/components/provincial/ProvincialVelocityT
 import { useProvincialSurveillance } from "@/hooks/useProvincialSurveillance";
 import "./ProvincialDashboard.css";
 
+const DISEASE_LABELS = {
+  DENGUE: "Dengue",
+  ILI: "ILI",
+  AWD: "AWD",
+  ALL: "All diseases"
+};
+
+function diseaseLabel(code) {
+  return DISEASE_LABELS[String(code ?? "").toUpperCase()] ?? "Selected disease";
+}
+
+function shortPeriodLabel(windowLabel) {
+  return windowLabel ? `Last 4 weeks (${windowLabel})` : "Last 4 weeks";
+}
+
+function formatCaseChange(delta) {
+  if (delta > 0) return `up ${delta}`;
+  if (delta < 0) return `down ${Math.abs(delta)}`;
+  return "no change";
+}
+
 function exportCsv(rows, mode) {
   const headers =
     mode === "barangay"
-      ? ["rank", "municipality", "barangay", "current", "prior", "delta", "pctChange"]
-      : ["rank", "municipality", "current", "prior", "delta", "pctChange"];
+      ? ["Rank", "Municipality", "Barangay", "Recent cases", "Previous period", "Change", "Percent change"]
+      : ["Rank", "Municipality", "Recent cases", "Previous period", "Change", "Percent change"];
   const lines = [
     headers.join(","),
     ...rows.map((r) => {
@@ -23,9 +44,26 @@ function exportCsv(rows, mode) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `alerto-province-${mode}-rankings.csv`;
+  a.download = `alerto-rankings-${mode}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function RankingTableSection({ id, title, subtitle, rows, mode, onExport }) {
+  return (
+    <section className="prov-panel" aria-labelledby={id}>
+      <div className="prov-panel-head">
+        <div>
+          <h3 id={id}>{title}</h3>
+          {subtitle ? <p className="prov-sub prov-panel-head-sub">{subtitle}</p> : null}
+        </div>
+        <button type="button" className="prov-btn prov-btn--ghost" onClick={onExport}>
+          Download CSV
+        </button>
+      </div>
+      <ProvincialVelocityTable rows={rows} mode={mode} plainLabels showToolbar={false} />
+    </section>
+  );
 }
 
 export default function ProvincialRankings() {
@@ -35,81 +73,74 @@ export default function ProvincialRankings() {
     lastSyncedAt,
     filters,
     patchFilters,
-    windows,
-    periodCaption,
+    windowLabel,
     municipalities,
     municipalityRows,
     barangayRows,
     topBarangaysHeadline
   } = useProvincialSurveillance();
 
+  const disease = diseaseLabel(filters.diseaseFilter);
+  const periodNote = shortPeriodLabel(windowLabel);
+  const barangayScope = filters.municipalityFilter
+    ? `${filters.municipalityFilter} only`
+    : "Province-wide";
+
   return (
-    <ProvincialPageShell
-      title="Fastest rising rankings"
-      subline="Province-wide velocity by municipality or barangay"
-      lastSyncedAt={lastSyncedAt}
-      loading={loading}
-    >
-      {loading ? <p className="prov-status">Loading…</p> : null}
-      {error ? <p className="prov-status prov-status--error">{error}</p> : null}
+    <ProvincialPageShell title="Areas with rising cases" lastSyncedAt={lastSyncedAt} loading={loading}>
+      {loading ? <p className="prov-status">Loading case data…</p> : null}
+      {error ? (
+        <p className="prov-status prov-status--error" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       {!loading && !error ? (
         <div className="prov-dash">
           <ProvincialFilters
             filters={filters}
             patchFilters={patchFilters}
-            periodCaption={periodCaption}
-            windows={windows}
+            periodCaption={periodNote}
             municipalities={municipalities}
-            showGeoToggle
             showMunicipalityFilter
           />
 
           <section className="prov-panel prov-headline" aria-live="polite">
-            <h3>
-              Top {topBarangaysHeadline.top.length} barangays rising fastest for{" "}
-              {topBarangaysHeadline.label} · last {topBarangaysHeadline.windowWeeks} weeks (
-              {topBarangaysHeadline.scope})
-            </h3>
-            <ol className="prov-top-list">
-              {topBarangaysHeadline.top.map((r) => (
-                <li key={r.barangayKey}>
-                  <strong>{r.barangay}</strong>, {r.municipality} — {r.current} cases (Δ{" "}
-                  {r.delta > 0 ? `+${r.delta}` : r.delta})
-                </li>
-              ))}
-            </ol>
+            <h3>Top barangays — {disease}</h3>
+            <p className="prov-sub">
+              {barangayScope} · compared to the previous 4 weeks
+            </p>
+            {topBarangaysHeadline.top.length === 0 ? (
+              <p className="prov-note">No barangays with cases for this filter.</p>
+            ) : (
+              <ol className="prov-top-list">
+                {topBarangaysHeadline.top.map((r) => (
+                  <li key={r.barangayKey}>
+                    <strong>{r.barangay}</strong>, {r.municipality} — {r.current}{" "}
+                    {r.current === 1 ? "case" : "cases"} ({formatCaseChange(r.delta)})
+                  </li>
+                ))}
+              </ol>
+            )}
           </section>
 
-          <section className="prov-panel" aria-labelledby="prov-table-a-title">
-            <h3 id="prov-table-a-title">
-              Table A — Municipalities by velocity ({filters.diseaseFilter})
-            </h3>
-            <ProvincialVelocityTable
-              rows={municipalityRows}
-              mode="municipality"
-              onExport={() => exportCsv(municipalityRows, "municipality")}
-            />
-          </section>
+          <RankingTableSection
+            id="prov-muni-rankings-title"
+            title="Municipalities"
+            subtitle={`${disease} · ${periodNote}`}
+            rows={municipalityRows}
+            mode="municipality"
+            onExport={() => exportCsv(municipalityRows, "municipality")}
+          />
 
-          <section className="prov-panel" aria-labelledby="prov-table-b-title">
-            <h3 id="prov-table-b-title">
-              Table B — Barangays {filters.municipalityFilter ? `in ${filters.municipalityFilter}` : "province-wide"}
-            </h3>
-            <ProvincialVelocityTable
-              rows={barangayRows}
-              mode="barangay"
-              onExport={() => exportCsv(barangayRows, "barangay")}
-            />
-          </section>
-
-          {filters.geoView === "municipality" ? (
-            <section className="prov-panel" aria-label="Primary ranking view">
-              <p className="prov-note">
-                Switch to <strong>By barangay</strong> above for province-wide barangay rankings (237 areas).
-              </p>
-            </section>
-          ) : null}
+          <RankingTableSection
+            id="prov-brgy-rankings-title"
+            title="Barangays"
+            subtitle={`${disease} · ${barangayScope} · ${periodNote}`}
+            rows={barangayRows}
+            mode="barangay"
+            onExport={() => exportCsv(barangayRows, "barangay")}
+          />
         </div>
       ) : null}
     </ProvincialPageShell>

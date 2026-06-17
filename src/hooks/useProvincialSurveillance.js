@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useDeferredValue, startTransition } from "react";
 
 import { listProvinceMunicipalities } from "@/data/davaoDeOroGeography";
 import { filterConfirmedPatients } from "@/lib/disease";
@@ -13,7 +13,8 @@ import {
   provinceBarangayCount
 } from "@/lib/provincialSurveillance";
 import {
-  computeDiseaseKpi,
+  buildSurveillanceIndex,
+  computeAllDiseaseKpis,
   formatPeriodCaption,
   formatWindowLabel,
   resolveSurveillanceWindows
@@ -42,15 +43,22 @@ function loadFilters() {
   }
 }
 
+const WINDOW_WEEKS = 4;
+const WINDOW_MODE = "weeks";
+const PERIOD_OFFSET = 0;
+
 export function useProvincialSurveillance() {
   const { patients: rawPatients, loading, error } = usePatients();
   const [filters, setFilters] = useState(loadFilters);
+  const deferredFilters = useDeferredValue(filters);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
 
   const patients = useMemo(
     () => filterConfirmedPatients(Array.isArray(rawPatients) ? rawPatients : []),
     [rawPatients]
   );
+
+  const caseIndex = useMemo(() => buildSurveillanceIndex(patients), [patients]);
 
   useEffect(() => {
     if (!loading && !error) setLastSyncedAt(new Date());
@@ -65,82 +73,81 @@ export function useProvincialSurveillance() {
   }, [filters]);
 
   const patchFilters = useCallback((patch) => {
-    setFilters((prev) => ({ ...prev, ...patch }));
+    startTransition(() => {
+      setFilters((prev) => ({ ...prev, ...patch }));
+    });
   }, []);
 
   const timeOptions = useMemo(
     () => ({
-      windowMode: filters.windowMode,
-      periodOffset: filters.periodOffset,
+      windowMode: WINDOW_MODE,
+      periodOffset: PERIOD_OFFSET,
       referenceDate: new Date(),
-      diseaseFilter: filters.diseaseFilter
+      diseaseFilter: deferredFilters.diseaseFilter,
+      caseIndex
     }),
-    [filters.windowMode, filters.periodOffset, filters.diseaseFilter]
+    [deferredFilters.diseaseFilter, caseIndex]
   );
 
   const windows = useMemo(
     () =>
       resolveSurveillanceWindows({
-        windowWeeks: filters.windowWeeks,
-        windowMode: filters.windowMode,
-        periodOffset: filters.periodOffset,
+        windowWeeks: WINDOW_WEEKS,
+        windowMode: WINDOW_MODE,
+        periodOffset: PERIOD_OFFSET,
         referenceDate: new Date()
       }),
-    [filters.windowWeeks, filters.windowMode, filters.periodOffset]
+    []
   );
 
   const periodCaption = useMemo(
     () =>
       formatPeriodCaption(windows, {
-        windowMode: filters.windowMode,
-        windowWeeks: filters.windowWeeks,
-        periodOffset: filters.periodOffset
+        windowMode: WINDOW_MODE,
+        windowWeeks: WINDOW_WEEKS,
+        periodOffset: PERIOD_OFFSET
       }),
-    [windows, filters.windowMode, filters.windowWeeks, filters.periodOffset]
+    [windows]
   );
 
   const kpis = useMemo(
-    () => ({
-      awd: computeDiseaseKpi(patients, "AWD", filters.windowWeeks, { ...timeOptions, windows }),
-      ili: computeDiseaseKpi(patients, "ILI", filters.windowWeeks, { ...timeOptions, windows }),
-      dengue: computeDiseaseKpi(patients, "DENGUE", filters.windowWeeks, { ...timeOptions, windows })
-    }),
-    [patients, filters.windowWeeks, timeOptions, windows]
+    () => computeAllDiseaseKpis(patients, WINDOW_WEEKS, { ...timeOptions, windows }),
+    [patients, timeOptions, windows]
   );
 
   const municipalityRows = useMemo(
     () =>
-      computeMunicipalityVelocityRows(patients, filters.windowWeeks, filters.diseaseFilter, {
+      computeMunicipalityVelocityRows(patients, WINDOW_WEEKS, deferredFilters.diseaseFilter, {
         ...timeOptions,
         windows
       }),
-    [patients, filters.windowWeeks, filters.diseaseFilter, timeOptions, windows]
+    [patients, deferredFilters.diseaseFilter, timeOptions, windows]
   );
 
   const barangayRows = useMemo(
     () =>
       computeProvinceBarangayRows(
         patients,
-        filters.windowWeeks,
-        filters.diseaseFilter,
+        WINDOW_WEEKS,
+        deferredFilters.diseaseFilter,
         { ...timeOptions, windows },
-        filters.municipalityFilter
+        deferredFilters.municipalityFilter
       ),
-    [patients, filters.windowWeeks, filters.diseaseFilter, timeOptions, windows, filters.municipalityFilter]
+    [patients, deferredFilters.diseaseFilter, timeOptions, windows, deferredFilters.municipalityFilter]
   );
 
   const statusBoard = useMemo(
     () =>
-      computeMunicipalityStatusBoard(patients, filters.windowWeeks, filters.diseaseFilter, {
+      computeMunicipalityStatusBoard(patients, WINDOW_WEEKS, deferredFilters.diseaseFilter, {
         ...timeOptions,
         windows
       }),
-    [patients, filters.windowWeeks, filters.diseaseFilter, timeOptions, windows]
+    [patients, deferredFilters.diseaseFilter, timeOptions, windows]
   );
 
   const crossAlerts = useMemo(() => computeCrossMunicipalityAlerts(statusBoard), [statusBoard]);
 
-  const syncHealth = useMemo(() => computeProvinceSyncHealth(patients), [patients]);
+  const syncHealth = useMemo(() => computeProvinceSyncHealth(patients, timeOptions), [patients, timeOptions]);
 
   const provinceTrend = useMemo(
     () => computeProvinceWeeklyTrend(patients, 8, timeOptions),
@@ -154,19 +161,19 @@ export function useProvincialSurveillance() {
 
   const topBarangaysHeadline = useMemo(() => {
     const label =
-      filters.diseaseFilter === "ALL"
+      deferredFilters.diseaseFilter === "ALL"
         ? "all diseases"
-        : filters.diseaseFilter === "ILI"
+        : deferredFilters.diseaseFilter === "ILI"
           ? "ILI"
-          : filters.diseaseFilter === "AWD"
+          : deferredFilters.diseaseFilter === "AWD"
             ? "AWD"
             : "Dengue";
-    const scope = filters.municipalityFilter
-      ? `in ${filters.municipalityFilter}`
+    const scope = deferredFilters.municipalityFilter
+      ? `in ${deferredFilters.municipalityFilter}`
       : "province-wide";
     const top = barangayRows.slice(0, 10);
-    return { label, scope, windowWeeks: filters.windowWeeks, top };
-  }, [barangayRows, filters.diseaseFilter, filters.municipalityFilter, filters.windowWeeks]);
+    return { label, scope, windowWeeks: WINDOW_WEEKS, top };
+  }, [barangayRows, deferredFilters.diseaseFilter, deferredFilters.municipalityFilter]);
 
   const municipalities = useMemo(() => listProvinceMunicipalities(), []);
 
@@ -176,6 +183,7 @@ export function useProvincialSurveillance() {
     error,
     lastSyncedAt,
     filters,
+    filtersPending: deferredFilters !== filters,
     patchFilters,
     windows,
     periodCaption,

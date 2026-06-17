@@ -1,5 +1,3 @@
-import { Link } from "react-router-dom";
-
 import ProvincialFilters from "@/components/provincial/ProvincialFilters";
 import ProvincialPageShell from "@/components/provincial/ProvincialPageShell";
 import { useProvincialSurveillance } from "@/hooks/useProvincialSurveillance";
@@ -49,24 +47,6 @@ export default function ProvincialCoordination() {
             municipalities={municipalities}
             showMunicipalityFilter
           />
-
-          <section className="prov-panel prov-links" aria-label="Reports and notifications">
-            <h3>Reports &amp; deeper analysis</h3>
-            <div className="prov-quicknav">
-              <Link to="/dashboard/reports" className="prov-quick-link">
-                Reports (period summaries)
-              </Link>
-              <Link to="/dashboard/notification" className="prov-quick-link prov-quick-link--muted">
-                Notifications (rule-based alerts)
-              </Link>
-              <Link to="/dashboard/province-rankings" className="prov-quick-link prov-quick-link--muted">
-                Fastest rising rankings
-              </Link>
-            </div>
-            <p className="prov-note prov-note--italic">
-              Future: intervention recommendations panel by municipality.
-            </p>
-          </section>
 
           <section className="prov-panel" aria-labelledby="prov-cross-title">
             <h3 id="prov-cross-title">Cross-municipality alerts</h3>

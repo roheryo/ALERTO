@@ -15,6 +15,16 @@
   padding: 12px 22px 22px;
 }
 
+.notify-fallback-note {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-size: 0.9rem;
+}
+
 .notify-summary {
   margin-top: 0;
   display: flex;
