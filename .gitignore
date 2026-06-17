@@ -57,3 +57,10 @@ Desktop.ini
 # Optional: local DB dumps (keep database/*.sql migrations in git)
 *-dump.sql
 *.sql.backup
+
+# ML retraining runtime outputs (versioned model bundles + audit trail)
+ml/.venv/
+ml/artifacts/versions/
+ml/artifacts/retrain_log.jsonl
+ml/artifacts/active_version.json
+ml/artifacts/cron.log
