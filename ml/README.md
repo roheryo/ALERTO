@@ -16,15 +16,21 @@ ml/
 ├── model_lstm.py            CaseLSTM (stacked LSTM + dropout + linear head)
 ├── config.yaml              Lookback, horizon, features, hyperparameters
 ├── train.py                 Sequence builder + training loop
+├── retrain.py               Automated retraining orchestrator (versioning,
+│                            validation, fallback, audit log, hot reload)
+├── scheduler.py             Weekly trigger that launches retrain.py
 ├── evaluate_baselines.py    Naive, Ridge, SVR, ARIMA vs LSTM (thesis §2.5)
 ├── serve/
-│   └── main.py              FastAPI inference service (/health /metrics /predict)
+│   └── main.py              FastAPI inference service (/health /metrics /predict /reload)
 ├── artifacts/               Generated per disease (gitignored)
 │   ├── ili_lstm.pt
 │   ├── ili_scaler.joblib
 │   ├── ili_config.json
 │   ├── ili_metrics.json
-│   └── ili_baselines.json
+│   ├── ili_baselines.json
+│   ├── active_version.json  Per-disease pointer to the promoted model version
+│   ├── retrain_log.jsonl    One JSON line per weekly retrain run (audit trail)
+│   └── versions/            Staged versioned bundles (model_YYYY-MM-DD/…)
 └── requirements.txt
 ```
 
@@ -46,6 +52,9 @@ pip install -r requirements.txt
 | `npm run ml:serve` | Just the FastAPI LSTM service on :5050. |
 | `npm run ml:health` | Curl-equivalent of `GET /health` against :5050. |
 | `npm run ml:train` | Train all three LSTMs from the current CSV. |
+| `npm run ml:retrain` | One automated retrain cycle on **real recorded cases only**: rebuild dataset (`--exclude-synthetic`) → train into a versioned dir → validate → promote or fall back → log → hot-reload the live service. |
+| `npm run ml:retrain:reuse` | Same as above but reuses the existing CSV (`--skip-build`). |
+| `npm run ml:schedule` | Start the long-running weekly scheduler (default Mon 02:00 local) that launches `ml:retrain`. |
 | `npm run ml:eval` | Re-run all baselines + print the thesis-style comparison table. |
 | `npm run ml:fetch-weather` | Pull Open-Meteo ERA5 history into `data/processed/weather_daily.csv`. |
 | `npm run ml:build-dataset` | Rebuild `surveillance_weekly_training.csv` from MySQL + weather. |
@@ -82,6 +91,76 @@ Each run writes four files into `ml/artifacts/`:
 | `{disease}_scaler.joblib` | `StandardScaler` fitted on train features only |
 | `{disease}_config.json` | Feature/target columns, lookback, horizon, transform |
 | `{disease}_metrics.json` | Train/val/test counts + MAPE/RMSE/MAE (overall + per horizon step) |
+
+## Automated weekly retraining
+
+`retrain.py` retrains the production model on a weekly cadence with full
+versioning and safety, **without ever interrupting the live forecasting
+service**. The model architecture (`CaseLSTM`) is unchanged — only the training
+pipeline and scheduling are added.
+
+```powershell
+# One full cycle (rebuild real-case dataset → train → validate → promote)
+npm run ml:retrain
+python ml/retrain.py --disease all
+
+# Reuse the existing CSV (skip the MySQL rebuild)
+python ml/retrain.py --skip-build
+
+# Tighten the promotion gate to a 5% max MAPE degradation
+python ml/retrain.py --max-mape-degradation 0.05
+```
+
+### What each run does
+
+1. **Rebuild on real cases only.** Invokes
+   `node backend/scripts/build-ml-datasets.mjs --exclude-synthetic`, which
+   aggregates the *cumulative total* of all eligible confirmed, form-submitted
+   cases up to "now" and **drops statistically-generated `SYN-%` rows**. The
+   model is therefore fit on actual recorded data only — never on synthetic or
+   model-predicted / forecasted values. (The LSTM's `cases_t_plus_1..4` targets
+   are shifted *actual* counts, not forecasts.)
+2. **Train into a versioned staging dir** — `ml/artifacts/versions/model_YYYY-MM-DD/`.
+   The live `ml/artifacts` bundle is untouched while this runs, so `/predict`
+   keeps serving the previous model.
+3. **Validate before promoting.** A disease model is promoted only if its
+   artifacts exist, it trained on real samples, and its test MAPE is within
+   `--max-mape-degradation` (default 10%) of the currently-active model.
+   Otherwise the **previous version is kept (automatic fallback)**.
+4. **Atomic hot-swap + reload.** Promotion atomically copies artifacts into the
+   active bundle, then `POST /reload` clears the service cache so the new model
+   is served on the next request — no restart, no downtime.
+5. **Traceability.** Appends one line to `ml/artifacts/retrain_log.jsonl`
+   (timestamp, dataset size, per-disease decision + metrics) and updates
+   `ml/artifacts/active_version.json`.
+
+A run that produces no valid candidate leaves production exactly as it was.
+
+### Scheduling
+
+Option A — built-in loop (simplest, keep the process running):
+
+```powershell
+npm run ml:schedule
+# or customise:
+python ml/scheduler.py --day sun --time 23:30
+python ml/scheduler.py --run-now            # run once now, then weekly
+```
+
+Option B — OS scheduler (recommended for servers):
+
+- **Windows Task Scheduler** — weekly trigger running:
+  `C:\…\ALERTO\ml\.venv\Scripts\python.exe C:\…\ALERTO\ml\retrain.py --disease all`
+- **cron (Linux/macOS)** — e.g. every Monday 02:00:
+
+```cron
+0 2 * * 1  cd /path/to/ALERTO && ml/.venv/bin/python ml/retrain.py --disease all >> ml/artifacts/cron.log 2>&1
+```
+
+Both paths call the same orchestrator, so versioning/validation/fallback/logging
+behave identically. The scheduler/cron job runs in its own process and only
+touches the active model via the atomic promote step, so the forecasting
+service is never blocked.
 
 ## Benchmark (thesis §2.5)
 

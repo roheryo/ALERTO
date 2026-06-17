@@ -4,10 +4,13 @@
 
 Endpoints
 ---------
-GET  /health                       liveness probe
+GET  /health                       liveness probe (+ active model version)
 GET  /metrics                      training metrics for all available diseases
 POST /predict                      1..4 week forecast for one (municipality, disease)
 GET  /predict?municipality_id=&disease=   convenience wrapper around POST
+POST /reload                       drop the in-memory bundle cache so freshly
+                                   retrained artifacts are picked up without a
+                                   restart (called by ml/retrain.py on promote)
 """
 from __future__ import annotations
 
@@ -31,6 +34,7 @@ from model_lstm import CaseLSTM  # noqa: E402
 
 ARTIFACTS = ROOT / "ml" / "artifacts"
 DATA_CSV = ROOT / "data" / "processed" / "surveillance_weekly_training.csv"
+ACTIVE_VERSION_FILE = ARTIFACTS / "active_version.json"
 
 app = FastAPI(title="ALERTO LSTM", version="0.3.0")
 
@@ -78,6 +82,16 @@ def _load_bundle(disease: str) -> dict:
     bundle["disease"] = disease.upper()
     _cache[key] = bundle
     return bundle
+
+
+def _active_version() -> dict:
+    """Read the per-disease active model version pointer written by retrain.py."""
+    if not ACTIVE_VERSION_FILE.is_file():
+        return {}
+    try:
+        return json.loads(ACTIVE_VERSION_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
 
 
 def _series_for_muni(municipality_id: int, disease: str) -> pd.DataFrame:
@@ -172,6 +186,26 @@ def health() -> dict:
         "version": app.version,
         "artifacts_dir": str(ARTIFACTS),
         "diseases_available": available,
+        "active_model_version": _active_version(),
+        "loaded_in_cache": sorted(k.upper() for k in _cache),
+    }
+
+
+@app.post("/reload")
+def reload_models() -> dict:
+    """Drop the cached model bundles so the next prediction reloads from disk.
+
+    The retraining pipeline calls this immediately after promoting a new model
+    version. Clearing the cache is effectively instantaneous and does not
+    interrupt in-flight requests — subsequent predictions transparently load the
+    freshly-promoted artifacts.
+    """
+    cleared = sorted(k.upper() for k in _cache)
+    _cache.clear()
+    return {
+        "ok": True,
+        "cleared": cleared,
+        "active_model_version": _active_version(),
     }
 
 
