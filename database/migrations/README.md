@@ -15,6 +15,17 @@ Run scripts in numeric order on a fresh MySQL instance:
 | `08_patients_case_fields.sql` | Case classification columns |
 | `09_patients_patient_number.sql` | Patient number column |
 | `10_users_username_from_fullname.sql` | Usernames derived from full name / place (existing DBs) |
+| `14_case_environmental.sql` | Per-case environmental / WASH factors (drives new LSTM features) |
+
+> Migrations `11`–`13` previously created the `early_warning_alerts` table. The
+> Early-Warning module has been retired pending a rewrite, so those files were
+> removed and the table is no longer auto-created. If you have an older DB with
+> the table still around, drop it manually:
+>
+> ```sql
+> DROP TABLE IF EXISTS early_warning_alert_events;
+> DROP TABLE IF EXISTS early_warning_alerts;
+> ```
 
 ## ILI 2023 dataset (Excel import)
 
