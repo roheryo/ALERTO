@@ -1,7 +1,7 @@
 import "./CasesLogs.css";
 import "@/styles/dashboard-shell.css";
 import logo from "@/assets/images/ddoLOGO.jpg";
-import { useMemo, useState, useEffect, useCallback } from "react";
+import { useMemo, useState, useEffect, useCallback, useDeferredValue, startTransition } from "react";
 import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
@@ -23,6 +23,8 @@ const MUNICIPALITY_DATA = {
   Laak: ["Amorcruz", "Anitap", "Datu Ampunan", "Longanapan", "Poblacion"],
   Mabini: ["Cadunan", "Golden Valley", "Pindasan", "San Antonio", "Tagnanan"]
 };
+
+const PAGE_SIZE = 100;
 
 function norm(s) {
   return String(s ?? "")
@@ -84,15 +86,6 @@ function comparePatientIds(a, b) {
   return av.localeCompare(bv, "en", { sensitivity: "base", numeric: true });
 }
 
-function compareDates(a, b) {
-  const at = dateSortTime(a);
-  const bt = dateSortTime(b);
-  if (at == null && bt == null) return 0;
-  if (at == null) return 1;
-  if (bt == null) return -1;
-  return at - bt;
-}
-
 function compareStrings(a, b) {
   const av = String(a ?? "").trim();
   const bv = String(b ?? "").trim();
@@ -113,13 +106,21 @@ function CasesLogs() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortKey, setSortKey] = useState(null);
   const [sortDir, setSortDir] = useState("asc");
+  const [page, setPage] = useState(1);
 
-  const { patients: remotePatients, loading, error, refetch } = usePatients();
-  const [patients, setPatients] = useState([]);
+  const deferredSearchTerm = useDeferredValue(searchTerm);
+  const deferredMunicipality = useDeferredValue(selectedMunicipality);
+  const deferredBarangay = useDeferredValue(selectedBarangay);
+  const deferredDisease = useDeferredValue(selectedDisease);
+  const deferredStatus = useDeferredValue(statusFilter);
+  const filtersPending =
+    deferredSearchTerm !== searchTerm ||
+    deferredMunicipality !== selectedMunicipality ||
+    deferredBarangay !== selectedBarangay ||
+    deferredDisease !== selectedDisease ||
+    deferredStatus !== statusFilter;
 
-  useEffect(() => {
-    setPatients(Array.isArray(remotePatients) ? remotePatients : []);
-  }, [remotePatients]);
+  const { patients, loading, error, refetch, mutatePatients } = usePatients();
 
   const [showView, setShowView] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -167,67 +168,101 @@ function CasesLogs() {
     }
   }, [roleKey, lockedMunicipality, lockedBarangay]);
 
-  /** API applies RBAC (including cases the user submitted via Report Case). */
-  const scopedPatients = useMemo(() => (Array.isArray(patients) ? [...patients] : []), [patients]);
+  /** Pre-normalize once per fetch so filters/sort avoid repeated string work. */
+  const patientIndex = useMemo(
+    () =>
+      (Array.isArray(patients) ? patients : []).map((p) => ({
+        patient: p,
+        normMuni: norm(p.municipality),
+        normBrgy: norm(p.barangay),
+        disease: normalizeDisease(p.diseaseType),
+        normStatus: norm(p.caseClassification),
+        searchHaystack: `${displayPatientId(p)} ${String(p.name ?? "")}`.toLowerCase(),
+        dateStartedTime: dateSortTime(p.dateStarted)
+      })),
+    [patients]
+  );
 
-  const visiblePatients = useMemo(() => {
-    let list = scopedPatients;
+  const visibleRows = useMemo(() => {
+    const q = deferredSearchTerm.trim().toLowerCase();
+    const muniKey = deferredMunicipality ? norm(deferredMunicipality) : "";
+    const brgyKey = deferredBarangay ? norm(deferredBarangay) : "";
+    const rows = [];
 
-    if (roleKey === "province" && selectedMunicipality) {
-      list = list.filter((p) => norm(p.municipality) === norm(selectedMunicipality));
+    for (const row of patientIndex) {
+      if (roleKey === "province" && muniKey && row.normMuni !== muniKey) continue;
+      if ((roleKey === "province" || roleKey === "municipal") && brgyKey && row.normBrgy !== brgyKey) {
+        continue;
+      }
+      if (deferredDisease && row.disease !== deferredDisease) continue;
+      if (deferredStatus && row.normStatus !== deferredStatus) continue;
+      if (q && !row.searchHaystack.includes(q)) continue;
+      rows.push(row);
     }
 
-    if ((roleKey === "province" || roleKey === "municipal") && selectedBarangay) {
-      list = list.filter((p) => norm(p.barangay) === norm(selectedBarangay));
-    }
+    return rows;
+  }, [
+    patientIndex,
+    roleKey,
+    deferredMunicipality,
+    deferredBarangay,
+    deferredDisease,
+    deferredStatus,
+    deferredSearchTerm
+  ]);
 
-    if (selectedDisease) {
-      list = list.filter((p) => normalizeDisease(p.diseaseType) === selectedDisease);
-    }
-
-    if (statusFilter === "suspect") {
-      list = list.filter((p) => norm(p.caseClassification) === "suspect");
-    } else if (statusFilter === "probable") {
-      list = list.filter((p) => norm(p.caseClassification) === "probable");
-    } else if (statusFilter === "confirmed") {
-      list = list.filter((p) => norm(p.caseClassification) === "confirmed");
-    }
-
-    const q = searchTerm.trim().toLowerCase();
-    if (q) {
-      list = list.filter((p) => {
-        const name = String(p.name ?? "").toLowerCase();
-        const pid = displayPatientId(p).toLowerCase();
-        return name.includes(q) || pid.includes(q);
-      });
-    }
-
-    return list;
-  }, [scopedPatients, roleKey, selectedMunicipality, selectedBarangay, selectedDisease, statusFilter, searchTerm]);
-
-  const sortedPatients = useMemo(() => {
-    if (!sortKey) return visiblePatients;
-    const list = [...visiblePatients];
+  const sortedRows = useMemo(() => {
+    if (!sortKey) return visibleRows;
+    const list = [...visibleRows];
     const dir = sortDir === "asc" ? 1 : -1;
     list.sort((a, b) => {
       let cmp = 0;
-      if (sortKey === "patientId") cmp = comparePatientIds(a, b);
-      else if (sortKey === "dateStarted") cmp = compareDates(a.dateStarted, b.dateStarted);
-      else if (sortKey === "municipality") cmp = compareStrings(a.municipality, b.municipality);
-      else if (sortKey === "barangay") cmp = compareStrings(a.barangay, b.barangay);
+      if (sortKey === "patientId") cmp = comparePatientIds(a.patient, b.patient);
+      else if (sortKey === "dateStarted") {
+        cmp = (a.dateStartedTime ?? Number.POSITIVE_INFINITY) - (b.dateStartedTime ?? Number.POSITIVE_INFINITY);
+      } else if (sortKey === "municipality") cmp = compareStrings(a.patient.municipality, b.patient.municipality);
+      else if (sortKey === "barangay") cmp = compareStrings(a.patient.barangay, b.patient.barangay);
       return dir * cmp;
     });
     return list;
-  }, [visiblePatients, sortKey, sortDir]);
+  }, [visibleRows, sortKey, sortDir]);
+
+  const pageCount = Math.max(1, Math.ceil(sortedRows.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage(1);
+  }, [
+    deferredMunicipality,
+    deferredBarangay,
+    deferredDisease,
+    deferredStatus,
+    deferredSearchTerm,
+    sortKey,
+    sortDir
+  ]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, pageCount));
+  }, [pageCount]);
+
+  const pagedRows = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return sortedRows.slice(start, start + PAGE_SIZE);
+  }, [sortedRows, page]);
+
+  const pageStart = sortedRows.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const pageEnd = Math.min(page * PAGE_SIZE, sortedRows.length);
 
   const toggleSort = useCallback((key) => {
-    const defaultDir = key === "dateStarted" ? "desc" : "asc";
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
-      setSortDir(defaultDir);
-    }
+    startTransition(() => {
+      const defaultDir = key === "dateStarted" ? "desc" : "asc";
+      if (sortKey === key) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      } else {
+        setSortKey(key);
+        setSortDir(defaultDir);
+      }
+    });
   }, [sortKey]);
 
   const sortIndicator = useCallback(
@@ -250,14 +285,13 @@ function CasesLogs() {
     let d = 0;
     let i = 0;
     let a = 0;
-    for (const p of visiblePatients) {
-      const t = normalizeDisease(p.diseaseType);
-      if (t === "DENGUE") d += 1;
-      else if (t === "ILI") i += 1;
-      else if (t === "AWD") a += 1;
+    for (const row of visibleRows) {
+      if (row.disease === "DENGUE") d += 1;
+      else if (row.disease === "ILI") i += 1;
+      else if (row.disease === "AWD") a += 1;
     }
-    return { total: visiblePatients.length, dengue: d, ili: i, awd: a };
-  }, [visiblePatients]);
+    return { total: visibleRows.length, dengue: d, ili: i, awd: a };
+  }, [visibleRows]);
 
   const scopeBanner = useMemo(() => {
     if (roleKey === "barangay") {
@@ -283,9 +317,23 @@ function CasesLogs() {
 
   const handleMunicipalityChange = useCallback((e) => {
     const municipality = e.target.value;
-    setSelectedMunicipality(municipality);
-    setSelectedBarangay("");
-    setBarangayOptions(municipality && MUNICIPALITY_DATA[municipality] ? MUNICIPALITY_DATA[municipality] : []);
+    startTransition(() => {
+      setSelectedMunicipality(municipality);
+      setSelectedBarangay("");
+      setBarangayOptions(municipality && MUNICIPALITY_DATA[municipality] ? MUNICIPALITY_DATA[municipality] : []);
+    });
+  }, []);
+
+  const handleBarangayChange = useCallback((e) => {
+    startTransition(() => setSelectedBarangay(e.target.value));
+  }, []);
+
+  const handleDiseaseChange = useCallback((e) => {
+    startTransition(() => setSelectedDisease(e.target.value));
+  }, []);
+
+  const handleStatusChange = useCallback((e) => {
+    startTransition(() => setStatusFilter(e.target.value));
   }, []);
 
   const handleView = (p) => {
@@ -328,7 +376,7 @@ function CasesLogs() {
     setDeleteError(null);
     try {
       await apiFetch(`/patients/${id}`, { token, method: "DELETE" });
-      setPatients((prev) => prev.filter((p) => p.id !== id));
+      mutatePatients((prev) => prev.filter((p) => p.id !== id));
       if (selectedPatient?.id === id) {
         setShowView(false);
         setSelectedPatient(null);
@@ -363,7 +411,7 @@ function CasesLogs() {
         body: { caseClassification: editCaseClass }
       });
       const saved = data?.caseClassification ?? editCaseClass;
-      setPatients((prev) =>
+      mutatePatients((prev) =>
         prev.map((p) => (p.id === editPatient.id ? { ...p, caseClassification: saved } : p))
       );
       if (typeof window !== "undefined") {
@@ -378,7 +426,7 @@ function CasesLogs() {
   };
 
   return (
-    <div className="caseslogs-page">
+    <div className={`caseslogs-page${filtersPending ? " caseslogs-page--pending" : ""}`}>
       <header className="dashboard-header">
         <h2 className="header-title">Case Logs</h2>
         <div className="header-right">
@@ -452,7 +500,7 @@ function CasesLogs() {
               <select
                 className="caseslogs-select"
                 aria-label="Filter by barangay"
-                onChange={(e) => setSelectedBarangay(e.target.value)}
+                onChange={handleBarangayChange}
                 value={selectedBarangay}
                 disabled={roleKey === "province" ? !selectedMunicipality : false}
               >
@@ -471,7 +519,7 @@ function CasesLogs() {
               className="caseslogs-select"
               aria-label="Filter by disease"
               value={selectedDisease}
-              onChange={(e) => setSelectedDisease(e.target.value)}
+              onChange={handleDiseaseChange}
             >
               <option value="">All diseases</option>
               <option value="DENGUE">Dengue</option>
@@ -483,7 +531,7 @@ function CasesLogs() {
               className="caseslogs-select"
               aria-label="Filter by case status"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={handleStatusChange}
             >
               <option value="">Filter by case status</option>
               <option value="suspect">Suspect</option>
@@ -493,7 +541,7 @@ function CasesLogs() {
           </div>
         </div>
 
-        {loading ? <div className="caseslogs-loading">Loading cases…</div> : null}
+        {loading && patients.length === 0 ? <div className="caseslogs-loading">Loading cases…</div> : null}
         {error ? (
           <div className="caseslogs-error" role="alert">
             {error}{" "}
@@ -502,7 +550,7 @@ function CasesLogs() {
             </button>
           </div>
         ) : null}
-        {!loading && !error ? (
+        {!error && (patients.length > 0 || !loading) ? (
           <div className="caseslogs-table-card">
             <div className="caseslogs-table-scroll">
               <table className="caseslogs-table">
@@ -550,7 +598,7 @@ function CasesLogs() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedPatients.length === 0 ? (
+                  {pagedRows.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="caseslogs-empty">
                         <strong>No cases match your filters</strong>
@@ -558,13 +606,13 @@ function CasesLogs() {
                       </td>
                     </tr>
                   ) : (
-                    sortedPatients.map((p) => {
-                      const dTok = normalizeDisease(p.diseaseType);
+                    pagedRows.map((row) => {
+                      const p = row.patient;
                       return (
                         <tr key={p.id}>
                           <td className="num">{displayPatientId(p)}</td>
                           <td>
-                            <span className="caseslogs-disease-pill">{diseaseLabel(dTok)}</span>
+                            <span className="caseslogs-disease-pill">{diseaseLabel(row.disease)}</span>
                           </td>
                           <td className="num">{p.dateStarted ?? "—"}</td>
                           <td>{caseStatusDisplay(p.caseClassification)}</td>
@@ -595,6 +643,52 @@ function CasesLogs() {
                 </tbody>
               </table>
             </div>
+            {sortedRows.length > PAGE_SIZE ? (
+              <footer className="caseslogs-pagination" aria-label="Case list pages">
+                <p className="caseslogs-pagination-meta">
+                  Showing {pageStart.toLocaleString()}–{pageEnd.toLocaleString()} of{" "}
+                  {sortedRows.length.toLocaleString()} cases
+                  {filtersPending ? " · Updating filters…" : ""}
+                </p>
+                <div className="caseslogs-pagination-actions">
+                  <button
+                    type="button"
+                    className="caseslogs-btn-ghost"
+                    onClick={() => setPage(1)}
+                    disabled={page <= 1}
+                  >
+                    First
+                  </button>
+                  <button
+                    type="button"
+                    className="caseslogs-btn-ghost"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page <= 1}
+                  >
+                    Previous
+                  </button>
+                  <span className="caseslogs-pagination-page">
+                    Page {page} of {pageCount}
+                  </span>
+                  <button
+                    type="button"
+                    className="caseslogs-btn-ghost"
+                    onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                    disabled={page >= pageCount}
+                  >
+                    Next
+                  </button>
+                  <button
+                    type="button"
+                    className="caseslogs-btn-ghost"
+                    onClick={() => setPage(pageCount)}
+                    disabled={page >= pageCount}
+                  >
+                    Last
+                  </button>
+                </div>
+              </footer>
+            ) : null}
           </div>
         ) : null}
       </div>

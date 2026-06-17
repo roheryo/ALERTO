@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useDeferredValue, startTransition } from "react";
 import { Link } from "react-router-dom";
 import { FaBell } from "react-icons/fa";
 
@@ -10,9 +10,9 @@ import { sessionUserFromAuth } from "@/lib/authUser";
 import { filterConfirmedPatients } from "@/lib/disease";
 import { usePatients } from "@/hooks/usePatients";
 import {
+  buildSurveillanceIndex,
   computeBarangayVelocityRows,
   formatPeriodCaption,
-  formatWindowLabel,
   resolveSurveillanceWindows
 } from "@/lib/surveillance";
 import "@/styles/dashboard-shell.css";
@@ -25,8 +25,7 @@ const DISEASE_OPTIONS = [
   { value: "ALL", label: "All diseases" }
 ];
 
-const WINDOW_WEEK_OPTIONS = [2, 3, 4];
-const MAX_PERIOD_OFFSET = 6;
+const FIXED_WINDOW_WEEKS = 4;
 
 function fmtPct(n) {
   if (!Number.isFinite(n)) return "—";
@@ -50,10 +49,9 @@ function MunicipalSurveillanceMap() {
 
   const { patients, loading, error } = usePatients();
 
-  const [windowMode, setWindowMode] = useState("weeks");
-  const [windowWeeks, setWindowWeeks] = useState(4);
-  const [periodOffset, setPeriodOffset] = useState(0);
   const [diseaseFilter, setDiseaseFilter] = useState("DENGUE");
+  const deferredDiseaseFilter = useDeferredValue(diseaseFilter);
+  const isFilterPending = deferredDiseaseFilter !== diseaseFilter;
   const [mapMetric, setMapMetric] = useState("count");
   const [selectedBarangayKey, setSelectedBarangayKey] = useState(null);
 
@@ -65,55 +63,63 @@ function MunicipalSurveillanceMap() {
     return filterConfirmedPatients(list);
   }, [patients, municipalityName]);
 
+  const caseIndex = useMemo(() => buildSurveillanceIndex(scopedPatients), [scopedPatients]);
+
   const barangayNames = useMemo(
     () => barangaysForMunicipality(municipalityName),
     [municipalityName]
   );
 
   const timeOptions = useMemo(
-    () => ({ windowMode, periodOffset, referenceDate: new Date() }),
-    [windowMode, periodOffset]
+    () => ({ windowMode: "weeks", periodOffset: 0, referenceDate: new Date(), caseIndex }),
+    [caseIndex]
   );
 
   const windows = useMemo(
     () =>
       resolveSurveillanceWindows({
-        windowWeeks,
-        windowMode,
-        periodOffset,
+        windowWeeks: FIXED_WINDOW_WEEKS,
+        windowMode: "weeks",
+        periodOffset: 0,
         referenceDate: new Date()
       }),
-    [windowWeeks, windowMode, periodOffset]
+    []
   );
 
   const periodCaption = useMemo(
-    () => formatPeriodCaption(windows, { windowMode, windowWeeks, periodOffset }),
-    [windows, windowMode, windowWeeks, periodOffset]
+    () =>
+      formatPeriodCaption(windows, {
+        windowMode: "weeks",
+        windowWeeks: FIXED_WINDOW_WEEKS,
+        periodOffset: 0
+      }),
+    [windows]
   );
 
   const velocityRows = useMemo(
     () =>
-      computeBarangayVelocityRows(scopedPatients, barangayNames, windowWeeks, diseaseFilter, {
+      computeBarangayVelocityRows(scopedPatients, barangayNames, FIXED_WINDOW_WEEKS, deferredDiseaseFilter, {
         ...timeOptions,
         windows
       }),
-    [scopedPatients, barangayNames, windowWeeks, diseaseFilter, timeOptions, windows]
+    [scopedPatients, barangayNames, deferredDiseaseFilter, timeOptions, windows]
   );
+
+  function handleDiseaseChange(nextValue) {
+    startTransition(() => {
+      setDiseaseFilter(nextValue);
+      setSelectedBarangayKey(null);
+    });
+  }
+
+  function handleMapMetricChange(nextValue) {
+    startTransition(() => setMapMetric(nextValue));
+  }
 
   const selectedRow = useMemo(
     () => velocityRows.find((r) => r.barangayKey === selectedBarangayKey) ?? null,
     [velocityRows, selectedBarangayKey]
   );
-
-  const periodOffsetLabel =
-    periodOffset === 0
-      ? "Current period"
-      : `${periodOffset} period${periodOffset > 1 ? "s" : ""} earlier`;
-
-  function handleWindowModeChange(mode) {
-    setWindowMode(mode);
-    setPeriodOffset(0);
-  }
 
   const headerSubline = municipalityName
     ? `${municipalityName} · Barangay-level case distribution`
@@ -153,40 +159,16 @@ function MunicipalSurveillanceMap() {
                 <h3>Map period</h3>
                 <p className="muni-dash-period-caption">{periodCaption}</p>
                 <p className="muni-dash-raw-note">
-                  Raw case counts by barangay until population data is available for rates.
+                  Fixed 4-week window · raw case counts by barangay until population data is available.
                 </p>
               </div>
               <div className="muni-dash-time-controls">
                 <label className="muni-dash-control">
-                  <span>Window</span>
-                  <select
-                    value={windowMode === "month" ? "month" : String(windowWeeks)}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "month") handleWindowModeChange("month");
-                      else {
-                        setWindowMode("weeks");
-                        setWindowWeeks(Number(v));
-                        setPeriodOffset(0);
-                      }
-                    }}
-                  >
-                    {WINDOW_WEEK_OPTIONS.map((w) => (
-                      <option key={w} value={w}>
-                        {w} weeks
-                      </option>
-                    ))}
-                    <option value="month">This month</option>
-                  </select>
-                </label>
-                <label className="muni-dash-control">
                   <span>Disease</span>
                   <select
                     value={diseaseFilter}
-                    onChange={(e) => {
-                      setDiseaseFilter(e.target.value);
-                      setSelectedBarangayKey(null);
-                    }}
+                    onChange={(e) => handleDiseaseChange(e.target.value)}
+                    aria-busy={isFilterPending}
                   >
                     {DISEASE_OPTIONS.map((o) => (
                       <option key={o.value} value={o.value}>
@@ -197,27 +179,10 @@ function MunicipalSurveillanceMap() {
                 </label>
                 <label className="muni-dash-control">
                   <span>Map metric</span>
-                  <select value={mapMetric} onChange={(e) => setMapMetric(e.target.value)}>
+                  <select value={mapMetric} onChange={(e) => handleMapMetricChange(e.target.value)}>
                     <option value="count">Rolling count</option>
                     <option value="velocity">Velocity (Δ)</option>
                   </select>
-                </label>
-                <label className="muni-dash-control muni-dash-control--slider">
-                  <span>
-                    Time shift · <strong>{periodOffsetLabel}</strong>
-                  </span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={MAX_PERIOD_OFFSET}
-                    step={1}
-                    value={periodOffset}
-                    onChange={(e) => setPeriodOffset(Number(e.target.value))}
-                    aria-valuetext={periodOffsetLabel}
-                  />
-                  <span className="muni-dash-slider-hint">
-                    Ending {formatWindowLabel(windows.current)}
-                  </span>
                 </label>
               </div>
             </section>

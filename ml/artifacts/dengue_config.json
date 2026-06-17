@@ -1,0 +1,33 @@
+{
+  "feature_columns": [
+    "case_count",
+    "cases_rolling_4wk",
+    "cases_rolling_8wk",
+    "week_sin",
+    "week_cos",
+    "month",
+    "temp_mean_c",
+    "humidity_mean_pct",
+    "rainfall_sum_mm",
+    "rainfall_sum_mm_lag_4",
+    "rainfall_sum_mm_lag_6",
+    "pct_stagnant_water_4wk",
+    "pct_recent_heavy_rain_4wk",
+    "pct_indoor_crowding_4wk",
+    "pct_unimproved_water_4wk",
+    "pct_open_defecation_4wk",
+    "pct_flood_history_4wk",
+    "pct_drought_history_4wk"
+  ],
+  "target_columns": [
+    "cases_t_plus_1",
+    "cases_t_plus_2",
+    "cases_t_plus_3",
+    "cases_t_plus_4"
+  ],
+  "lookback_weeks": 12,
+  "horizon_weeks": 4,
+  "target_transform": "log1p",
+  "hidden": 64,
+  "dropout": 0.2
+}

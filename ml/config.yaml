@@ -1,0 +1,77 @@
+# ALERTO LSTM training configuration
+# Aligns with thesis §2.4 (LSTM Model Development) and §2.5 (Evaluation).
+
+# Sequence shape
+lookback_weeks: 12        # ~3 months of history (covers rainfall->case 4-8wk lag)
+horizon_weeks: 4          # 1..4 week ahead forecast (thesis §2.5)
+
+# Features fed into the LSTM at each timestep (must exist in
+# data/processed/surveillance_weekly_training.csv). Order matters: it is
+# preserved in {disease}_config.json and reused at inference time.
+#
+# The columns are grouped as:
+#   1. Surveillance signal       (case counts + rolling sums)
+#   2. Seasonality               (sin/cos/month)
+#   3. Meteorology               (temperature, humidity, rainfall + lags)
+#   4. Environmental / WASH      (derived from per-case ReportCaseForm.jsx
+#                                 "LSTM Input" fields, aggregated by municipality
+#                                 and ISO-week; see backend/scripts/build-ml-datasets.mjs)
+feature_columns:
+  # 1. Surveillance signal
+  - case_count
+  - cases_rolling_4wk
+  - cases_rolling_8wk
+  # 2. Seasonality
+  - week_sin
+  - week_cos
+  - month
+  # 3. Meteorology
+  - temp_mean_c
+  - humidity_mean_pct
+  - rainfall_sum_mm
+  - rainfall_sum_mm_lag_4
+  - rainfall_sum_mm_lag_6
+  # 4. Environmental / WASH (rolling 4-week rates from BHU case reports)
+  - pct_stagnant_water_4wk
+  - pct_recent_heavy_rain_4wk
+  - pct_indoor_crowding_4wk
+  - pct_unimproved_water_4wk
+  - pct_open_defecation_4wk
+  - pct_flood_history_4wk
+  - pct_drought_history_4wk
+
+# Multi-step targets (already engineered in the CSV).
+target_columns:
+  - cases_t_plus_1
+  - cases_t_plus_2
+  - cases_t_plus_3
+  - cases_t_plus_4
+
+# Target transform: log1p stabilises sparse / zero-heavy weeks (especially AWD).
+# Inverse expm1 is applied at inference time.
+target_transform: log1p
+
+# Model architecture
+model:
+  hidden_size: 64
+  dropout: 0.2
+
+# Optimiser / training loop
+train:
+  batch_size: 32
+  epochs: 200
+  learning_rate: 0.001
+  weight_decay: 0.0
+  early_stopping_patience: 20
+  seed: 42
+
+# Diseases trained by `train.py --disease all`
+diseases:
+  - ILI
+  - DENGUE
+  - AWD
+
+# Paths (relative to repo root)
+paths:
+  data_csv: data/processed/surveillance_weekly_training.csv
+  artifacts_dir: ml/artifacts

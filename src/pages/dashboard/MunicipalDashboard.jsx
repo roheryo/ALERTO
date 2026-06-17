@@ -1,23 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useDeferredValue, startTransition } from "react";
 
 import MunicipalDeclarationWorkspace from "@/components/dashboard/MunicipalDeclarationWorkspace";
-import MunicipalEarlyWarning from "@/components/dashboard/MunicipalEarlyWarning";
+import MunicipalForecastCard from "@/components/dashboard/MunicipalForecastCard";
 import MunicipalTrendCharts from "@/components/dashboard/MunicipalTrendCharts";
 import MunicipalWeatherContext from "@/components/dashboard/MunicipalWeatherContext";
 import { barangaysForMunicipality } from "@/data/davaoDeOroGeography";
 import {
-  loadWatchStatus,
-  saveWatchStatus,
-  watchStorageKey
-} from "@/lib/municipalAlerts";
-import {
+  buildSurveillanceIndex,
+  computeAllDiseaseKpis,
   computeBarangayVelocityRows,
   computeBarangayWeeklyTrend,
-  computeDiseaseKpi,
   computeMunicipalityWeeklyTrend,
   formatDeltaLabel,
   formatPeriodCaption,
-  formatWindowLabel,
   resolveSurveillanceWindows
 } from "@/lib/surveillance";
 import "./MunicipalDashboard.css";
@@ -29,8 +24,7 @@ const DISEASE_OPTIONS = [
   { value: "ALL", label: "All diseases" }
 ];
 
-const WINDOW_WEEK_OPTIONS = [2, 3, 4];
-const MAX_PERIOD_OFFSET = 6;
+const FIXED_WINDOW_WEEKS = 4;
 const TREND_WEEKS = 8;
 
 function fmtPct(n) {
@@ -57,31 +51,19 @@ function KpiCard({ title, kpi, variant }) {
 }
 
 /**
- * Municipal Health Office dashboard — surveillance, early warning, and declaration support.
+ * Municipal Health Office dashboard — surveillance, trends, forecast, and
+ * declaration support. Early-warning alerts have been retired pending a
+ * rewrite.
  */
 function MunicipalDashboard({ patients = [], municipalityName = "", weather = null }) {
-  const [windowMode, setWindowMode] = useState("weeks");
-  const [windowWeeks, setWindowWeeks] = useState(4);
-  const [periodOffset, setPeriodOffset] = useState(0);
   const [diseaseFilter, setDiseaseFilter] = useState("DENGUE");
+  const deferredDiseaseFilter = useDeferredValue(diseaseFilter);
+  const isFilterPending = deferredDiseaseFilter !== diseaseFilter;
   const [sortKey, setSortKey] = useState("delta");
   const [sortDir, setSortDir] = useState("desc");
   const [selectedBarangayKey, setSelectedBarangayKey] = useState(null);
-  const [watchStatus, setWatchStatus] = useState({});
 
-  const storageKey = watchStorageKey(municipalityName);
-
-  useEffect(() => {
-    setWatchStatus(loadWatchStatus(storageKey));
-  }, [storageKey]);
-
-  const persistWatchStatus = useCallback(
-    (next) => {
-      setWatchStatus(next);
-      saveWatchStatus(storageKey, next);
-    },
-    [storageKey]
-  );
+  const caseIndex = useMemo(() => buildSurveillanceIndex(patients), [patients]);
 
   const barangayNames = useMemo(
     () => barangaysForMunicipality(municipalityName),
@@ -89,42 +71,44 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
   );
 
   const timeOptions = useMemo(
-    () => ({ windowMode, periodOffset, referenceDate: new Date() }),
-    [windowMode, periodOffset]
+    () => ({ windowMode: "weeks", periodOffset: 0, referenceDate: new Date(), caseIndex }),
+    [caseIndex]
   );
 
   const windows = useMemo(
     () =>
       resolveSurveillanceWindows({
-        windowWeeks,
-        windowMode,
-        periodOffset,
+        windowWeeks: FIXED_WINDOW_WEEKS,
+        windowMode: "weeks",
+        periodOffset: 0,
         referenceDate: new Date()
       }),
-    [windowWeeks, windowMode, periodOffset]
+    []
   );
 
   const periodCaption = useMemo(
-    () => formatPeriodCaption(windows, { windowMode, windowWeeks, periodOffset }),
-    [windows, windowMode, windowWeeks, periodOffset]
+    () =>
+      formatPeriodCaption(windows, {
+        windowMode: "weeks",
+        windowWeeks: FIXED_WINDOW_WEEKS,
+        periodOffset: 0
+      }),
+    [windows]
   );
 
   const kpis = useMemo(
-    () => ({
-      awd: computeDiseaseKpi(patients, "AWD", windowWeeks, { ...timeOptions, windows }),
-      ili: computeDiseaseKpi(patients, "ILI", windowWeeks, { ...timeOptions, windows }),
-      dengue: computeDiseaseKpi(patients, "DENGUE", windowWeeks, { ...timeOptions, windows })
-    }),
-    [patients, windowWeeks, timeOptions, windows]
+    () => computeAllDiseaseKpis(patients, FIXED_WINDOW_WEEKS, { ...timeOptions, windows }),
+    [patients, timeOptions, windows]
   );
 
   const velocityRows = useMemo(
     () =>
-      computeBarangayVelocityRows(patients, barangayNames, windowWeeks, diseaseFilter, {
+      computeBarangayVelocityRows(patients, barangayNames, FIXED_WINDOW_WEEKS, deferredDiseaseFilter, {
         ...timeOptions,
-        windows
+        windows,
+        diseaseFilter: deferredDiseaseFilter
       }),
-    [patients, barangayNames, windowWeeks, diseaseFilter, timeOptions, windows]
+    [patients, barangayNames, deferredDiseaseFilter, timeOptions, windows]
   );
 
   const selectedRow = useMemo(
@@ -136,9 +120,9 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
     if (!selectedBarangayKey) return [];
     return computeBarangayWeeklyTrend(patients, selectedBarangayKey, TREND_WEEKS, {
       ...timeOptions,
-      diseaseFilter
+      diseaseFilter: deferredDiseaseFilter
     });
-  }, [selectedBarangayKey, patients, timeOptions, diseaseFilter]);
+  }, [selectedBarangayKey, patients, timeOptions, deferredDiseaseFilter]);
 
   const sortedRows = useMemo(() => {
     const list = [...velocityRows];
@@ -161,16 +145,19 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
     () =>
       computeMunicipalityWeeklyTrend(patients, TREND_WEEKS, {
         ...timeOptions,
-        diseaseFilter
+        diseaseFilter: deferredDiseaseFilter
       }),
-    [patients, timeOptions, diseaseFilter]
+    [patients, timeOptions, deferredDiseaseFilter]
   );
 
-  const showDiseaseColumn = diseaseFilter === "ALL";
-  const periodOffsetLabel =
-    periodOffset === 0
-      ? "Current period"
-      : `${periodOffset} period${periodOffset > 1 ? "s" : ""} earlier`;
+  const showDiseaseColumn = deferredDiseaseFilter === "ALL";
+
+  function handleDiseaseChange(nextValue) {
+    startTransition(() => {
+      setDiseaseFilter(nextValue);
+      setSelectedBarangayKey(null);
+    });
+  }
 
   function toggleSort(key) {
     if (sortKey === key) {
@@ -186,17 +173,12 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
     return sortDir === "asc" ? " ↑" : " ↓";
   }
 
-  function handleWindowModeChange(mode) {
-    setWindowMode(mode);
-    setPeriodOffset(0);
-  }
-
   function handleSelectBarangay(key) {
     setSelectedBarangayKey((prev) => (prev === key ? null : key));
   }
 
   return (
-    <div className="muni-dash">
+    <div className={`muni-dash${isFilterPending ? " muni-dash--pending" : ""}`}>
       <MunicipalWeatherContext weather={weather} municipalityName={municipalityName} />
 
       <section className="muni-panel muni-dash-time" aria-label="Time and disease filters">
@@ -206,41 +188,17 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
             <h3>Surveillance period</h3>
             <p className="muni-dash-period-caption">{periodCaption}</p>
             <p className="muni-dash-raw-note">
-              All values are raw case counts until barangay population data is available.
+              Fixed 4-week window · raw case counts until barangay population data is available.
             </p>
           </div>
         </header>
         <div className="muni-dash-time-controls">
           <label className="muni-dash-control">
-            <span>Window</span>
-            <select
-              value={windowMode === "month" ? "month" : String(windowWeeks)}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === "month") handleWindowModeChange("month");
-                else {
-                  setWindowMode("weeks");
-                  setWindowWeeks(Number(v));
-                  setPeriodOffset(0);
-                }
-              }}
-            >
-              {WINDOW_WEEK_OPTIONS.map((w) => (
-                <option key={w} value={w}>
-                  {w} weeks
-                </option>
-              ))}
-              <option value="month">This month</option>
-            </select>
-          </label>
-          <label className="muni-dash-control">
             <span>Disease</span>
             <select
               value={diseaseFilter}
-              onChange={(e) => {
-                setDiseaseFilter(e.target.value);
-                setSelectedBarangayKey(null);
-              }}
+              onChange={(e) => handleDiseaseChange(e.target.value)}
+              aria-busy={isFilterPending}
             >
               {DISEASE_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
@@ -248,23 +206,6 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
                 </option>
               ))}
             </select>
-          </label>
-          <label className="muni-dash-control muni-dash-control--slider">
-            <span>
-              Time shift · <strong>{periodOffsetLabel}</strong>
-            </span>
-            <input
-              type="range"
-              min={0}
-              max={MAX_PERIOD_OFFSET}
-              step={1}
-              value={periodOffset}
-              onChange={(e) => setPeriodOffset(Number(e.target.value))}
-              aria-valuetext={periodOffsetLabel}
-            />
-            <span className="muni-dash-slider-hint">
-              Ending {formatWindowLabel(windows.current)}
-            </span>
           </label>
         </div>
       </section>
@@ -275,26 +216,19 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
         <KpiCard title="Dengue" kpi={kpis.dengue} variant="orange" />
       </section>
 
-      <MunicipalEarlyWarning
-        velocityRows={velocityRows}
-        diseaseFilter={diseaseFilter}
-        watchStatus={watchStatus}
-        onWatchStatusChange={persistWatchStatus}
-        onSelectBarangay={handleSelectBarangay}
-        selectedBarangayKey={selectedBarangayKey}
-      />
-
       <MunicipalDeclarationWorkspace
         row={selectedRow}
         weeklyTrend={selectedWeeklyTrend}
-        diseaseFilter={diseaseFilter}
+        diseaseFilter={deferredDiseaseFilter}
         periodCaption={periodCaption}
         onClose={() => setSelectedBarangayKey(null)}
       />
 
       <section className="muni-panel muni-dash-trends-card" aria-label="Trend charts">
-        <MunicipalTrendCharts municipalityTrend={municipalityTrend} diseaseFilter={diseaseFilter} />
+        <MunicipalTrendCharts municipalityTrend={municipalityTrend} diseaseFilter={deferredDiseaseFilter} />
       </section>
+
+      <MunicipalForecastCard diseaseFilter={deferredDiseaseFilter} />
 
       <section className="muni-panel muni-dash-risers" aria-labelledby="muni-risers-title">
         <header className="muni-section-head muni-section-head--compact">

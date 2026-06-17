@@ -5,9 +5,8 @@ import {
   provinceBarangayCount,
   resolveMunicipalityKey
 } from "@/data/davaoDeOroGeography";
-import { COUNT_THRESHOLDS, VELOCITY_MIN_DELTA, VELOCITY_MIN_PCT } from "@/lib/municipalAlerts";
-import { normalizeDisease, parseCaseDate } from "@/lib/disease";
 import {
+  buildSurveillanceIndex,
   compositeBarangayKey,
   computePctChange,
   getWeeklyBuckets,
@@ -15,7 +14,25 @@ import {
   resolveSurveillanceWindows
 } from "@/lib/surveillance";
 
+/** Provincial cross-municipality alert thresholds (kept here after the
+ *  municipal early-warning module was retired). */
+const COUNT_THRESHOLDS = { DENGUE: 10, ILI: 14, AWD: 8 };
+const VELOCITY_MIN_DELTA = 2;
+const VELOCITY_MIN_PCT = 40;
+
 export { listProvinceMunicipalities, provinceBarangayCount };
+
+function resolveCaseIndex(patients, timeOptions = {}) {
+  return timeOptions.caseIndex ?? buildSurveillanceIndex(patients);
+}
+
+function bucketIndexForTime(time, bucketRanges) {
+  for (let i = 0; i < bucketRanges.length; i += 1) {
+    const bucket = bucketRanges[i];
+    if (time >= bucket.start && time <= bucket.end) return i;
+  }
+  return -1;
+}
 
 function normalizeMuniKey(name) {
   return String(name ?? "")
@@ -32,22 +49,22 @@ export function resolveMunicipalityCoords(municipalityName) {
   return null;
 }
 
-function countForMunicipality(patients, windows, diseaseFilter, municipalityName) {
+function countForMunicipality(index, windows, diseaseFilter, municipalityName) {
   const muniKey = normalizePlaceKey(municipalityName);
   const diseases =
-    diseaseFilter === "ALL" ? ["DENGUE", "ILI", "AWD"] : [String(diseaseFilter).toUpperCase()];
+    diseaseFilter === "ALL" ? new Set(["DENGUE", "ILI", "AWD"]) : new Set([String(diseaseFilter).toUpperCase()]);
+  const currentStart = windows.current.start.getTime();
+  const currentEnd = windows.current.end.getTime();
+  const priorStart = windows.prior.start.getTime();
+  const priorEnd = windows.prior.end.getTime();
 
   let current = 0;
   let prior = 0;
-  for (const p of patients) {
-    const pm = normalizePlaceKey(p?.municipality);
-    if (pm !== muniKey) continue;
-    const d = normalizeDisease(p?.diseaseType);
-    if (!diseases.includes(d)) continue;
-    const dt = parseCaseDate(p);
-    if (!dt) continue;
-    if (dt >= windows.current.start && dt <= windows.current.end) current += 1;
-    else if (dt >= windows.prior.start && dt <= windows.prior.end) prior += 1;
+  for (const c of index) {
+    if (c.municipalityKey !== muniKey) continue;
+    if (!diseases.has(c.disease)) continue;
+    if (c.time >= currentStart && c.time <= currentEnd) current += 1;
+    else if (c.time >= priorStart && c.time <= priorEnd) prior += 1;
   }
   return { current, prior, delta: current - prior, pctChange: computePctChange(current, prior) };
 }
@@ -67,9 +84,10 @@ export function computeMunicipalityVelocityRows(
       periodOffset: timeOptions.periodOffset,
       referenceDate: timeOptions.referenceDate
     });
+  const index = resolveCaseIndex(patients, timeOptions);
 
   const rows = listProvinceMunicipalities().map((name) => {
-    const counts = countForMunicipality(patients, windows, diseaseFilter, name);
+    const counts = countForMunicipality(index, windows, diseaseFilter, name);
     return {
       municipality: name,
       municipalityKey: normalizePlaceKey(name),
@@ -100,44 +118,46 @@ export function computeProvinceBarangayRows(
     });
 
   const diseases =
-    diseaseFilter === "ALL" ? ["DENGUE", "ILI", "AWD"] : [String(diseaseFilter).toUpperCase()];
+    diseaseFilter === "ALL" ? new Set(["DENGUE", "ILI", "AWD"]) : new Set([String(diseaseFilter).toUpperCase()]);
   const muniFilterKey = municipalityFilter ? normalizePlaceKey(municipalityFilter) : null;
-  const rows = [];
+  const currentStart = windows.current.start.getTime();
+  const currentEnd = windows.current.end.getTime();
+  const priorStart = windows.prior.start.getTime();
+  const priorEnd = windows.prior.end.getTime();
 
+  const rowsByKey = new Map();
   for (const [municipality, barangays] of Object.entries(BARANGAY_BY_MUNICIPALITY)) {
     const muniKey = normalizePlaceKey(municipality);
     if (muniFilterKey && muniKey !== muniFilterKey) continue;
 
     for (const barangay of barangays) {
-      const barangayNameKey = normalizePlaceKey(barangay);
       const barangayKey = compositeBarangayKey(municipality, barangay);
-      let current = 0;
-      let prior = 0;
-
-      for (const p of patients) {
-        if (normalizePlaceKey(p?.municipality) !== muniKey) continue;
-        if (normalizePlaceKey(p?.barangay) !== barangayNameKey) continue;
-        const d = normalizeDisease(p?.diseaseType);
-        if (!diseases.includes(d)) continue;
-        const dt = parseCaseDate(p);
-        if (!dt) continue;
-        if (dt >= windows.current.start && dt <= windows.current.end) current += 1;
-        else if (dt >= windows.prior.start && dt <= windows.prior.end) prior += 1;
-      }
-
-      rows.push({
+      rowsByKey.set(barangayKey, {
         municipality,
         municipalityKey: muniKey,
         barangay,
         barangayKey,
         disease: diseaseFilter === "ALL" ? "All diseases" : diseaseFilter,
-        current,
-        prior,
-        delta: current - prior,
-        pctChange: computePctChange(current, prior)
+        current: 0,
+        prior: 0
       });
     }
   }
+
+  const index = resolveCaseIndex(patients, timeOptions);
+  for (const c of index) {
+    if (!diseases.has(c.disease)) continue;
+    const row = rowsByKey.get(`${c.municipalityKey}|${c.barangayKey}`);
+    if (!row) continue;
+    if (c.time >= currentStart && c.time <= currentEnd) row.current += 1;
+    else if (c.time >= priorStart && c.time <= priorEnd) row.prior += 1;
+  }
+
+  const rows = Array.from(rowsByKey.values()).map((row) => ({
+    ...row,
+    delta: row.current - row.prior,
+    pctChange: computePctChange(row.current, row.prior)
+  }));
 
   rows.sort((a, b) => b.delta - a.delta || b.current - a.current);
   return rows.map((row, i) => ({ ...row, rank: i + 1 }));
@@ -163,23 +183,20 @@ export function computeMunicipalityStatusBoard(
   timeOptions = {}
 ) {
   const rows = computeMunicipalityVelocityRows(patients, windowWeeks, diseaseFilter, timeOptions);
+  const index = resolveCaseIndex(patients, timeOptions);
   const now = Date.now();
+  const lastByMuni = new Map();
+
+  for (const c of index) {
+    const existing = lastByMuni.get(c.municipalityKey);
+    if (!existing || c.time > existing.time) {
+      lastByMuni.set(c.municipalityKey, { time: c.time, barangay: c.barangay });
+    }
+  }
 
   return rows.map((row) => {
-    let lastEncodeAt = null;
-    let lastBarangay = "";
-    const muniKey = row.municipalityKey;
-
-    for (const p of patients) {
-      if (normalizePlaceKey(p?.municipality) !== muniKey) continue;
-      const dt = parseCaseDate(p);
-      if (!dt) continue;
-      if (!lastEncodeAt || dt > lastEncodeAt) {
-        lastEncodeAt = dt;
-        lastBarangay = String(p?.barangay ?? "").trim();
-      }
-    }
-
+    const last = lastByMuni.get(row.municipalityKey);
+    const lastEncodeAt = last ? new Date(last.time) : null;
     const minutesAgo =
       lastEncodeAt != null ? Math.max(0, Math.round((now - lastEncodeAt.getTime()) / 60000)) : null;
 
@@ -187,7 +204,7 @@ export function computeMunicipalityStatusBoard(
       ...row,
       alertLevel: alertLevelForRow(row, diseaseFilter),
       lastEncodeAt,
-      lastBarangay,
+      lastBarangay: last?.barangay ?? "",
       minutesAgo
     };
   });
@@ -199,33 +216,29 @@ export function computeCrossMunicipalityAlerts(statusBoard) {
 }
 
 /** Barangays with recent case encodes (surveillance sync health). */
-export function computeProvinceSyncHealth(patients) {
+export function computeProvinceSyncHealth(patients, timeOptions = {}) {
   const totalBarangays = provinceBarangayCount();
+  const index = resolveCaseIndex(patients, timeOptions);
   const reportingKeys = new Set();
-  let lastPatient = null;
-  let lastDate = null;
+  let lastCase = null;
 
-  for (const p of patients) {
-    const m = resolveMunicipalityKey(p?.municipality);
-    const b = String(p?.barangay ?? "").trim();
-    if (m && b) reportingKeys.add(compositeBarangayKey(m, b));
-
-    const dt = parseCaseDate(p);
-    if (!dt) continue;
-    if (!lastDate || dt > lastDate) {
-      lastDate = dt;
-      lastPatient = p;
+  for (const c of index) {
+    if (c.municipalityKey && c.barangayKey) {
+      reportingKeys.add(`${c.municipalityKey}|${c.barangayKey}`);
+    }
+    if (!lastCase || c.time > lastCase.time) {
+      lastCase = c;
     }
   }
 
   return {
     totalBarangays,
     reportingBarangays: reportingKeys.size,
-    lastEncode: lastPatient
+    lastEncode: lastCase
       ? {
-          barangay: lastPatient.barangay,
-          municipality: lastPatient.municipality,
-          at: lastDate
+          barangay: lastCase.barangay,
+          municipality: lastCase.municipality || lastCase.municipalityKey,
+          at: new Date(lastCase.time)
         }
       : null
   };
@@ -239,24 +252,33 @@ export function computeProvinceWeeklyTrend(patients, weekCount, timeOptions = {}
     timeOptions.periodOffset ?? 0
   );
   const diseaseFilter = timeOptions.diseaseFilter;
+  const diseases =
+    !diseaseFilter || diseaseFilter === "ALL"
+      ? new Set(["DENGUE", "ILI", "AWD"])
+      : new Set([String(diseaseFilter).toUpperCase()]);
+  const index = resolveCaseIndex(patients, timeOptions);
+  const bucketRanges = buckets.map((bucket) => ({
+    start: bucket.start.getTime(),
+    end: bucket.end.getTime()
+  }));
 
-  return buckets.map((bucket) => {
-    let dengue = 0;
-    let ili = 0;
-    let awd = 0;
-    for (const p of patients) {
-      const dt = parseCaseDate(p);
-      if (!dt || dt < bucket.start || dt > bucket.end) continue;
-      const d = normalizeDisease(p?.diseaseType);
-      if (diseaseFilter && diseaseFilter !== "ALL" && d !== String(diseaseFilter).toUpperCase()) {
-        continue;
-      }
-      if (d === "DENGUE") dengue += 1;
-      else if (d === "ILI") ili += 1;
-      else if (d === "AWD") awd += 1;
-    }
-    return { label: bucket.label, DENGUE: dengue, ILI: ili, AWD: awd };
-  });
+  const counts = buckets.map((bucket) => ({
+    label: bucket.label,
+    DENGUE: 0,
+    ILI: 0,
+    AWD: 0
+  }));
+
+  for (const c of index) {
+    if (!diseases.has(c.disease)) continue;
+    const bucketIdx = bucketIndexForTime(c.time, bucketRanges);
+    if (bucketIdx < 0) continue;
+    if (c.disease === "DENGUE") counts[bucketIdx].DENGUE += 1;
+    else if (c.disease === "ILI") counts[bucketIdx].ILI += 1;
+    else if (c.disease === "AWD") counts[bucketIdx].AWD += 1;
+  }
+
+  return counts;
 }
 
 /** Sparkline data per municipality. */
@@ -269,23 +291,31 @@ export function computeMunicipalitySparklines(patients, weekCount, timeOptions =
   const diseaseFilter = timeOptions.diseaseFilter;
   const diseases =
     diseaseFilter === "ALL" || !diseaseFilter
-      ? ["DENGUE", "ILI", "AWD"]
-      : [String(diseaseFilter).toUpperCase()];
+      ? new Set(["DENGUE", "ILI", "AWD"])
+      : new Set([String(diseaseFilter).toUpperCase()]);
+  const index = resolveCaseIndex(patients, timeOptions);
+  const bucketRanges = buckets.map((bucket) => ({
+    start: bucket.start.getTime(),
+    end: bucket.end.getTime()
+  }));
 
-  return listProvinceMunicipalities().map((municipality) => {
-    const muniKey = normalizePlaceKey(municipality);
-    const data = buckets.map((bucket) => {
-      let cases = 0;
-      for (const p of patients) {
-        if (normalizePlaceKey(p?.municipality) !== muniKey) continue;
-        const dt = parseCaseDate(p);
-        if (!dt || dt < bucket.start || dt > bucket.end) continue;
-        const d = normalizeDisease(p?.diseaseType);
-        if (!diseases.includes(d)) continue;
-        cases += 1;
-      }
-      return { label: bucket.label, cases };
-    });
-    return { municipality, data };
-  });
+  const byMuni = new Map(
+    listProvinceMunicipalities().map((municipality) => [
+      normalizePlaceKey(municipality),
+      buckets.map((bucket) => ({ label: bucket.label, cases: 0 }))
+    ])
+  );
+
+  for (const c of index) {
+    if (!diseases.has(c.disease)) continue;
+    const series = byMuni.get(c.municipalityKey);
+    if (!series) continue;
+    const bucketIdx = bucketIndexForTime(c.time, bucketRanges);
+    if (bucketIdx >= 0) series[bucketIdx].cases += 1;
+  }
+
+  return listProvinceMunicipalities().map((municipality) => ({
+    municipality,
+    data: byMuni.get(normalizePlaceKey(municipality)) ?? buckets.map((bucket) => ({ label: bucket.label, cases: 0 }))
+  }));
 }

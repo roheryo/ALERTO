@@ -13,15 +13,12 @@ function DashboardLayout() {
   const isMunicipalWide =
     user?.role === "municipality" && (isDashboardHome || isMunicipalSurveillanceMap);
 
-  const isProvincialRoute =
-    pathname === "/dashboard" ||
-    pathname === "/dashboard/" ||
-    pathname.startsWith("/dashboard/province-");
-  const isProvincialWide = user?.role === "province" && isProvincialRoute;
+  const isProvincialWide =
+    user?.role === "province" &&
+    (isDashboardHome || pathname.startsWith("/dashboard/province-"));
 
   const layoutClass = [
     "dashboard-layout",
-    isDashboardHome ? "dashboard-layout--home" : "",
     isMunicipalWide ? "dashboard-layout--municipal" : "",
     isProvincialWide ? "dashboard-layout--provincial" : ""
   ]

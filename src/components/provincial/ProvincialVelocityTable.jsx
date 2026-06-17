@@ -12,12 +12,31 @@ function deltaClass(delta) {
   return "prov-delta--flat";
 }
 
+const DEFAULT_LABELS = {
+  current: "Current",
+  prior: "Prior",
+  delta: "Δ",
+  pctChange: "% change",
+  empty: "No data for this filter."
+};
+
+const PLAIN_LABELS = {
+  current: "Recent cases",
+  prior: "Previous period",
+  delta: "Change",
+  pctChange: "Percent change",
+  empty: "No cases match these filters."
+};
+
 export default function ProvincialVelocityTable({
   rows = [],
   mode = "municipality",
   onExport,
-  onRowClick
+  onRowClick,
+  plainLabels = false,
+  showToolbar = true
 }) {
+  const labels = plainLabels ? PLAIN_LABELS : DEFAULT_LABELS;
   const [sortKey, setSortKey] = useState("delta");
   const [sortDir, setSortDir] = useState("desc");
 
@@ -53,10 +72,10 @@ export default function ProvincialVelocityTable({
 
   return (
     <div className="prov-table-wrap">
-      {onExport ? (
+      {showToolbar && onExport ? (
         <div className="prov-table-toolbar">
           <button type="button" className="prov-btn prov-btn--ghost" onClick={onExport}>
-            Export CSV
+            Download CSV
           </button>
         </div>
       ) : null}
@@ -87,22 +106,26 @@ export default function ProvincialVelocityTable({
             </th>
             <th>
               <button type="button" className="prov-sort-btn" onClick={() => toggleSort("current")}>
-                Current{indicator("current")}
+                {labels.current}
+                {indicator("current")}
               </button>
             </th>
             <th>
               <button type="button" className="prov-sort-btn" onClick={() => toggleSort("prior")}>
-                Prior{indicator("prior")}
+                {labels.prior}
+                {indicator("prior")}
               </button>
             </th>
             <th>
               <button type="button" className="prov-sort-btn" onClick={() => toggleSort("delta")}>
-                Δ{indicator("delta")}
+                {labels.delta}
+                {indicator("delta")}
               </button>
             </th>
             <th>
               <button type="button" className="prov-sort-btn" onClick={() => toggleSort("pctChange")}>
-                % change{indicator("pctChange")}
+                {labels.pctChange}
+                {indicator("pctChange")}
               </button>
             </th>
           </tr>
@@ -111,7 +134,7 @@ export default function ProvincialVelocityTable({
           {sorted.length === 0 ? (
             <tr>
               <td colSpan={mode === "barangay" ? 7 : 6} className="prov-table-empty">
-                No data for this filter.
+                {labels.empty}
               </td>
             </tr>
           ) : (
