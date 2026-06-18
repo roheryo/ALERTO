@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "../context/AuthContext";
+import { PATIENTS_CHANGED_EVENT } from "../context/PatientsContext";
 import { apiFetch } from "../lib/api";
 
 const POLL_INTERVAL_MS = 60_000;
 
+export const ALERTS_CHANGED_EVENT = "alerto:alerts-changed";
+
 const EMPTY_SUMMARY = { total: 0, active: 0, bySeverity: { high: 0, elevated: 0, watch: 0 } };
+
+function notifyAlertsChanged() {
+  window.dispatchEvent(new Event(ALERTS_CHANGED_EVENT));
+}
 
 /**
  * Lightweight summary-only hook for the sidebar badge / dashboard indicators.
@@ -42,9 +49,15 @@ export function useAlertSummary(options = {}) {
     };
     tick();
     const id = setInterval(tick, POLL_INTERVAL_MS);
+    const onPatientsChanged = () => tick();
+    const onAlertsChanged = () => tick();
+    window.addEventListener(PATIENTS_CHANGED_EVENT, onPatientsChanged);
+    window.addEventListener(ALERTS_CHANGED_EVENT, onAlertsChanged);
     return () => {
       cancelled = true;
       clearInterval(id);
+      window.removeEventListener(PATIENTS_CHANGED_EVENT, onPatientsChanged);
+      window.removeEventListener(ALERTS_CHANGED_EVENT, onAlertsChanged);
     };
   }, [isAuthenticated, token, enabled]);
 
@@ -134,7 +147,12 @@ export function useAlerts(options = {}) {
   useEffect(() => {
     if (!isAuthenticated || !token || !enabled) return undefined;
     const id = setInterval(() => refetch({ quiet: true }), POLL_INTERVAL_MS);
-    return () => clearInterval(id);
+    const onPatientsChanged = () => refetch({ quiet: true });
+    window.addEventListener(PATIENTS_CHANGED_EVENT, onPatientsChanged);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener(PATIENTS_CHANGED_EVENT, onPatientsChanged);
+    };
   }, [refetch, isAuthenticated, token, enabled]);
 
   const acknowledge = useCallback(
@@ -142,6 +160,7 @@ export function useAlerts(options = {}) {
       if (!canMutate) throw new Error("Only Municipal Health Office accounts can acknowledge alerts");
       await apiFetch(`/alerts/${alertId}/acknowledge`, { token, method: "PATCH" });
       await refetch({ quiet: true });
+      notifyAlertsChanged();
     },
     [token, canMutate, refetch]
   );
@@ -155,6 +174,7 @@ export function useAlerts(options = {}) {
         body: reason ? { reason } : undefined
       });
       await refetch({ quiet: true });
+      notifyAlertsChanged();
     },
     [token, canMutate, refetch]
   );

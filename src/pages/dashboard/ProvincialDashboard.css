@@ -11,14 +11,133 @@
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.25);
 }
 
+.prov-page {
+  --prov-dash-gap: 14px;
+  --prov-card-pad: 18px;
+}
+
 .content-area--provincial {
-  max-width: 1320px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 12px 0 16px;
 }
 
 .prov-dash {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: var(--prov-dash-gap, 14px);
+}
+
+.prov-dash-grid {
+  gap: var(--prov-dash-gap, 14px);
+}
+
+.prov-dash-row-main {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: var(--prov-dash-gap, 14px);
+  align-items: start;
+}
+
+.prov-dash-trend-head {
+  margin-bottom: 8px;
+  gap: 10px 16px;
+}
+
+.prov-dash-trend-head .prov-dash-disease-buttons {
+  flex-shrink: 0;
+}
+
+.prov-dash-trend-panel .prov-filters--compact {
+  padding: 0;
+  margin: 0 0 12px;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.prov-filters--compact .prov-filters-toolbar {
+  margin: 0;
+}
+
+.prov-filters--compact[data-toolbar-cols="1"] .prov-filters-toolbar {
+  grid-template-columns: 1fr;
+}
+
+.prov-dash-disease-buttons {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.prov-dash-trend-panel .prov-dash-disease-buttons {
+  justify-content: flex-end;
+}
+
+.prov-disease-btn {
+  min-height: 32px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(15, 23, 42, 0.14);
+  background: #fff;
+  color: var(--dash-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.prov-disease-btn:hover:not(.prov-disease-btn--active) {
+  border-color: rgba(15, 23, 42, 0.28);
+  background: rgba(248, 250, 252, 0.95);
+}
+
+.prov-disease-btn:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.prov-disease-btn--active.prov-disease-btn--dengue {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.14);
+  color: #92400e;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.16);
+}
+
+.prov-disease-btn--active.prov-disease-btn--ili {
+  border-color: #f43f5e;
+  background: rgba(244, 63, 94, 0.12);
+  color: #9f1239;
+  box-shadow: 0 0 0 2px rgba(244, 63, 94, 0.14);
+}
+
+.prov-disease-btn--active.prov-disease-btn--awd {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.12);
+  color: #1d4ed8;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.14);
+}
+
+.prov-disease-btn--active.prov-disease-btn--all {
+  border-color: #475569;
+  background: rgba(71, 85, 105, 0.1);
+  color: #0f172a;
+  box-shadow: 0 0 0 2px rgba(71, 85, 105, 0.12);
+}
+
+.prov-trend-chart {
+  margin: 0;
+  padding: 0;
+}
+
+.prov-kpis {
+  margin-top: 0;
 }
 
 .prov-panel {
@@ -26,7 +145,7 @@
   border: 1px solid var(--dash-border);
   border-radius: var(--dash-radius);
   box-shadow: var(--dash-shadow-sm);
-  padding: 16px 18px;
+  padding: var(--prov-card-pad, 18px);
 }
 
 .prov-kicker {
@@ -506,9 +625,10 @@
   background: linear-gradient(90deg, rgba(148, 163, 184, 0.5), #dc2626);
 }
 
-.prov-board-table-wrap {
-  overflow-x: auto;
-  margin-top: 10px;
+@media (max-width: 1024px) {
+  .prov-dash-row-main {
+    grid-template-columns: 1fr;
+  }
 }
 
 .prov-escalation-meta {
@@ -532,6 +652,20 @@
 
 .main-content--provincial {
   max-width: none;
+  padding: 16px 16px 20px;
+}
+
+@media (max-width: 768px) {
+  .prov-dash-trend-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .prov-dash-trend-head .prov-dash-disease-buttons {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    width: 100%;
+  }
 }
 
 @media (max-width: 900px) {

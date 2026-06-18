@@ -9,6 +9,7 @@
     "dev:client": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test": "node --test src/lib/**/*.test.js",
     "preview": "vite preview",
     "ml:serve": "cd ml && .venv\\Scripts\\python.exe -m uvicorn serve.main:app --host 127.0.0.1 --port 5050",
     "ml:train": "ml\\.venv\\Scripts\\python.exe ml/train.py --disease all",

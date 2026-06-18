@@ -1,126 +1,45 @@
 .barangay-dash {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: var(--dash-gap, 20px);
 }
 
-.barangay-dash-intro {
-  padding: 0 2px;
+.barangay-dash-grid {
+  gap: var(--dash-gap, 20px);
 }
 
-.barangay-dash-title {
-  margin: 0 0 6px;
-  font-size: 1.25rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: #0f172a;
+.barangay-dash-row-kpis {
+  margin-top: 0;
 }
 
-.barangay-dash-scope {
-  margin: 0;
-  font-size: 0.9375rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.barangay-dash-kpis {
+.barangay-dash-row-main {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: var(--dash-gap, 20px);
+  align-items: start;
 }
 
-@media (max-width: 900px) {
-  .barangay-dash-kpis {
-    grid-template-columns: 1fr;
-  }
+.barangay-dash-side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dash-gap, 20px);
+  min-width: 0;
 }
 
-.barangay-kpi {
-  border-radius: 16px;
-  padding: 18px 18px 16px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: #ffffff;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+.barangay-weather-embed.weather-container {
+  margin-bottom: 0;
 }
 
-.barangay-kpi-label {
-  margin: 0 0 8px;
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
-.barangay-kpi-value {
-  margin: 0 0 6px;
-  font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  color: #0f172a;
-}
-
-.barangay-kpi-hint {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: #94a3b8;
-  font-weight: 600;
-}
-
-.barangay-kpi--dengue {
-  border-color: rgba(217, 119, 6, 0.28);
-  background: linear-gradient(165deg, #fffbeb 0%, #ffffff 52%);
-}
-
-.barangay-kpi--dengue .barangay-kpi-label {
-  color: #b45309;
-}
-
-.barangay-kpi--ili {
-  border-color: rgba(225, 29, 72, 0.22);
-  background: linear-gradient(165deg, #fff1f2 0%, #ffffff 52%);
-}
-
-.barangay-kpi--ili .barangay-kpi-label {
-  color: #be123c;
-}
-
-.barangay-kpi--awd {
-  border-color: rgba(37, 99, 235, 0.22);
-  background: linear-gradient(165deg, #eff6ff 0%, #ffffff 52%);
-}
-
-.barangay-kpi--awd .barangay-kpi-label {
-  color: #1d4ed8;
+.barangay-weather-embed .weather-card {
+  height: 100%;
 }
 
 .barangay-dash-chart-wrap {
-  border-radius: 18px;
-  padding: 18px 18px 8px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: #ffffff;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07);
+  padding: var(--dash-card-pad, 24px);
 }
 
-.barangay-dash-chart-head {
-  margin-bottom: 4px;
-  padding: 0 4px;
-}
-
-.barangay-dash-chart-title {
-  margin: 0 0 4px;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: -0.02em;
-}
-
-.barangay-dash-chart-sub {
-  margin: 0;
-  font-size: 0.8125rem;
-  color: #64748b;
-  font-weight: 600;
+.barangay-dash-chart-wrap .dash-panel-head {
+  margin-bottom: 8px;
 }
 
 .barangay-dash-chart {
@@ -129,4 +48,22 @@
 
 .barangay-dash-chart .apexcharts-tooltip {
   border-radius: 10px !important;
+}
+
+.barangay-dash-scope-card {
+  grid-column: 1 / -1;
+}
+
+.barangay-dash-scope-note {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--dash-muted);
+}
+
+@media (max-width: 1024px) {
+  .barangay-dash-row-main {
+    grid-template-columns: 1fr;
+  }
 }

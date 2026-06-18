@@ -64,8 +64,9 @@
   overflow-x: clip;
 }
 
-/* Sticky blue bar — sizing lives in Dashboard.css */
+/* Page header — sizing lives in dashboard-shell.css */
 .report-case-form .dashboard-header {
+  margin-bottom: var(--dash-gap, 20px);
   position: sticky;
   top: 0;
   flex-shrink: 0;

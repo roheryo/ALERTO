@@ -1,16 +1,14 @@
 import "@/styles/dashboard-shell.css";
 
-import logo from "@/assets/images/ddoLOGO.jpg";
 import { useMemo, useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { FaBell } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
 import { sessionUserFromAuth } from "@/lib/authUser";
 
 import { filterConfirmedPatients } from "@/lib/disease";
 import { usePatients } from "@/hooks/usePatients";
 import { useAccountWeather } from "@/hooks/useAccountWeather";
-import LiveWeatherCard from "@/components/weather/LiveWeatherCard";
+import { useForecasts } from "@/hooks/useForecasts";
+import DashboardPageHeader from "@/layout/DashboardPageHeader";
 import BarangayDashboard from "./BarangayDashboard";
 import MunicipalDashboard from "./MunicipalDashboard";
 import ProvincialDashboard from "./ProvincialDashboard";
@@ -45,6 +43,12 @@ function BarangayMunicipalDashboard({ user, roleKey, token }) {
     barangay: accountBarangay,
     token
   });
+
+  const { error: forecastError } = useForecasts({
+    disease: "DENGUE",
+    enabled: roleKey === "municipal"
+  });
+  const mlActive = roleKey === "municipal" && !forecastError;
 
   useEffect(() => {
     if (!loading && !error) {
@@ -81,27 +85,14 @@ function BarangayMunicipalDashboard({ user, roleKey, token }) {
     return parts.join(" · ") || null;
   }, [roleKey, municipalityName, lastSyncedAt, loading]);
 
-  const officeLabel = roleKey === "municipal" ? "Municipal Health Office" : "Barangay Health Unit";
-
   return (
     <div className="dashboard-container">
-      <header className="dashboard-header">
-        <div>
-          <h2 className="header-title">{headerTitle}</h2>
-          {headerSubline ? <p className="header-subline">{headerSubline}</p> : null}
-        </div>
-
-        <div className="header-right">
-          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
-            <FaBell />
-          </Link>
-          <div className="header-text">
-            <h3>Davao de Oro</h3>
-            <p>{officeLabel}</p>
-          </div>
-          <img src={logo} alt="logo" className="header-logo" />
-        </div>
-      </header>
+      <DashboardPageHeader
+        pageTitle={headerTitle}
+        subline={headerSubline}
+        showMlStatus={roleKey === "municipal"}
+        mlActive={mlActive}
+      />
 
       <div
         className={[
@@ -113,11 +104,6 @@ function BarangayMunicipalDashboard({ user, roleKey, token }) {
       >
         {roleKey === "barangay" ? (
           <>
-            <LiveWeatherCard
-              weather={weather}
-              municipalityLabel={accountMunicipality}
-              barangayLabel={accountBarangay}
-            />
             {loading ? <p className="dashboard-data-status">Loading case data…</p> : null}
             {error ? (
               <p className="dashboard-data-status dashboard-data-status--error" role="alert">
@@ -129,6 +115,7 @@ function BarangayMunicipalDashboard({ user, roleKey, token }) {
                 patients={barangayPatients}
                 barangayName={accountBarangay}
                 municipalityName={accountMunicipality}
+                weather={weather}
               />
             ) : null}
           </>

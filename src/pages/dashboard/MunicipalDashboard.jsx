@@ -1,30 +1,23 @@
-import { useEffect, useMemo, useState, useDeferredValue, startTransition } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { Bell } from "lucide-react";
+import { useMemo, useState, useDeferredValue, startTransition } from "react";
+import { Link } from "react-router-dom";
 
-import MunicipalDeclarationWorkspace from "@/components/dashboard/MunicipalDeclarationWorkspace";
+import AlertSeverityBadge from "@/components/alerts/AlertSeverityBadge";
 import MunicipalForecastCard from "@/components/dashboard/MunicipalForecastCard";
 import MunicipalTrendCharts from "@/components/dashboard/MunicipalTrendCharts";
 import MunicipalWeatherContext from "@/components/dashboard/MunicipalWeatherContext";
-import { barangaysForMunicipality } from "@/data/davaoDeOroGeography";
 import { useAlerts } from "@/hooks/useAlerts";
+import { formatAlertToken } from "@/lib/alertListDisplay";
+import { barangaysForMunicipality } from "@/data/davaoDeOroGeography";
 import {
   buildSurveillanceIndex,
   computeAllDiseaseKpis,
   computeBarangayVelocityRows,
-  computeBarangayWeeklyTrend,
   computeMunicipalityWeeklyTrend,
   formatDeltaLabel,
   formatWindowLabel,
-  normalizePlaceKey,
   resolveSurveillanceWindows
 } from "@/lib/surveillance";
-import { computeRiskScore } from "@/lib/riskScoring";
 import "./MunicipalDashboard.css";
-
-const SEVERITY_RANK = { high: 3, elevated: 2, watch: 1 };
-const SEVERITY_LABEL = { high: "High", elevated: "Elevated", watch: "Watch" };
-const RISK_SEVERITY_CLASS = { high: "high", elevated: "elevated", watch: "watch", normal: "normal" };
 
 const DISEASE_OPTIONS = [
   { value: "DENGUE", label: "Dengue", buttonClass: "muni-disease-btn--dengue" },
@@ -32,6 +25,12 @@ const DISEASE_OPTIONS = [
   { value: "AWD", label: "Acute Watery Diarrhea", buttonClass: "muni-disease-btn--awd" },
   { value: "ALL", label: "All diseases", buttonClass: "muni-disease-btn--all" }
 ];
+
+const DISEASE_LABEL = {
+  DENGUE: "Dengue",
+  ILI: "Influenza-like Illness",
+  AWD: "Acute Watery Diarrhea"
+};
 
 const FIXED_WINDOW_WEEKS = 4;
 const TREND_WEEKS = 8;
@@ -48,9 +47,26 @@ function deltaClass(delta) {
   return "muni-kpi-delta--flat";
 }
 
-function KpiCard({ title, kpi, variant }) {
+function formatRelativeTime(value) {
+  if (!value) return "—";
+  const then = new Date(value).getTime();
+  if (Number.isNaN(then)) return "—";
+  const diffMs = Date.now() - then;
+  const mins = Math.round(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+function KpiCard({ title, kpi, variant, icon }) {
   return (
     <article className={`summary-card muni-kpi-card ${variant}`}>
+      <span className="summary-card-icon" aria-hidden="true">
+        {icon}
+      </span>
       <h4>{title}</h4>
       <h2>{kpi.windowCount.toLocaleString()}</h2>
       <p className="muni-kpi-window">{kpi.windowLabel}</p>
@@ -59,33 +75,47 @@ function KpiCard({ title, kpi, variant }) {
   );
 }
 
-/**
- * Municipal Health Office dashboard — surveillance, trends, forecast, and
- * declaration support. Early-warning alerts have been retired pending a
- * rewrite.
- */
+function HeroKpiCard({ total, windowLabel, totalDelta }) {
+  return (
+    <article className="summary-card summary-card--hero muni-kpi-card">
+      <h4>Total confirmed cases</h4>
+      <h2>{total.toLocaleString()}</h2>
+      <p className="muni-kpi-window">{windowLabel}</p>
+      <span className="summary-card-delta-pill">{formatDeltaLabel(totalDelta)}</span>
+    </article>
+  );
+}
+
+function AlertPreviewItem({ alert }) {
+  const diseaseLabel = DISEASE_LABEL[alert.disease] ?? alert.disease;
+  const severityKey = String(alert.severity ?? "").toLowerCase();
+  return (
+    <li className={`muni-alert-preview-item muni-alert-preview-item--${severityKey}`}>
+      <span className="muni-alert-preview-dot" aria-hidden="true" />
+      <div className="muni-alert-preview-body">
+        <span className="muni-alert-preview-title">{diseaseLabel}</span>
+        <span className="muni-alert-preview-meta">
+          {alert.barangay} · {formatAlertToken(alert.triggerType ?? "pattern")}
+        </span>
+      </div>
+      <div className="muni-alert-preview-end">
+        <span className="muni-alert-preview-time">{formatRelativeTime(alert.createdAt)}</span>
+        <AlertSeverityBadge severity={alert.severity} />
+      </div>
+    </li>
+  );
+}
+
+/** Municipal Health Office dashboard — surveillance, trends, and forecast. */
 function MunicipalDashboard({ patients = [], municipalityName = "", weather = null }) {
   const [diseaseFilter, setDiseaseFilter] = useState("DENGUE");
   const deferredDiseaseFilter = useDeferredValue(diseaseFilter);
   const isFilterPending = deferredDiseaseFilter !== diseaseFilter;
   const [sortKey, setSortKey] = useState("delta");
   const [sortDir, setSortDir] = useState("desc");
-  const [selectedBarangayKey, setSelectedBarangayKey] = useState(null);
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Deep-link from an alert ("Open declaration workspace"): preselect the
-  // barangay + disease, then clear the params so later interaction is normal.
-  useEffect(() => {
-    const barangayParam = searchParams.get("barangay");
-    const diseaseParam = searchParams.get("disease");
-    if (!barangayParam && !diseaseParam) return;
-    if (diseaseParam) {
-      const upper = String(diseaseParam).toUpperCase();
-      if (["DENGUE", "ILI", "AWD", "ALL"].includes(upper)) setDiseaseFilter(upper);
-    }
-    if (barangayParam) setSelectedBarangayKey(barangayParam);
-    setSearchParams({}, { replace: true });
-  }, [searchParams, setSearchParams]);
+  const { alerts, summary: alertSummary } = useAlerts({ status: "active" });
+  const topAlerts = useMemo(() => alerts.slice(0, 5), [alerts]);
 
   const caseIndex = useMemo(() => buildSurveillanceIndex(patients), [patients]);
 
@@ -120,75 +150,20 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
     [patients, timeOptions, windows]
   );
 
-  // Map barangay name → id from the case list so the declaration workspace can
-  // fetch a server decision brief for the selected barangay.
-  const barangayIdByKey = useMemo(() => {
-    const map = new Map();
-    for (const p of patients) {
-      const key = normalizePlaceKey(p?.barangay);
-      if (key && p?.barangayId != null && !map.has(key)) map.set(key, p.barangayId);
-    }
-    return map;
-  }, [patients]);
+  const totalCases = kpis.awd.windowCount + kpis.ili.windowCount + kpis.dengue.windowCount;
+  const totalDelta = kpis.awd.wowDelta + kpis.ili.wowDelta + kpis.dengue.wowDelta;
 
-  const velocityRows = useMemo(() => {
-    const rows = computeBarangayVelocityRows(
-      patients,
-      barangayNames,
-      FIXED_WINDOW_WEEKS,
-      deferredDiseaseFilter,
-      { ...timeOptions, windows, diseaseFilter: deferredDiseaseFilter }
-    );
-    if (deferredDiseaseFilter === "ALL") {
-      return rows.map((r) => ({ ...r, riskScore: null, riskSeverity: null }));
-    }
-    return rows.map((r) => {
-      const risk = computeRiskScore({
-        disease: deferredDiseaseFilter,
-        current: r.current,
-        prior: r.prior,
-        delta: r.delta,
-        pctChange: r.pctChange
-      });
-      return { ...r, riskScore: risk.score, riskSeverity: risk.severity };
-    });
-  }, [patients, barangayNames, deferredDiseaseFilter, timeOptions, windows]);
-
-  const { alerts: activeAlerts, summary: alertSummary } = useAlerts({ status: "active" });
-
-  // Highest active-alert severity per barangay, filtered to the selected disease
-  // (or all diseases when the "ALL" filter is active) for table row indicators.
-  const alertSeverityByBarangay = useMemo(() => {
-    const map = new Map();
-    for (const alert of activeAlerts) {
-      if (deferredDiseaseFilter !== "ALL" && alert.disease !== deferredDiseaseFilter) continue;
-      const key = normalizePlaceKey(alert.barangay);
-      if (!key) continue;
-      const current = map.get(key);
-      if (!current || (SEVERITY_RANK[alert.severity] ?? 0) > (SEVERITY_RANK[current] ?? 0)) {
-        map.set(key, alert.severity);
-      }
-    }
-    return map;
-  }, [activeAlerts, deferredDiseaseFilter]);
-
-  const selectedRow = useMemo(
-    () => velocityRows.find((r) => r.barangayKey === selectedBarangayKey) ?? null,
-    [velocityRows, selectedBarangayKey]
+  const velocityRows = useMemo(
+    () =>
+      computeBarangayVelocityRows(
+        patients,
+        barangayNames,
+        FIXED_WINDOW_WEEKS,
+        deferredDiseaseFilter,
+        { ...timeOptions, windows, diseaseFilter: deferredDiseaseFilter }
+      ),
+    [patients, barangayNames, deferredDiseaseFilter, timeOptions, windows]
   );
-
-  const selectedBarangayId = useMemo(
-    () => (selectedBarangayKey ? barangayIdByKey.get(selectedBarangayKey) ?? null : null),
-    [selectedBarangayKey, barangayIdByKey]
-  );
-
-  const selectedWeeklyTrend = useMemo(() => {
-    if (!selectedBarangayKey) return [];
-    return computeBarangayWeeklyTrend(patients, selectedBarangayKey, TREND_WEEKS, {
-      ...timeOptions,
-      diseaseFilter: deferredDiseaseFilter
-    });
-  }, [selectedBarangayKey, patients, timeOptions, deferredDiseaseFilter]);
 
   const sortedRows = useMemo(() => {
     const list = [...velocityRows];
@@ -216,12 +191,33 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
     [patients, timeOptions, deferredDiseaseFilter]
   );
 
+  const trendPctBadge = useMemo(() => {
+    if (!municipalityTrend.length) return null;
+    const key =
+      deferredDiseaseFilter === "ALL"
+        ? null
+        : String(deferredDiseaseFilter).toUpperCase();
+    const mid = Math.floor(municipalityTrend.length / 2);
+    const prior = municipalityTrend.slice(0, mid);
+    const current = municipalityTrend.slice(mid);
+    const sumSlice = (rows, k) =>
+      rows.reduce((s, r) => {
+        if (k) return s + (Number(r[k]) || 0);
+        return s + (Number(r.DENGUE) || 0) + (Number(r.ILI) || 0) + (Number(r.AWD) || 0);
+      }, 0);
+    const priorSum = sumSlice(prior, key);
+    const currentSum = sumSlice(current, key);
+    if (priorSum === 0) return currentSum > 0 ? "+100%" : null;
+    const pct = ((currentSum - priorSum) / priorSum) * 100;
+    const sign = pct > 0 ? "+" : "";
+    return `${sign}${pct.toFixed(1)}% vs prior period`;
+  }, [municipalityTrend, deferredDiseaseFilter]);
+
   const showDiseaseColumn = deferredDiseaseFilter === "ALL";
 
   function handleDiseaseChange(nextValue) {
     startTransition(() => {
       setDiseaseFilter(nextValue);
-      setSelectedBarangayKey(null);
     });
   }
 
@@ -239,44 +235,21 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
     return sortDir === "asc" ? " ↑" : " ↓";
   }
 
-  function handleSelectBarangay(key) {
-    setSelectedBarangayKey((prev) => (prev === key ? null : key));
-  }
-
   return (
-    <div className={`muni-dash${isFilterPending ? " muni-dash--pending" : ""}`}>
-      {alertSummary.total > 0 ? (
-        <Link
-          to="/dashboard/notification"
-          className={`muni-alert-banner${alertSummary.bySeverity.high > 0 ? " muni-alert-banner--high" : ""}`}
-        >
-          <Bell className="muni-alert-banner-icon" strokeWidth={2} aria-hidden="true" />
-          <span className="muni-alert-banner-copy">
-            <strong>
-              {alertSummary.total} active early-warning alert
-              {alertSummary.total === 1 ? "" : "s"}
-            </strong>
-            <span className="muni-alert-banner-breakdown">
-              {alertSummary.bySeverity.high} high · {alertSummary.bySeverity.elevated} elevated ·{" "}
-              {alertSummary.bySeverity.watch} watch
-            </span>
-          </span>
-          <span className="muni-alert-banner-cta">View alerts →</span>
-        </Link>
-      ) : null}
-
-      <MunicipalWeatherContext weather={weather} municipalityName={municipalityName} />
-
-      <section className="card-container muni-dash-kpis" aria-label="Disease summary">
-        <KpiCard title="Acute Watery Diarrhea" kpi={kpis.awd} variant="blue" />
-        <KpiCard title="Influenza-Like-Illness" kpi={kpis.ili} variant="red" />
-        <KpiCard title="Dengue" kpi={kpis.dengue} variant="orange" />
+    <div className={`muni-dash muni-dash-grid${isFilterPending ? " muni-dash--pending" : ""}`}>
+      <section className="muni-dash-row-kpis card-container muni-dash-kpis" aria-label="Disease summary">
+        <HeroKpiCard
+          total={totalCases}
+          windowLabel={kpis.awd.windowLabel}
+          totalDelta={totalDelta}
+        />
+        <KpiCard title="Acute Watery Diarrhea" kpi={kpis.awd} variant="blue" icon="💧" />
+        <KpiCard title="Influenza-Like-Illness" kpi={kpis.ili} variant="red" icon="🤧" />
+        <KpiCard title="Dengue" kpi={kpis.dengue} variant="orange" icon="🦟" />
       </section>
 
-      <section className="muni-panel muni-dash-time" aria-label="Time and disease filters">
+      <section className="muni-dash-row-filters" aria-label="Time and disease filters">
         <div className="muni-dash-period-info">
-          <p className="muni-section-kicker">Filters</p>
-          <h3 className="muni-dash-period-title">Looking at the last month</h3>
           <p className="muni-dash-period-dates">{periodCaption}</p>
         </div>
         <div
@@ -308,142 +281,131 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
         </div>
       </section>
 
-      <MunicipalDeclarationWorkspace
-        row={selectedRow}
-        barangayId={selectedBarangayId}
-        weeklyTrend={selectedWeeklyTrend}
-        diseaseFilter={deferredDiseaseFilter}
-        periodCaption={periodCaption}
-        onClose={() => setSelectedBarangayKey(null)}
-      />
+      <div className="muni-dash-row-main">
+        <section className="muni-panel muni-dash-trends-card" aria-label="Trend charts">
+          <header className="dash-panel-head">
+            <div className="dash-panel-head-copy">
+              <h3>Case trends</h3>
+              <p>Confirmed cases over the last {TREND_WEEKS} weeks</p>
+            </div>
+            {trendPctBadge ? (
+              <span
+                className={`dash-panel-badge${trendPctBadge.startsWith("+") ? " dash-panel-badge--up" : ""}`}
+              >
+                {trendPctBadge}
+              </span>
+            ) : null}
+          </header>
+          <MunicipalTrendCharts municipalityTrend={municipalityTrend} diseaseFilter={deferredDiseaseFilter} />
+        </section>
 
-      <section className="muni-panel muni-dash-trends-card" aria-label="Trend charts">
-        <MunicipalTrendCharts municipalityTrend={municipalityTrend} diseaseFilter={deferredDiseaseFilter} />
-      </section>
+        <div className="muni-dash-side-stack">
+          <MunicipalWeatherContext weather={weather} municipalityName={municipalityName} />
+        </div>
+      </div>
 
-      <MunicipalForecastCard diseaseFilter={deferredDiseaseFilter} />
+      <div className="muni-dash-row-bottom">
+        <section className="muni-panel muni-dash-risers" aria-labelledby="muni-risers-title">
+          <header className="dash-panel-head dash-panel-head--split">
+            <div className="dash-panel-head-copy">
+              <h3 id="muni-risers-title">Barangay velocity</h3>
+              <p>Case change ranking by barangay</p>
+            </div>
+            <Link className="dash-panel-link" to="/dashboard/surveillance-map">
+              View surveillance map →
+            </Link>
+          </header>
 
-      <section className="muni-panel muni-dash-risers" aria-labelledby="muni-risers-title">
-        <header className="muni-section-head muni-section-head--compact muni-section-head--centered">
-          <div className="muni-section-head-copy">
-            <p className="muni-section-kicker">Barangay ranking</p>
-            <h3 id="muni-risers-title">Velocity table</h3>
-          </div>
-        </header>
-
-        <div className="muni-dash-table-wrap">
-          <table className="muni-dash-table">
-            <thead>
-              <tr>
-                <th scope="col">
-                  <button type="button" className="muni-sort-btn" onClick={() => toggleSort("rank")}>
-                    Rank{sortIndicator("rank")}
-                  </button>
-                </th>
-                <th scope="col">
-                  <button type="button" className="muni-sort-btn" onClick={() => toggleSort("barangay")}>
-                    Barangay{sortIndicator("barangay")}
-                  </button>
-                </th>
-                {showDiseaseColumn ? <th scope="col">Disease</th> : null}
-                <th scope="col">
-                  <button type="button" className="muni-sort-btn" onClick={() => toggleSort("current")}>
-                    Current{sortIndicator("current")}
-                  </button>
-                </th>
-                <th scope="col">
-                  <button type="button" className="muni-sort-btn" onClick={() => toggleSort("prior")}>
-                    Prior{sortIndicator("prior")}
-                  </button>
-                </th>
-                <th scope="col">
-                  <button type="button" className="muni-sort-btn" onClick={() => toggleSort("delta")}>
-                    Δ{sortIndicator("delta")}
-                  </button>
-                </th>
-                <th scope="col">
-                  <button type="button" className="muni-sort-btn" onClick={() => toggleSort("pctChange")}>
-                    % change{sortIndicator("pctChange")}
-                  </button>
-                </th>
-                {showDiseaseColumn ? null : (
+          <div className="muni-dash-table-wrap">
+            <table className="muni-dash-table">
+              <thead>
+                <tr>
                   <th scope="col">
-                    <button type="button" className="muni-sort-btn" onClick={() => toggleSort("riskScore")}>
-                      Risk{sortIndicator("riskScore")}
+                    <button type="button" className="muni-sort-btn" onClick={() => toggleSort("rank")}>
+                      Rank{sortIndicator("rank")}
                     </button>
                   </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {sortedRows.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="muni-dash-table-empty">
-                    No barangay data for this municipality.
-                  </td>
+                  <th scope="col">
+                    <button type="button" className="muni-sort-btn" onClick={() => toggleSort("barangay")}>
+                      Barangay{sortIndicator("barangay")}
+                    </button>
+                  </th>
+                  {showDiseaseColumn ? <th scope="col">Disease</th> : null}
+                  <th scope="col">
+                    <button type="button" className="muni-sort-btn" onClick={() => toggleSort("current")}>
+                      Current{sortIndicator("current")}
+                    </button>
+                  </th>
+                  <th scope="col">
+                    <button type="button" className="muni-sort-btn" onClick={() => toggleSort("prior")}>
+                      Prior{sortIndicator("prior")}
+                    </button>
+                  </th>
+                  <th scope="col">
+                    <button type="button" className="muni-sort-btn" onClick={() => toggleSort("delta")}>
+                      Δ{sortIndicator("delta")}
+                    </button>
+                  </th>
+                  <th scope="col">
+                    <button type="button" className="muni-sort-btn" onClick={() => toggleSort("pctChange")}>
+                      % change{sortIndicator("pctChange")}
+                    </button>
+                  </th>
                 </tr>
-              ) : (
-                sortedRows.map((row) => {
-                  const rowSeverity = alertSeverityByBarangay.get(row.barangayKey);
-                  return (
-                  <tr
-                    key={row.barangayKey}
-                    className={[
-                      row.delta > 0 ? "muni-row--rising" : "",
-                      rowSeverity ? `muni-row--alert-${rowSeverity}` : "",
-                      selectedBarangayKey === row.barangayKey ? "muni-row--selected" : ""
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                    onClick={() => handleSelectBarangay(row.barangayKey)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleSelectBarangay(row.barangayKey);
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-pressed={selectedBarangayKey === row.barangayKey}
-                  >
-                    <td>{row.rank}</td>
-                    <td>
-                      <span className="muni-row-barangay">
-                        {row.barangay}
-                        {rowSeverity ? (
-                          <span
-                            className={`muni-row-alert-tag muni-row-alert-tag--${rowSeverity}`}
-                            title={`${SEVERITY_LABEL[rowSeverity]} early-warning alert`}
-                          >
-                            {SEVERITY_LABEL[rowSeverity]}
-                          </span>
-                        ) : null}
-                      </span>
+              </thead>
+              <tbody>
+                {sortedRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={showDiseaseColumn ? 7 : 6} className="muni-dash-table-empty">
+                      No barangay data for this municipality.
                     </td>
-                    {showDiseaseColumn ? <td>{row.disease}</td> : null}
-                    <td>{row.current}</td>
-                    <td>{row.prior}</td>
-                    <td className={deltaClass(row.delta)}>{row.delta > 0 ? `+${row.delta}` : row.delta}</td>
-                    <td className={deltaClass(row.delta)}>{fmtPct(row.pctChange)}</td>
-                    {showDiseaseColumn ? null : (
-                      <td>
-                        {row.riskScore != null ? (
-                          <span className={`muni-risk-chip muni-risk-chip--${RISK_SEVERITY_CLASS[row.riskSeverity] ?? "normal"}`}>
-                            {row.riskScore}
-                          </span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                    )}
                   </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  sortedRows.map((row) => (
+                    <tr key={row.barangayKey} className={row.delta > 0 ? "muni-row--rising" : ""}>
+                      <td>{row.rank}</td>
+                      <td>{row.barangay}</td>
+                      {showDiseaseColumn ? <td>{row.disease}</td> : null}
+                      <td>{row.current}</td>
+                      <td>{row.prior}</td>
+                      <td className={deltaClass(row.delta)}>{row.delta > 0 ? `+${row.delta}` : row.delta}</td>
+                      <td className={deltaClass(row.delta)}>{fmtPct(row.pctChange)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <div className="muni-dash-side-stack">
+          <section className="muni-panel muni-alert-preview" aria-label="Priority alerts">
+            <header className="dash-panel-head dash-panel-head--split">
+              <div className="dash-panel-head-copy">
+                <h3>Priority alerts</h3>
+              </div>
+              <span className="dash-panel-live">
+                <span className="dash-panel-live-dot" aria-hidden="true" />
+                {alertSummary.active} active
+              </span>
+            </header>
+            {topAlerts.length === 0 ? (
+              <p className="muni-empty-state">No active alerts</p>
+            ) : (
+              <ul className="muni-alert-preview-list">
+                {topAlerts.map((alert) => (
+                  <AlertPreviewItem key={alert.id} alert={alert} />
+                ))}
+              </ul>
+            )}
+            <Link className="dash-panel-link dash-panel-link--block" to="/dashboard/alerts">
+              View all alerts →
+            </Link>
+          </section>
+
+          <MunicipalForecastCard diseaseFilter={deferredDiseaseFilter} />
         </div>
-      </section>
+      </div>
     </div>
   );
 }

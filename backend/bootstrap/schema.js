@@ -229,93 +229,27 @@ const EARLY_WARNING_ALERT_EVENTS_CREATE_SQL = `
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 `;
 
-/** Idempotent Early-Warning alert tables (matches migration 15). Persists
- *  server-generated outbreak-risk alerts and their lifecycle audit log. */
+/** Idempotent Early-Warning alert tables (matches migration 15). */
 export async function ensureEarlyWarningAlertTables() {
   try {
+    const [tables] = await pool.query(`SHOW TABLES LIKE 'early_warning_alerts'`);
+    if (tables.length > 0) {
+      const [severityCol] = await pool.query(
+        `SHOW COLUMNS FROM early_warning_alerts LIKE 'severity'`
+      );
+      if (severityCol.length === 0) {
+        console.log(
+          "[ALERTO API] Replacing legacy early_warning_alerts schema with migration 15 tables…"
+        );
+        await pool.query(`DROP TABLE IF EXISTS early_warning_alert_events`);
+        await pool.query(`DROP TABLE IF EXISTS early_warning_alerts`);
+      }
+    }
     await pool.query(EARLY_WARNING_ALERTS_CREATE_SQL);
     await pool.query(EARLY_WARNING_ALERT_EVENTS_CREATE_SQL);
   } catch (err) {
     if (err?.code !== "ER_TABLE_EXISTS_ERROR") {
       console.warn("[ALERTO API] early_warning_alerts bootstrap:", err.message);
-    }
-  }
-}
-
-const OUTBREAK_DECLARATIONS_CREATE_SQL = `
-  CREATE TABLE IF NOT EXISTS outbreak_declarations (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    declaration_uuid CHAR(36) NOT NULL,
-    scope_type ENUM('barangay', 'municipality') NOT NULL,
-    scope_id INT UNSIGNED NOT NULL,
-    municipality_id SMALLINT UNSIGNED NOT NULL,
-    barangay_id INT UNSIGNED NULL DEFAULT NULL,
-    disease ENUM('DENGUE', 'ILI', 'AWD') NOT NULL,
-    status ENUM('draft', 'recommended', 'declared', 'lifted', 'cancelled') NOT NULL DEFAULT 'draft',
-    risk_score DECIMAL(5, 2) NULL DEFAULT NULL,
-    risk_severity ENUM('normal', 'watch', 'elevated', 'high') NULL DEFAULT NULL,
-    risk_snapshot JSON NULL DEFAULT NULL,
-    forecast_snapshot JSON NULL DEFAULT NULL,
-    supporting_alert_ids JSON NULL DEFAULT NULL,
-    notes TEXT NULL,
-    created_by INT UNSIGNED NULL DEFAULT NULL,
-    declared_by INT UNSIGNED NULL DEFAULT NULL,
-    declared_at TIMESTAMP NULL DEFAULT NULL,
-    lifted_by INT UNSIGNED NULL DEFAULT NULL,
-    lifted_at TIMESTAMP NULL DEFAULT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    UNIQUE KEY uq_declarations_uuid (declaration_uuid),
-    KEY idx_declarations_municipality_status (municipality_id, status),
-    KEY idx_declarations_scope (scope_type, scope_id, disease),
-    KEY idx_declarations_barangay (barangay_id),
-    CONSTRAINT fk_declarations_municipality
-      FOREIGN KEY (municipality_id) REFERENCES municipalities (id)
-      ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_declarations_barangay
-      FOREIGN KEY (barangay_id) REFERENCES barangays (id)
-      ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_declarations_created_by
-      FOREIGN KEY (created_by) REFERENCES users (id)
-      ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_declarations_declared_by
-      FOREIGN KEY (declared_by) REFERENCES users (id)
-      ON DELETE SET NULL ON UPDATE CASCADE,
-    CONSTRAINT fk_declarations_lifted_by
-      FOREIGN KEY (lifted_by) REFERENCES users (id)
-      ON DELETE SET NULL ON UPDATE CASCADE
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-`;
-
-const OUTBREAK_DECLARATION_EVENTS_CREATE_SQL = `
-  CREATE TABLE IF NOT EXISTS outbreak_declaration_events (
-    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    declaration_id INT UNSIGNED NOT NULL,
-    event_type ENUM('created', 'updated', 'recommended', 'declared', 'lifted', 'cancelled') NOT NULL,
-    actor_user_id INT UNSIGNED NULL DEFAULT NULL,
-    payload JSON NULL DEFAULT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    KEY idx_declaration_events_declaration (declaration_id, created_at),
-    CONSTRAINT fk_declaration_events_declaration
-      FOREIGN KEY (declaration_id) REFERENCES outbreak_declarations (id)
-      ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_declaration_events_actor
-      FOREIGN KEY (actor_user_id) REFERENCES users (id)
-      ON DELETE SET NULL ON UPDATE CASCADE
-  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-`;
-
-/** Idempotent outbreak-declaration tables (matches migration 16). Persists
- *  human-authored declaration decisions + their audit trail. */
-export async function ensureOutbreakDeclarationTables() {
-  try {
-    await pool.query(OUTBREAK_DECLARATIONS_CREATE_SQL);
-    await pool.query(OUTBREAK_DECLARATION_EVENTS_CREATE_SQL);
-  } catch (err) {
-    if (err?.code !== "ER_TABLE_EXISTS_ERROR") {
-      console.warn("[ALERTO API] outbreak_declarations bootstrap:", err.message);
     }
   }
 }
@@ -327,7 +261,4 @@ export async function bootstrapSchema() {
     ensureCaseEnvironmentalTable(),
     ensureEarlyWarningAlertTables()
   ]);
-  // Declarations FK-reference early_warning_alerts/users, so create after the
-  // above batch settles to avoid racing table creation.
-  await ensureOutbreakDeclarationTables();
 }

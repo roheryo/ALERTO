@@ -13,10 +13,6 @@ import {
   normalizePlaceKey,
   resolveSurveillanceWindows
 } from "@/lib/surveillance";
-import { COUNT_THRESHOLDS, VELOCITY_MIN_DELTA, VELOCITY_MIN_PCT } from "@/lib/riskConfig";
-
-/** Provincial cross-municipality alert thresholds derive from the shared risk
- *  config (COUNT_THRESHOLDS, VELOCITY_MIN_DELTA, VELOCITY_MIN_PCT imported above). */
 
 export { listProvinceMunicipalities, provinceBarangayCount };
 
@@ -161,18 +157,6 @@ export function computeProvinceBarangayRows(
   return rows.map((row, i) => ({ ...row, rank: i + 1 }));
 }
 
-function alertLevelForRow(row, diseaseFilter) {
-  const threshold =
-    diseaseFilter === "ALL"
-      ? Math.min(COUNT_THRESHOLDS.DENGUE, COUNT_THRESHOLDS.ILI, COUNT_THRESHOLDS.AWD)
-      : COUNT_THRESHOLDS[String(diseaseFilter).toUpperCase()] ?? 10;
-
-  if (row.current >= threshold && row.delta >= VELOCITY_MIN_DELTA) return "high";
-  if (row.current >= threshold || row.delta >= VELOCITY_MIN_DELTA) return "elevated";
-  if (row.pctChange >= VELOCITY_MIN_PCT && row.delta > 0 && row.current >= 2) return "watch";
-  return "normal";
-}
-
 /** Municipality status board for PHO coordination. */
 export function computeMunicipalityStatusBoard(
   patients,
@@ -200,17 +184,11 @@ export function computeMunicipalityStatusBoard(
 
     return {
       ...row,
-      alertLevel: alertLevelForRow(row, diseaseFilter),
       lastEncodeAt,
       lastBarangay: last?.barangay ?? "",
       minutesAgo
     };
   });
-}
-
-/** Municipalities needing cross-municipality PHO coordination. */
-export function computeCrossMunicipalityAlerts(statusBoard) {
-  return (statusBoard ?? []).filter((r) => r.alertLevel === "high" || r.alertLevel === "elevated");
 }
 
 /** Barangays with recent case encodes (surveillance sync health). */

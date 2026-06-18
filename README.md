@@ -37,7 +37,6 @@ ALERTO/
 │   │   ├── auth/
 │   │   ├── cases/
 │   │   ├── dashboard/
-│   │   ├── notifications/
 │   │   ├── patients/
 │   │   └── reports/
 │   └── styles/              # Global + dashboard shell CSS

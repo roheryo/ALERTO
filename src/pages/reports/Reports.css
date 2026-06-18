@@ -1,10 +1,15 @@
 /* Print-first A4 report styling for ALERTO */
 
 .report-page {
-  background: #eef1f5;
+  background: var(--dash-bg, #f4f6f8);
   min-height: 100vh;
   padding: 10px 0 18px;
   color: #111;
+}
+
+.report-page-chrome {
+  width: min(1000px, calc(100% - 48px));
+  margin: 0 auto 8px;
 }
 
 .report-toolbar {
