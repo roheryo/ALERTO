@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import Chart from "react-apexcharts";
 
+import LiveWeatherCard from "@/components/weather/LiveWeatherCard";
 import {
   filterConfirmedPatients,
   getLastFourWeekBuckets,
@@ -9,6 +10,7 @@ import {
   weeklyDiseaseCounts
 } from "../../lib/disease";
 import "./BarangayDashboard.css";
+import "../dashboard/MunicipalDashboard.css";
 
 function countByDisease(patients) {
   let dengue = 0;
@@ -28,9 +30,15 @@ function countByDisease(patients) {
  * Barangay-scoped dashboard: KPI totals and 4-week disease trend.
  * Only confirmed cases are counted (Suspect/Probable excluded for surveillance accuracy).
  */
-function BarangayDashboard({ patients = [], barangayName = "", municipalityName = "" }) {
+function BarangayDashboard({
+  patients = [],
+  barangayName = "",
+  municipalityName = "",
+  weather = null
+}) {
   const confirmedPatients = useMemo(() => filterConfirmedPatients(patients), [patients]);
   const kpis = useMemo(() => countByDisease(confirmedPatients), [confirmedPatients]);
+  const totalCases = kpis.dengue + kpis.ili + kpis.awd;
 
   const weekBuckets = useMemo(() => getLastFourWeekBuckets(), []);
   const weekLabels = useMemo(() => weekBuckets.map((b) => b.label), [weekBuckets]);
@@ -60,8 +68,7 @@ function BarangayDashboard({ patients = [], barangayName = "", municipalityName 
         type: "area",
         toolbar: { show: false },
         zoom: { enabled: false },
-        fontFamily:
-          'ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        fontFamily: '"Inter", ui-sans-serif, system-ui, sans-serif',
         animations: { enabled: true, speed: 450 }
       },
       stroke: {
@@ -137,47 +144,74 @@ function BarangayDashboard({ patients = [], barangayName = "", municipalityName 
   const scopeLine = [municipalityName, barangayName].filter(Boolean).join(" · ");
 
   return (
-    <section className="barangay-dash" aria-labelledby="barangay-dash-title">
-      <div className="barangay-dash-intro">
-        <h2 id="barangay-dash-title" className="barangay-dash-title">
-          Barangay overview
-        </h2>
-        {scopeLine ? (
-          <p className="barangay-dash-scope">
-            {scopeLine}
-          </p>
-        ) : (
-          <p className="barangay-dash-scope">Confirmed cases only · real-time surveillance</p>
-        )}
+    <section className="barangay-dash barangay-dash-grid" aria-label="Barangay dashboard">
+      <div className="barangay-dash-row-kpis card-container" role="list">
+        <article className="summary-card summary-card--hero muni-kpi-card" role="listitem">
+          <h4>Total confirmed cases</h4>
+          <h2>{totalCases.toLocaleString()}</h2>
+          <p className="muni-kpi-window">All diseases · barangay scope</p>
+        </article>
+        <article className="summary-card muni-kpi-card orange barangay-kpi" role="listitem">
+          <span className="summary-card-icon" aria-hidden="true">
+            🦟
+          </span>
+          <h4>Dengue</h4>
+          <h2>{kpis.dengue.toLocaleString()}</h2>
+          <p className="muni-kpi-window">Confirmed cases</p>
+        </article>
+        <article className="summary-card muni-kpi-card red barangay-kpi" role="listitem">
+          <span className="summary-card-icon" aria-hidden="true">
+            🤧
+          </span>
+          <h4>ILI</h4>
+          <h2>{kpis.ili.toLocaleString()}</h2>
+          <p className="muni-kpi-window">Confirmed cases</p>
+        </article>
+        <article className="summary-card muni-kpi-card blue barangay-kpi" role="listitem">
+          <span className="summary-card-icon" aria-hidden="true">
+            💧
+          </span>
+          <h4>AWD</h4>
+          <h2>{kpis.awd.toLocaleString()}</h2>
+          <p className="muni-kpi-window">Confirmed cases</p>
+        </article>
       </div>
 
-      <div className="barangay-dash-kpis" role="list">
-        <article className="barangay-kpi barangay-kpi--dengue" role="listitem">
-          <p className="barangay-kpi-label">Dengue</p>
-          <p className="barangay-kpi-value">{kpis.dengue.toLocaleString()}</p>
-          <p className="barangay-kpi-hint">Confirmed cases</p>
-        </article>
-        <article className="barangay-kpi barangay-kpi--ili" role="listitem">
-          <p className="barangay-kpi-label">ILI</p>
-          <p className="barangay-kpi-value">{kpis.ili.toLocaleString()}</p>
-          <p className="barangay-kpi-hint">Confirmed cases</p>
-        </article>
-        <article className="barangay-kpi barangay-kpi--awd" role="listitem">
-          <p className="barangay-kpi-label">AWD</p>
-          <p className="barangay-kpi-value">{kpis.awd.toLocaleString()}</p>
-          <p className="barangay-kpi-hint">Confirmed cases</p>
-        </article>
+      <div className="barangay-dash-row-main">
+        <div className="muni-panel barangay-dash-chart-wrap">
+          <header className="dash-panel-head">
+            <div className="dash-panel-head-copy">
+              <h3>Weekly case trend</h3>
+              <p>Last four weeks · confirmed cases only</p>
+            </div>
+          </header>
+          <div className="barangay-dash-chart" role="img" aria-label="Weekly case trend chart">
+            <Chart options={chartOptions} series={chartSeries} type="area" height={320} />
+          </div>
+        </div>
+
+        <div className="barangay-dash-side-stack">
+          <LiveWeatherCard
+            weather={weather}
+            municipalityLabel={municipalityName}
+            barangayLabel={barangayName}
+            className="barangay-weather-embed"
+          />
+        </div>
       </div>
 
-      <div className="barangay-dash-chart-wrap">
-        <div className="barangay-dash-chart-head">
-          <h3 className="barangay-dash-chart-title">Weekly case trend</h3>
-          <p className="barangay-dash-chart-sub">Last four weeks</p>
-        </div>
-        <div className="barangay-dash-chart" role="img" aria-label="Weekly case trend chart">
-          <Chart options={chartOptions} series={chartSeries} type="area" height={320} />
-        </div>
-      </div>
+      <section className="muni-panel barangay-dash-scope-card" aria-label="Surveillance scope">
+        <header className="dash-panel-head">
+          <div className="dash-panel-head-copy">
+            <h3>Surveillance scope</h3>
+            <p>{scopeLine || "Confirmed cases only · real-time surveillance"}</p>
+          </div>
+        </header>
+        <p className="barangay-dash-scope-note">
+          Data reflects confirmed cases reported for this barangay. Suspect and probable cases are
+          excluded from surveillance totals.
+        </p>
+      </section>
     </section>
   );
 }

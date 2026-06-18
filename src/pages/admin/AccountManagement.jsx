@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { FaBell } from "react-icons/fa";
 
-import logo from "@/assets/images/ddoLOGO.jpg";
 import { useAuth } from "@/context/AuthContext";
 import { apiFetch } from "@/lib/api";
+import DashboardPageHeader from "@/layout/DashboardPageHeader";
 import "@/styles/dashboard-shell.css";
 import "./AccountManagement.css";
 
@@ -145,8 +143,6 @@ export default function AccountManagement() {
   }, [load]);
 
   const isProvince = user?.role === "province";
-  const officeLabel = isProvince ? "Provincial Health Office" : "Municipal Health Office";
-
   const headerSubline = isProvince
     ? "Province · rotate municipality account passwords in Davao de Oro"
     : "Municipality · rotate barangay BHU passwords in your jurisdiction";
@@ -161,22 +157,7 @@ export default function AccountManagement() {
 
   return (
     <div className="am-page">
-      <header className="dashboard-header">
-        <div>
-          <h2 className="header-title">Account management</h2>
-          <p className="header-subline">{headerSubline}</p>
-        </div>
-        <div className="header-right">
-          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
-            <FaBell />
-          </Link>
-          <div className="header-text">
-            <h3>Davao de Oro</h3>
-            <p>{officeLabel}</p>
-          </div>
-          <img src={logo} alt="Davao de Oro logo" className="header-logo" />
-        </div>
-      </header>
+      <DashboardPageHeader pageTitle="Account management" subline={headerSubline} />
 
       <div className="am-main">
         <section className="am-intro" aria-label="Account management overview">

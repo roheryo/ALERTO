@@ -1,9 +1,8 @@
 import "./CasesLogs.css";
 import "@/styles/dashboard-shell.css";
-import logo from "@/assets/images/ddoLOGO.jpg";
+import DashboardPageHeader from "@/layout/DashboardPageHeader";
 import { useMemo, useState, useEffect, useCallback, useDeferredValue, startTransition } from "react";
-import { Link } from "react-router-dom";
-import { FaBell, FaClipboardList, FaMapMarkerAlt, FaUser } from "react-icons/fa";
+import { FaClipboardList, FaMapMarkerAlt, FaUser } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext";
 import { sessionUserFromAuth } from "@/lib/authUser";
 import { usePatients, PATIENTS_CHANGED_EVENT } from "@/hooks/usePatients";
@@ -477,19 +476,7 @@ function CasesLogs() {
 
   return (
     <div className={`caseslogs-page${filtersPending ? " caseslogs-page--pending" : ""}`}>
-      <header className="dashboard-header">
-        <h2 className="header-title">Case Logs</h2>
-        <div className="header-right">
-          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
-            <FaBell />
-          </Link>
-          <div className="header-text">
-            <h3>Davao de Oro</h3>
-            <p>Provincial Health Office</p>
-          </div>
-          <img src={logo} alt="logo" className="header-logo" />
-        </div>
-      </header>
+      <DashboardPageHeader pageTitle="Case Logs" />
 
       <div className="caseslogs-main">
         <section className="caseslogs-scope-panel" aria-label="Case log scope and summary">

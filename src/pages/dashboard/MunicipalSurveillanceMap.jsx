@@ -1,9 +1,8 @@
 import { useMemo, useState, useDeferredValue, startTransition } from "react";
-import { Link } from "react-router-dom";
-import { FaBell, FaMapMarkedAlt } from "react-icons/fa";
+import { FaMapMarkedAlt } from "react-icons/fa";
 
-import logo from "@/assets/images/ddoLOGO.jpg";
 import MunicipalBarangayMap from "@/components/dashboard/MunicipalBarangayMap";
+import DashboardPageHeader from "@/layout/DashboardPageHeader";
 import { barangaysForMunicipality } from "@/data/davaoDeOroGeography";
 import { useAuth } from "@/context/AuthContext";
 import { sessionUserFromAuth } from "@/lib/authUser";
@@ -146,22 +145,7 @@ function MunicipalSurveillanceMap() {
 
   return (
     <div className="dashboard-container muni-map-page">
-      <header className="dashboard-header">
-        <div>
-          <h2 className="header-title">Surveillance Map</h2>
-          {headerSubline ? <p className="header-subline">{headerSubline}</p> : null}
-        </div>
-        <div className="header-right">
-          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
-            <FaBell />
-          </Link>
-          <div className="header-text">
-            <h3>Davao de Oro</h3>
-            <p>Municipal Health Office</p>
-          </div>
-          <img src={logo} alt="logo" className="header-logo" />
-        </div>
-      </header>
+      <DashboardPageHeader pageTitle="Surveillance Map" subline={headerSubline} />
 
       <div className="content-area">
         {loading ? <p className="dashboard-data-status">Loading case data…</p> : null}
@@ -178,9 +162,6 @@ function MunicipalSurveillanceMap() {
                 <p className="muni-section-kicker">Surveillance window</p>
                 <h3 className="muni-dash-period-title">Last 4 weeks</h3>
                 <p className="muni-dash-period-dates">{periodCaption}</p>
-                <p className="muni-dash-period-note">
-                  Raw case counts by barangay · population rates when census data is available
-                </p>
               </div>
 
               <div className="muni-map-filter-groups">

@@ -1,82 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import "./Reports.css";
+import DashboardPageHeader from "@/layout/DashboardPageHeader";
+import { barangaysForMunicipality, listProvinceMunicipalities } from "@/data/davaoDeOroGeography";
 import { useAuth } from "../../context/AuthContext";
 import { sessionUserFromAuth } from "../../lib/authUser";
 import { usePatients } from "../../hooks/usePatients";
-import { exportReportExcel } from "../../lib/exportReportExcel";
 
-const MUNICIPALITY_DATA = {
-  Compostela: [
-    "Aurora","Bagongon","Gabi","Lagab","Mangayon","Mapaca","Maparat",
-    "New Alegria","Ngan","Osmeña","Panansalan","Poblacion",
-    "San Jose","San Miguel","Siocon","Tamia"
-  ],
-  Maragusan: [
-    "Bagong Silang","Bahi","Cambagang","Coronobe","Katipunan","Lahi",
-    "Langgawisan","Mabugnao","Magcagong","Mahayahay","Mapawa",
-    "Maragusan (Poblacion)","Mauswagon","New Albay","New Katipunan",
-    "New Manay","New Panay","Paloc","Pamintaran","Parasanon","Talian","Tandik",
-    "Tigbao","Tupaz","Tupaz Proper"
-  ],
-  Monkayo: [
-    "Awao","Babag","Banlag","Baylo","Casoon","Haguimitan","Inambatan",
-    "Macopa","Mamunga","Mount Diwata","Naboc","Olaycon","Pasian",
-    "Poblacion","Rizal","Salvacion","San Isidro","San Jose",
-    "Tubo-tubo","Union","Upper Ulip"
-  ],
-  Montevista: [
-    "Banagbanag","Banglasan","Bankerohan Norte","Bankerohan Sur",
-    "Camansi","Camantangan","Canidkid","Concepcion","Dauman","Kapatagan",
-    "Lebanon","Linoan","Mayaon","New Calape","New Cebulan (Sambayon)",
-    "New Dalaguete","New Eagle","New Visayas","Prosperidad","San Jose",
-    "San Vicente","Santa Maria","Tapasan","Poblacion"
-  ],
-  "New Bataan": [
-    "Andap","Bantacan","Batinao","Cabinuangan (Poblacion)","Camanlangan",
-    "Cogonon","Fatima","Kahayag","Katipunan","Magangit","Magsaysay",
-    "Manurigao","Pagsabangan","Panag","San Roque","Tandawan"
-  ],
-  Nabunturan: [
-    "Anislagan","Antiquera","Basak","Bayabas","Bukal","Cabacungan",
-    "Cabidianan","Katipunan","Libasan","Linda","Magading","Magsaysay",
-    "Mainit","Manat","Matilo","Mipangi","New Dauis","New Sibonga",
-    "Ogao","Pangutosan","Poblacion","San Isidro","San Roque",
-    "San Vicente","Santa Maria","Santo Niño (Kao)","Sasa","Tagnocon"
-  ],
-  Laak: [
-    "Aguinaldo","Amor Cruz","Ampawid","Andap","Anitap","Bagong Silang",
-    "Banbanon","Belmonte","Binasbas","Bullucan","Cebulida","Concepcion",
-    "Datu Ampunan","Datu Davao","Doña Josefa","El Katipunan","Il Papa",
-    "Imelda","Inacayan","Kaligutan","Kapatagan","Kidawa","Kilagding",
-    "Kiokmay","Laak (Poblacion)","Langtud","Longanapan","Mabuhay",
-    "Macopa","Malinao","Mangloy","Melale","Naga","New Bethlehem",
-    "Panamoren","Sabud","San Antonio","Santa Emilia","Santo Niño","Sisimon"
-  ],
-  Mabini: [
-    "Anitapan","Cabuyuan","Cadunan","Cuambog","Golden Valley (Maraut)",
-    "Libodon","Pangibiran","Pindasan","Poblacion","San Antonio",
-    "Tagnanan (Mabini)","Del Pilar"
-  ],
-  Maco: [
-    "Anibongan","Anislagan","Binuangan","Buanan","Bucana","Calabcab",
-    "Concepcion","Dumlan","Elizalde (Somil)","Gubatan","Hijo","Kinuban",
-    "Langgam","Lapu-lapu","Libay-libay","Limbo","Lumatab","Magangit",
-    "Mainit","Malamodao","Manipongol","Mapaang","Masara","New Asturias",
-    "New Barili","New Leyte","New Visayas","Panangan","Panibasan",
-    "Panoraon","Pangi (Gaudencio Antonio)","Poblacion","San Juan",
-    "San Roque","Sangab","Tagbaros","Taglawig","Teresa","Ubalaz",
-    "Unangian","Uracia","Vacolan","Vancezo"
-  ],
-  Mawab: [
-    "Andili","Bawani","Concepcion","Malinawon","Nueva Visayas",
-    "Nuevo Iloco","Poblacion","Salvacion","Saosao","Sawangan","Tuboran"
-  ],
-  Pantukan: [
-    "Araibo","Bongabong","Bongbong","Kingking (Poblacion)",
-    "Las Arenas","Magnaga","Matiao","Napnapan","P. Fuentes",
-    "Tag-ugpo","Tagdangua","Tambongon","Tibagon"
-  ]
-};
+function dateKey(d) {
+  // YYYY-MM-DD in local time
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 function formatLongDate(d) {
   if (!(d instanceof Date) || Number.isNaN(d.getTime())) return "—";
@@ -89,15 +25,6 @@ function formatLongDate(d) {
   } catch {
     return "—";
   }
-}
-
-function normalizeDisease(raw) {
-  const v = String(raw ?? "").trim().toLowerCase();
-  if (!v) return "";
-  if (v.includes("dengue")) return "Dengue";
-  if (v.includes("ili") || (v.includes("influenza") && v.includes("like"))) return "ILI";
-  if (v.includes("awd") || (v.includes("acute") && v.includes("watery") && v.includes("diarr"))) return "AWD";
-  return String(raw ?? "").trim();
 }
 
 function safeDate(value) {
@@ -113,30 +40,9 @@ function normalizePlaceKey(value) {
     .toLowerCase();
 }
 
-function dateKey(d) {
-  // YYYY-MM-DD in local time
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-}
-
-function matchesLocationScope(
-  p,
-  { roleKey, lockedMunicipality, lockedBarangay, selectedMunicipality, selectedBarangay }
-) {
-  const municipality = String(p?.municipality ?? "").trim();
-  const barangay = String(p?.barangay ?? "").trim();
-  const municipalityScope =
-    roleKey === "barangay" || roleKey === "municipal" ? lockedMunicipality : selectedMunicipality;
-  const barangayScope = roleKey === "barangay" ? lockedBarangay : selectedBarangay;
-
-  if (municipalityScope && normalizePlaceKey(municipality) !== normalizePlaceKey(municipalityScope)) {
-    return false;
-  }
-  if (barangayScope && normalizePlaceKey(barangay) !== normalizePlaceKey(barangayScope)) {
-    return false;
-  }
+function matchesScopeKeys(row, municipalityKey, barangayKey) {
+  if (municipalityKey && row.municipalityKey !== municipalityKey) return false;
+  if (barangayKey && row.barangayKey !== barangayKey) return false;
   return true;
 }
 
@@ -181,34 +87,29 @@ function Reports() {
   const [selectedMunicipality, setSelectedMunicipality] = useState("");
   const [selectedBarangay, setSelectedBarangay] = useState("");
   const [exportingExcel, setExportingExcel] = useState(false);
-  const { patients, loading, error } = usePatients();
-  useEffect(() => {
-    if (roleKey === "municipal") {
-      setSelectedMunicipality(lockedMunicipality);
-      setSelectedBarangay("");
-    } else if (roleKey === "barangay") {
-      setSelectedMunicipality(lockedMunicipality);
-      setSelectedBarangay(lockedBarangay);
-    } else {
-      // provincial
-      setSelectedMunicipality("");
-      setSelectedBarangay("");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roleKey, lockedMunicipality, lockedBarangay]);
+  const { patients, loading, error, reportRows, reportRowsLoading } = usePatients();
+  const isReportPending = loading || reportRowsLoading;
+  const preparedRows = reportRows;
+  const municipalityScope =
+    roleKey === "barangay" || roleKey === "municipal" ? lockedMunicipality : selectedMunicipality;
+  const barangayScope = roleKey === "barangay" ? lockedBarangay : selectedBarangay;
 
- const municipalityOptions = Object.keys(MUNICIPALITY_DATA);
+  const scopeKeys = useMemo(
+    () => ({
+      municipality: municipalityScope ? normalizePlaceKey(municipalityScope) : "",
+      barangay: barangayScope ? normalizePlaceKey(barangayScope) : ""
+    }),
+    [municipalityScope, barangayScope]
+  );
+
+  const municipalityOptions = useMemo(() => listProvinceMunicipalities(), []);
 
   const barangayOptions = useMemo(() => {
-  const selected =
-    roleKey === "barangay" || roleKey === "municipal"
-      ? lockedMunicipality
-      : selectedMunicipality;
-
-  if (!selected) return [];
-
-  return MUNICIPALITY_DATA[selected] || [];
-}, [selectedMunicipality, roleKey, lockedMunicipality]);
+    const selected =
+      roleKey === "barangay" || roleKey === "municipal" ? lockedMunicipality : selectedMunicipality;
+    if (!selected) return [];
+    return barangaysForMunicipality(selected);
+  }, [selectedMunicipality, roleKey, lockedMunicipality]);
 
   const range = useMemo(() => {
     if (dateMode === "ALL") return null;
@@ -221,72 +122,10 @@ function Reports() {
     return { start, end };
   }, [startDate, endDate, dateMode]);
 
-  const filtered = useMemo(() => {
-    if (dateMode === "CUSTOM" && !range) return [];
-    const start = range?.start ?? null;
-    const end = range?.end ?? null;
-
-    return (patients ?? [])
-      .map((p) => {
-        const started = safeDate(p?.dateStarted);
-        const fallback = safeDate(p?.createdAt || p?.created_at || p?.created);
-        const d = started || fallback;
-
-        const municipality = String(p?.municipality ?? "—").trim() || "—";
-        const barangay = String(p?.barangay ?? "—").trim() || "—";
-
-        return {
-          raw: p,
-          date: d,
-          dateLabel: d ? formatLongDate(d) : "—",
-          disease: normalizeDisease(p?.diseaseType),
-          municipality,
-          barangay,
-          municipalityKey: normalizePlaceKey(municipality),
-          barangayKey: normalizePlaceKey(barangay),
-          patientName: String(p?.name ?? "—").trim() || "—",
-          status: String(p?.status ?? "Recorded").trim() || "Recorded"
-        };
-      })
-      .filter((x) => {
-        if (!x.date) return false;
-        if (dateMode === "ALL") return true;
-        return x.date >= start && x.date <= end;
-      })
-      .filter((x) => (reportType === "ALL" ? true : x.disease === reportType))
-      .filter((x) => {
-        const municipalityScope =
-          roleKey === "barangay" || roleKey === "municipal" ? lockedMunicipality : selectedMunicipality;
-        const barangayScope = roleKey === "barangay" ? lockedBarangay : selectedBarangay;
-
-        if (municipalityScope && x.municipalityKey !== normalizePlaceKey(municipalityScope)) return false;
-        if (barangayScope && x.barangayKey !== normalizePlaceKey(barangayScope)) return false;
-        return true;
-      })
-      .sort((a, b) => b.date - a.date);
-  }, [
-    patients,
-    range,
-    reportType,
-    roleKey,
-    lockedMunicipality,
-    lockedBarangay,
-    selectedMunicipality,
-    selectedBarangay,
-    dateMode
-  ]);
-
   const scopedPatients = useMemo(() => {
-    return (patients ?? [])
-      .filter((p) =>
-        matchesLocationScope(p, {
-          roleKey,
-          lockedMunicipality,
-          lockedBarangay,
-          selectedMunicipality,
-          selectedBarangay
-        })
-      )
+    return preparedRows
+      .filter((row) => matchesScopeKeys(row, scopeKeys.municipality, scopeKeys.barangay))
+      .map((row) => row.raw)
       .sort((a, b) => {
         const da = safeDate(a?.dateStarted) ?? safeDate(a?.createdAt);
         const db = safeDate(b?.dateStarted) ?? safeDate(b?.createdAt);
@@ -295,14 +134,21 @@ function Reports() {
         if (!db) return -1;
         return db - da;
       });
-  }, [
-    patients,
-    roleKey,
-    lockedMunicipality,
-    lockedBarangay,
-    selectedMunicipality,
-    selectedBarangay
-  ]);
+  }, [preparedRows, scopeKeys]);
+
+  const filtered = useMemo(() => {
+    if (dateMode === "CUSTOM" && !range) return [];
+    const start = range?.start ?? null;
+    const end = range?.end ?? null;
+
+    return preparedRows
+      .filter((row) => {
+        if (dateMode !== "ALL" && (row.date < start || row.date > end)) return false;
+        if (reportType !== "ALL" && row.disease !== reportType) return false;
+        return matchesScopeKeys(row, scopeKeys.municipality, scopeKeys.barangay);
+      })
+      .sort((a, b) => b.date - a.date);
+  }, [preparedRows, range, reportType, dateMode, scopeKeys]);
 
   const summary = useMemo(() => {
     const counts = { total: 0, dengue: 0, ili: 0, awd: 0 };
@@ -383,23 +229,20 @@ function Reports() {
   const reportTitle = reportType === "ALL" ? "Disease Surveillance Report" : `${reportType} Surveillance Report`;
 
   const coverageLabel = useMemo(() => {
-    const municipalityScope =
-      roleKey === "barangay" || roleKey === "municipal" ? lockedMunicipality : selectedMunicipality;
-    const barangayScope = roleKey === "barangay" ? lockedBarangay : selectedBarangay;
-
     if (municipalityScope && barangayScope) return `${municipalityScope} — ${barangayScope}`;
     if (municipalityScope) return municipalityScope;
     return "Province-wide";
-  }, [roleKey, lockedMunicipality, lockedBarangay, selectedMunicipality, selectedBarangay]);
+  }, [municipalityScope, barangayScope]);
 
   const excelDisabled =
-    loading || exportingExcel || (dateMode === "CUSTOM" && !range);
+    loading || exportingExcel || isReportPending || (dateMode === "CUSTOM" && !range);
 
-  function handleExportExcel() {
+  async function handleExportExcel() {
     if (excelDisabled) return;
     setExportingExcel(true);
     try {
-      exportReportExcel({
+      const { exportReportExcel } = await import("../../lib/exportReportExcel");
+      await exportReportExcel({
         reportTitle,
         titleRange,
         coverageLabel,
@@ -420,10 +263,16 @@ function Reports() {
 
   return (
     <div className="report-page">
+      <div className="report-page-chrome no-print">
+        <DashboardPageHeader pageTitle="Reports" />
+      </div>
       <div className="report-toolbar no-print">
         <div className="toolbar-left">
           <div className="toolbar-title">{reportTitle}</div>
-          <div className="toolbar-subtitle">ALERTO — Davao de Oro Disease Surveillance System</div>
+          <div className="toolbar-subtitle">
+            ALERTO — Davao de Oro Disease Surveillance System
+            {isReportPending ? " · Updating report…" : ""}
+          </div>
         </div>
 
         <div className="toolbar-right">
@@ -611,7 +460,11 @@ function Reports() {
               </div>
             ) : (
               <div className="muted">
-                {loading ? "Loading…" : error ? error : "Select a valid date range to display chart."}
+                {loading || isReportPending
+                  ? "Loading…"
+                  : error
+                    ? error
+                    : "Select a valid date range to display chart."}
               </div>
             )}
           </div>
@@ -647,7 +500,7 @@ function Reports() {
                 ) : (
                   <tr>
                     <td colSpan={5} className="muted center">
-                      {loading ? "Loading…" : error ? error : "No municipality data for selected period."}
+                      {loading || isReportPending ? "Loading…" : error ? error : "No municipality data for selected period."}
                     </td>
                   </tr>
                 )}
@@ -685,7 +538,7 @@ function Reports() {
                 ) : (
                   <tr>
                     <td colSpan={6} className="muted center">
-                      {loading ? "Loading…" : error ? error : "No cases recorded for selected period."}
+                      {loading || isReportPending ? "Loading…" : error ? error : "No cases recorded for selected period."}
                     </td>
                   </tr>
                 )}

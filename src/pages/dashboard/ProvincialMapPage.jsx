@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import ProvincialFilters from "@/components/provincial/ProvincialFilters";
@@ -15,29 +15,30 @@ export default function ProvincialMapPage() {
     lastSyncedAt,
     filters,
     patchFilters,
-    windows,
     periodCaption,
-    municipalities,
     municipalityRows,
     barangayRows
   } = useProvincialSurveillance();
 
   const [selectedMuniKey, setSelectedMuniKey] = useState(null);
 
+  useEffect(() => {
+    patchFilters({ municipalityFilter: "" });
+  }, [patchFilters]);
+
   const selectedMunicipality = useMemo(() => {
-    if (!selectedMuniKey) return filters.municipalityFilter || "";
+    if (!selectedMuniKey) return "";
     const row = municipalityRows.find((r) => r.municipalityKey === selectedMuniKey);
     return row?.municipality ?? "";
-  }, [selectedMuniKey, municipalityRows, filters.municipalityFilter]);
+  }, [selectedMuniKey, municipalityRows]);
 
   const drillBarangays = useMemo(() => {
     if (!selectedMunicipality) return [];
     return barangayRows.filter((r) => r.municipality === selectedMunicipality);
   }, [barangayRows, selectedMunicipality]);
 
-  function handleMapSelect(key, name) {
-    setSelectedMuniKey(key);
-    patchFilters({ municipalityFilter: name });
+  function handleMapSelect(key) {
+    setSelectedMuniKey((prev) => (prev === key ? null : key));
   }
 
   return (
@@ -56,10 +57,8 @@ export default function ProvincialMapPage() {
             filters={filters}
             patchFilters={patchFilters}
             periodCaption={periodCaption}
-            windows={windows}
-            municipalities={municipalities}
             showMapMetric
-            showMunicipalityFilter
+            showMunicipalityFilter={false}
           />
 
           <section className="prov-panel prov-map-section">
