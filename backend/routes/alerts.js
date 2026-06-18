@@ -156,7 +156,7 @@ export function createAlertsRouter(authMiddleware) {
       const actorUserId = req.auth?.sub ?? null;
       const totals = { created: 0, updated: 0, expired: 0, municipalities: municipalityIds.length };
       for (const id of municipalityIds) {
-        const candidates = await evaluateMunicipalityAlerts(id);
+        const candidates = await evaluateMunicipalityAlerts(id, { withForecast: false });
         const summary = await persistMunicipalityAlerts(id, candidates, { actorUserId });
         totals.created += summary.created;
         totals.updated += summary.updated;

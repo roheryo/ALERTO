@@ -16,23 +16,15 @@ Run scripts in numeric order on a fresh MySQL instance:
 | `09_patients_patient_number.sql` | Patient number column |
 | `10_users_username_from_fullname.sql` | Usernames derived from full name / place (existing DBs) |
 | `14_case_environmental.sql` | Per-case environmental / WASH factors (drives new LSTM features) |
-| `15_early_warning_alerts.sql` | Early-Warning alerts + lifecycle audit log (server-generated outbreak-risk signals per barangay × disease) |
+| `15_early_warning_alerts.sql` | *(retired)* Early-Warning alerts — dropped by migration 17 |
+| `16_outbreak_declarations.sql` | *(retired)* Outbreak declarations — dropped by migration 17 |
+| `17_drop_alerts_and_declarations.sql` | Drops alert + declaration tables (run on existing DBs that had 15/16) |
 
 > Migrations `11`–`13` previously created an earlier `early_warning_alerts`
-> table. That module was retired and those files removed. The Early-Warning
-> system has since been **redesigned** in `15_early_warning_alerts.sql` with a
-> dedup-friendly schema, a JSON trigger snapshot, an explicit status lifecycle,
-> and an events audit log. If you have an older DB with the legacy tables, drop
-> them before running migration 15 so the new schema is created cleanly:
->
-> ```sql
-> DROP TABLE IF EXISTS early_warning_alert_events;
-> DROP TABLE IF EXISTS early_warning_alerts;
-> ```
->
-> The backend also auto-creates these tables on startup
-> (`backend/bootstrap/schema.js` → `ensureEarlyWarningAlertTables`), so existing
-> databases pick them up without running the migration manually.
+> table. That module was retired and those files removed. Migrations `15` and `16`
+> introduced the redesigned alert and declaration schemas; migration `17` drops
+> those tables for a clean baseline. The backend no longer auto-creates them on
+> startup.
 
 ## ILI 2023 dataset (Excel import)
 

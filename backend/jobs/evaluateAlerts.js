@@ -29,13 +29,16 @@ dotenv.config({ path: path.join(__dirname, "../.env") });
 const DEFAULT_INTERVAL_MIN = Number(process.env.ALERT_EVAL_INTERVAL_MIN ?? 30);
 const INGEST_DEBOUNCE_MS = Math.max(1000, Number(process.env.ALERT_INGEST_DEBOUNCE_MS ?? 10000) || 10000);
 
+/** Pattern-only evaluation — never use LSTM forecast signals for alerts. */
+const EVAL_OPTS = { withForecast: false };
+
 /** Evaluate one municipality and persist the resulting candidate alerts. */
 export async function runEvaluationForMunicipality(municipalityId, options = {}) {
   const id = Number(municipalityId);
   if (!Number.isFinite(id) || id < 1) {
     return { created: 0, updated: 0, expired: 0 };
   }
-  const candidates = await evaluateMunicipalityAlerts(id, options);
+  const candidates = await evaluateMunicipalityAlerts(id, { ...EVAL_OPTS, ...options });
   return persistMunicipalityAlerts(id, candidates, options);
 }
 
