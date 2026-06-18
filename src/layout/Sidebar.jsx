@@ -31,12 +31,9 @@ function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { summary: alertSummary } = useAlertSummary();
+  const { summary: alertSummary } = useAlertSummary({ enabled: user?.role === "municipality" });
   const [logoutOpen, setLogoutOpen] = useState(false);
   const closeLogoutModal = useCallback(() => setLogoutOpen(false), []);
-
-  const alertCount = alertSummary.total;
-  const hasHighAlerts = alertSummary.bySeverity.high > 0;
 
   const pathname = location.pathname;
 
@@ -50,6 +47,9 @@ function Sidebar() {
 
   const isMunicipality = user?.role === "municipality";
   const isProvince = user?.role === "province";
+
+  const activeAlertCount = alertSummary.active;
+  const hasHighAlerts = alertSummary.bySeverity.high > 0;
 
   const isDashboardActive = /^\/dashboard\/?$/.test(pathname);
 
@@ -69,11 +69,11 @@ function Sidebar() {
     pathname === "/dashboard/surveillance-map" ||
     pathname.startsWith("/dashboard/surveillance-map/");
 
+  const isAlertsActive =
+    pathname === "/dashboard/alerts" || pathname.startsWith("/dashboard/alerts/");
+
   const isReportCaseActive =
     pathname === "/dashboard/report-case" || pathname === "/dashboard/add-patient";
-
-  const isAlertsActive =
-    pathname === "/dashboard/notification" || pathname.startsWith("/dashboard/notification/");
 
   const isCasesLogsActive =
     pathname === "/dashboard/cases" || pathname.startsWith("/dashboard/cases/");
@@ -129,9 +129,14 @@ function Sidebar() {
           </div>
           <div className="sidebar-brand-text">
             <span className="sidebar-brand-title">ALERTO</span>
-            <span className="sidebar-brand-sub">DAVAO DE ORO PHO</span>
+            <span className="sidebar-brand-sub">Disease Surveillance</span>
           </div>
         </header>
+
+        <div className="sidebar-online-pill">
+          <span className="sidebar-online-dot" aria-hidden="true" />
+          System online
+        </div>
 
         <div className="sidebar-location-card">
           <span className="sidebar-location-dot" aria-hidden="true" />
@@ -142,7 +147,7 @@ function Sidebar() {
         </div>
 
         <nav className="sidebar-nav" aria-label="Main pages">
-          <p className="sidebar-nav-heading">Menu</p>
+          <p className="sidebar-nav-heading">Navigation</p>
           <ul className="sidebar-menu">
             <li>
               <Link
@@ -155,15 +160,34 @@ function Sidebar() {
             </li>
 
             {isMunicipality ? (
-              <li>
-                <Link
-                  className={`sidebar-link${isSurveillanceMapActive ? " is-active" : ""}`}
-                  to="/dashboard/surveillance-map"
-                >
-                  <Map className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
-                  <span>Surveillance Map</span>
-                </Link>
-              </li>
+              <>
+                <li>
+                  <Link
+                    className={`sidebar-link${isSurveillanceMapActive ? " is-active" : ""}`}
+                    to="/dashboard/surveillance-map"
+                  >
+                    <Map className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                    <span>Surveillance Map</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    className={`sidebar-link${isAlertsActive ? " is-active" : ""}`}
+                    to="/dashboard/alerts"
+                  >
+                    <Bell className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
+                    <span>Alerts</span>
+                    {activeAlertCount > 0 ? (
+                      <span
+                        className={`sidebar-badge${hasHighAlerts ? " sidebar-badge--high" : ""}`}
+                        aria-label={`${activeAlertCount} active alert${activeAlertCount === 1 ? "" : "s"}`}
+                      >
+                        {activeAlertCount > 99 ? "99+" : activeAlertCount}
+                      </span>
+                    ) : null}
+                  </Link>
+                </li>
+              </>
             ) : null}
 
             {isProvince ? (
@@ -209,24 +233,6 @@ function Sidebar() {
                 </Link>
               </li>
             ) : null}
-
-            <li>
-              <Link
-                className={`sidebar-link${isAlertsActive ? " is-active" : ""}`}
-                to="/dashboard/notification"
-              >
-                <Bell className="sidebar-link-icon" strokeWidth={2} aria-hidden="true" />
-                <span>Alerts</span>
-                {alertCount > 0 ? (
-                  <span
-                    className={`sidebar-badge${hasHighAlerts ? " sidebar-badge--high" : ""}`}
-                    aria-label={`${alertCount} active alert${alertCount === 1 ? "" : "s"}`}
-                  >
-                    {alertCount > 99 ? "99+" : alertCount}
-                  </span>
-                ) : null}
-              </Link>
-            </li>
 
             <li>
               <Link
@@ -285,6 +291,7 @@ function Sidebar() {
             <span className="sidebar-profile-user">{usernameLine}</span>
           </span>
         </button>
+        <p className="sidebar-version">ALERTO v1.0</p>
       </div>
 
       <LogoutConfirmModal

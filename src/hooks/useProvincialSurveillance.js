@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useState, useDeferredValue, startTrans
 import { listProvinceMunicipalities } from "@/data/davaoDeOroGeography";
 import { filterConfirmedPatients } from "@/lib/disease";
 import {
-  computeCrossMunicipalityAlerts,
   computeMunicipalitySparklines,
   computeMunicipalityStatusBoard,
   computeMunicipalityVelocityRows,
@@ -145,8 +144,6 @@ export function useProvincialSurveillance() {
     [patients, deferredFilters.diseaseFilter, timeOptions, windows]
   );
 
-  const crossAlerts = useMemo(() => computeCrossMunicipalityAlerts(statusBoard), [statusBoard]);
-
   const syncHealth = useMemo(() => computeProvinceSyncHealth(patients, timeOptions), [patients, timeOptions]);
 
   const provinceTrend = useMemo(
@@ -192,7 +189,6 @@ export function useProvincialSurveillance() {
     municipalityRows,
     barangayRows,
     statusBoard,
-    crossAlerts,
     syncHealth,
     provinceTrend,
     municipalitySparklines,

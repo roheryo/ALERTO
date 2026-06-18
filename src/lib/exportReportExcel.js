@@ -1,12 +1,10 @@
-import * as XLSX from "xlsx";
-
 import { normalizeDisease } from "./disease";
 
-function sheetFromRows(rows) {
+function sheetFromRows(XLSX, rows) {
   return XLSX.utils.json_to_sheet(rows);
 }
 
-function sheetFromPairs(pairs) {
+function sheetFromPairs(XLSX, pairs) {
   return XLSX.utils.aoa_to_sheet(pairs);
 }
 
@@ -62,8 +60,9 @@ function caseRow(c) {
 
 /**
  * Build and download an Excel workbook for the Reports page.
+ * Loads xlsx on demand so the Reports route stays lightweight.
  */
-export function exportReportExcel({
+export async function exportReportExcel({
   reportTitle,
   titleRange,
   coverageLabel,
@@ -75,11 +74,12 @@ export function exportReportExcel({
   allPatients,
   remarks
 }) {
+  const XLSX = await import("xlsx");
   const workbook = XLSX.utils.book_new();
   const reportCaseRows = (cases ?? []).map(caseRow);
   const allPatientRows = (allPatients ?? []).map(patientRecordRow);
 
-  const summarySheet = sheetFromPairs([
+  const summarySheet = sheetFromPairs(XLSX, [
     ["ALERTO Disease Surveillance Report"],
     [],
     ["Report title", reportTitle],
@@ -101,7 +101,7 @@ export function exportReportExcel({
   ]);
   XLSX.utils.book_append_sheet(workbook, summarySheet, "Summary");
 
-  const municipalitySheet = sheetFromRows(
+  const municipalitySheet = sheetFromRows(XLSX,
     municipalityRows.length
       ? municipalityRows.map((r) => ({
           Municipality: r.municipality,
@@ -114,14 +114,14 @@ export function exportReportExcel({
   );
   XLSX.utils.book_append_sheet(workbook, municipalitySheet, "By Municipality");
 
-  const casesSheet = sheetFromRows(
+  const casesSheet = sheetFromRows(XLSX,
     reportCaseRows.length
       ? reportCaseRows
       : [{ "Patient Name": "No cases for selected report filters" }]
   );
   XLSX.utils.book_append_sheet(workbook, casesSheet, "Report Cases");
 
-  const patientsSheet = sheetFromRows(
+  const patientsSheet = sheetFromRows(XLSX,
     allPatientRows.length
       ? allPatientRows
       : [{ "Patient Name": "No patient records in your coverage area" }]
