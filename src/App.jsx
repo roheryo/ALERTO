@@ -20,9 +20,10 @@ import ProvincialMapPage from "@/pages/dashboard/ProvincialMapPage";
 import ProvincialCoordination from "@/pages/dashboard/ProvincialCoordination";
 import CasesLogs from "@/pages/cases/CasesLogs";
 import Reports from "@/pages/reports/Reports";
-import Notification from "@/pages/notifications/Notification";
 import AddPatient from "@/pages/patients/AddPatient";
+
 import AccountManagement from "@/pages/admin/AccountManagement";
+import MunicipalAlerts from "@/pages/alerts/MunicipalAlerts";
 
 function App() {
   return (
@@ -49,6 +50,15 @@ function App() {
               element={(
                 <RoleRoute allow={["municipality"]}>
                   <MunicipalSurveillanceMap />
+                </RoleRoute>
+              )}
+            />
+
+            <Route
+              path="alerts"
+              element={(
+                <RoleRoute allow={["municipality"]}>
+                  <MunicipalAlerts />
                 </RoleRoute>
               )}
             />
@@ -98,8 +108,6 @@ function App() {
             <Route path="cases" element={<CasesLogs />} />
 
             <Route path="reports" element={<Reports />} />
-
-            <Route path="notification" element={<Notification />} />
 
             <Route
               path="account-management"

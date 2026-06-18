@@ -23,7 +23,11 @@ function TrendTooltip({ active, payload, label }) {
   );
 }
 
-export default function ProvincialProvinceTrend({ provinceTrend = [], diseaseFilter = "DENGUE" }) {
+export default function ProvincialProvinceTrend({
+  provinceTrend = [],
+  diseaseFilter = "DENGUE",
+  hideTitle = false
+}) {
   const showAll = diseaseFilter === "ALL";
   const series = useMemo(() => {
     if (showAll) {
@@ -44,9 +48,13 @@ export default function ProvincialProvinceTrend({ provinceTrend = [], diseaseFil
   }, [showAll, diseaseFilter]);
 
   return (
-    <section className="prov-panel" aria-labelledby="prov-trend-title">
-      <h3 id="prov-trend-title">Province-wide weekly trends</h3>
-      <p className="prov-sub">Total confirmed cases · Davao de Oro</p>
+    <section className={hideTitle ? "prov-trend-chart" : "prov-panel"} aria-labelledby="prov-trend-title">
+      {hideTitle ? null : (
+        <>
+          <h3 id="prov-trend-title">Province-wide weekly trends</h3>
+          <p className="prov-sub">Total confirmed cases · Davao de Oro</p>
+        </>
+      )}
       <ResponsiveContainer width="100%" height={260}>
         <AreaChart data={provinceTrend}>
           <CartesianGrid stroke="rgba(15, 23, 42, 0.06)" vertical={false} />

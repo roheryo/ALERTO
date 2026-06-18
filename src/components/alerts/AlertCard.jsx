@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 
 import { severityClass } from "@/lib/alertSeverity";
-import { normalizePlaceKey } from "@/lib/surveillance";
+import { formatAlertToken } from "@/lib/alertListDisplay";
 
 import AlertSeverityBadge from "./AlertSeverityBadge";
 
@@ -18,6 +17,10 @@ const STATUS_LABEL = {
   dismissed: "Dismissed",
   expired: "Expired"
 };
+
+function displayStatus(status) {
+  return STATUS_LABEL[status] ?? formatAlertToken(status);
+}
 
 function formatRelativeTime(value) {
   if (!value) return "—";
@@ -50,7 +53,7 @@ function triggerSummary(snapshot) {
   return parts.join(" · ");
 }
 
-function AlertCard({ alert, canMutate, onAcknowledge, onDismiss }) {
+function AlertCard({ alert, canMutate, onAcknowledge }) {
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState(null);
 
@@ -86,10 +89,10 @@ function AlertCard({ alert, canMutate, onAcknowledge, onDismiss }) {
           <strong>Municipality:</strong> {alert.municipality || "—"}
         </span>
         <span>
-          <strong>Status:</strong> {STATUS_LABEL[alert.status] ?? alert.status}
+          <strong>Status:</strong> {displayStatus(alert.status)}
         </span>
         <span>
-          <strong>Trigger:</strong> {alert.triggerType ?? "—"}
+          <strong>Trigger:</strong> {formatAlertToken(alert.triggerType)}
         </span>
         <span>
           <strong>Threshold:</strong> {alert.triggerSnapshot?.threshold ?? "—"}
@@ -112,23 +115,6 @@ function AlertCard({ alert, canMutate, onAcknowledge, onDismiss }) {
           >
             {busy ? "Working…" : "Acknowledge"}
           </button>
-          <button
-            type="button"
-            className="alert-btn alert-btn--dismiss"
-            disabled={busy}
-            onClick={() => handle(() => onDismiss(alert.id))}
-          >
-            Dismiss
-          </button>
-          <Link
-            className="alert-btn alert-btn--declare"
-            to={`/dashboard?barangay=${encodeURIComponent(
-              normalizePlaceKey(alert.barangay)
-            )}&disease=${encodeURIComponent(alert.disease)}`}
-            title="Open the declaration workspace for this barangay"
-          >
-            Open declaration workspace →
-          </Link>
         </div>
       ) : null}
 

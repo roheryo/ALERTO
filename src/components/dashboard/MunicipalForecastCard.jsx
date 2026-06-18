@@ -70,13 +70,11 @@ export default function MunicipalForecastCard({ diseaseFilter = "DENGUE" }) {
   if (skip) {
     return (
       <section className="muni-panel muni-forecast" aria-label="LSTM forecast">
-        <header className="muni-section-head muni-section-head--compact muni-section-head--centered">
-          <div className="muni-section-head-copy">
+        <header className="dash-panel-head muni-forecast-head">
+          <div className="dash-panel-head-copy">
             <p className="muni-section-kicker">LSTM forecast · 4-week horizon</p>
             <h3>Outbreak forecast</h3>
-            <p className="muni-section-sub">
-              Pick a single disease (Dengue, ILI, or AWD) to see its predicted weekly case counts.
-            </p>
+            <p>Pick a single disease (Dengue, ILI, or AWD) to see its predicted weekly case counts.</p>
           </div>
         </header>
       </section>
@@ -85,22 +83,20 @@ export default function MunicipalForecastCard({ diseaseFilter = "DENGUE" }) {
 
   return (
     <section className="muni-panel muni-forecast" aria-label="LSTM forecast">
-      <header className="muni-section-head muni-section-head--compact muni-section-head--centered">
-        <div className="muni-section-head-copy">
+      <header className="dash-panel-head dash-panel-head--split muni-forecast-head">
+        <div className="dash-panel-head-copy">
           <p className="muni-section-kicker">LSTM forecast · 4-week horizon</p>
           <h3>{niceDisease} outlook</h3>
+          {asOfWeek ? <p className="muni-forecast-asof">As of week of {asOfWeek}</p> : null}
         </div>
-        <div className="muni-forecast-meta muni-forecast-meta--anchored">
-          {asOfWeek ? <span className="muni-forecast-asof">As of week of {asOfWeek}</span> : null}
-          <button
-            type="button"
-            className="muni-forecast-refresh"
-            onClick={() => refetch()}
-            disabled={loading}
-          >
-            {loading ? "Loading…" : "Refresh"}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="muni-forecast-refresh"
+          onClick={() => refetch()}
+          disabled={loading}
+        >
+          {loading ? "Loading…" : "Refresh"}
+        </button>
       </header>
 
       {error ? (
@@ -134,37 +130,40 @@ export default function MunicipalForecastCard({ diseaseFilter = "DENGUE" }) {
             </div>
           </div>
 
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={chartData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid stroke="rgba(15, 23, 42, 0.06)" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 11, fill: "#64748b" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                allowDecimals={false}
-                tick={{ fontSize: 11, fill: "#64748b" }}
-                axisLine={false}
-                tickLine={false}
-                width={28}
-              />
-              <Tooltip content={<ForecastTooltip />} cursor={{ fill: "rgba(15, 23, 42, 0.04)" }} />
-              <Bar dataKey="predicted_cases" radius={[6, 6, 0, 0]}>
-                {chartData.map((row) => (
-                  <Cell key={row.step} fill={colors.fill} />
-                ))}
-                <LabelList
-                  dataKey="predicted_cases"
-                  position="top"
-                  style={{ fontSize: 11, fill: "#0f172a", fontWeight: 600 }}
+          <div className="muni-forecast-chart">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={chartData} margin={{ top: 16, right: 16, left: 0, bottom: 0 }}>
+                <CartesianGrid stroke="rgba(15, 23, 42, 0.06)" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 11, fill: "#64748b" }}
+                  axisLine={false}
+                  tickLine={false}
                 />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 11, fill: "#64748b" }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={28}
+                />
+                <Tooltip content={<ForecastTooltip />} cursor={{ fill: "rgba(15, 23, 42, 0.04)" }} />
+                <Bar dataKey="predicted_cases" radius={[6, 6, 0, 0]}>
+                  {chartData.map((row) => (
+                    <Cell key={row.step} fill={colors.fill} />
+                  ))}
+                  <LabelList
+                    dataKey="predicted_cases"
+                    position="top"
+                    style={{ fontSize: 11, fill: "#0f172a", fontWeight: 600 }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
 
-          <table className="muni-forecast-table">
+          <div className="muni-forecast-table-wrap">
+            <table className="muni-forecast-table">
             <thead>
               <tr>
                 <th scope="col">Step</th>
@@ -181,7 +180,8 @@ export default function MunicipalForecastCard({ diseaseFilter = "DENGUE" }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         </>
       )}
     </section>

@@ -11,21 +11,44 @@ function formatDeltaLabel(delta) {
 }
 
 export default function ProvincialKpiCards({ kpis }) {
+  const total =
+    kpis.awd.windowCount + kpis.ili.windowCount + kpis.dengue.windowCount;
+  const totalDelta = kpis.awd.wowDelta + kpis.ili.wowDelta + kpis.dengue.wowDelta;
+
   return (
     <section className="card-container prov-kpis" aria-label="Province disease summary">
+      <article className="summary-card summary-card--hero prov-kpi-card">
+        <h4>Total confirmed cases</h4>
+        <h2>{total.toLocaleString()}</h2>
+        <p className="prov-kpi-window">{kpis.awd.windowLabel}</p>
+        <span className="summary-card-delta-pill">{formatDeltaLabel(totalDelta)}</span>
+      </article>
       <article className="summary-card blue prov-kpi-card">
+        <span className="summary-card-icon" aria-hidden="true">
+          💧
+        </span>
         <h4>Acute Watery Diarrhea</h4>
         <h2>{kpis.awd.windowCount.toLocaleString()}</h2>
         <p className="prov-kpi-window">{kpis.awd.windowLabel}</p>
-        <p className={`prov-kpi-delta ${deltaClass(kpis.awd.wowDelta)}`}>{formatDeltaLabel(kpis.awd.wowDelta)}</p>
+        <p className={`prov-kpi-delta ${deltaClass(kpis.awd.wowDelta)}`}>
+          {formatDeltaLabel(kpis.awd.wowDelta)}
+        </p>
       </article>
       <article className="summary-card red prov-kpi-card">
+        <span className="summary-card-icon" aria-hidden="true">
+          🤧
+        </span>
         <h4>Influenza-Like-Illness</h4>
         <h2>{kpis.ili.windowCount.toLocaleString()}</h2>
         <p className="prov-kpi-window">{kpis.ili.windowLabel}</p>
-        <p className={`prov-kpi-delta ${deltaClass(kpis.ili.wowDelta)}`}>{formatDeltaLabel(kpis.ili.wowDelta)}</p>
+        <p className={`prov-kpi-delta ${deltaClass(kpis.ili.wowDelta)}`}>
+          {formatDeltaLabel(kpis.ili.wowDelta)}
+        </p>
       </article>
       <article className="summary-card orange prov-kpi-card">
+        <span className="summary-card-icon" aria-hidden="true">
+          🦟
+        </span>
         <h4>Dengue</h4>
         <h2>{kpis.dengue.windowCount.toLocaleString()}</h2>
         <p className="prov-kpi-window">{kpis.dengue.windowLabel}</p>

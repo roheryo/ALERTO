@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { FaBell } from "react-icons/fa";
-import logo from "@/assets/images/ddoLOGO.jpg";
+import DashboardPageHeader from "@/layout/DashboardPageHeader";
 import "@/styles/dashboard-shell.css";
 import "./ReportCaseForm.css";
 import FormDateInput from "./FormDateInput";
@@ -424,22 +422,7 @@ export default function ReportCaseForm({ user, onSubmitted }) {
         </div>
       ) : null}
 
-      <header className="dashboard-header">
-        <div className="report-case-header-left">
-          <h2 className="header-title">Report New Case</h2>
-          <p className="header-subline">{topbarSub}</p>
-        </div>
-        <div className="header-right">
-          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
-            <FaBell />
-          </Link>
-          <div className="header-text">
-            <h3>Davao de Oro</h3>
-            <p>Provincial Health Office</p>
-          </div>
-          <img src={logo} alt="logo" className="header-logo" />
-        </div>
-      </header>
+      <DashboardPageHeader pageTitle="Report New Case" subline={topbarSub} />
 
       <div className="rc-main">
         <div className="content">

@@ -1,9 +1,6 @@
-import { Link } from "react-router-dom";
-import { FaBell } from "react-icons/fa";
-
-import logo from "@/assets/images/ddoLOGO.jpg";
 import "@/styles/dashboard-shell.css";
 import "@/pages/dashboard/ProvincialDashboard.css";
+import DashboardPageHeader from "@/layout/DashboardPageHeader";
 
 function fmtSyncedAt(date) {
   if (!date) return null;
@@ -35,25 +32,7 @@ export default function ProvincialPageShell({
 
   return (
     <div className="dashboard-container prov-page">
-      <header className="dashboard-header">
-        <div>
-          <h2 className="header-title">{title}</h2>
-          <p className="header-subline">
-            <span className="prov-live-dot" aria-hidden="true" />
-            {sub}
-          </p>
-        </div>
-        <div className="header-right">
-          <Link to="/dashboard/notification" className="header-notification-link" aria-label="Notifications">
-            <FaBell />
-          </Link>
-          <div className="header-text">
-            <h3>Davao de Oro</h3>
-            <p>Provincial Health Office</p>
-          </div>
-          <img src={logo} alt="Davao de Oro logo" className="header-logo" />
-        </div>
-      </header>
+      <DashboardPageHeader pageTitle={title} subline={sub} />
       <div className="content-area content-area--provincial">{children}</div>
     </div>
   );

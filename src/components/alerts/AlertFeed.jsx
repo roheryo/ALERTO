@@ -8,9 +8,9 @@ const SECTION_ORDER = [
 
 /**
  * Renders Early-Warning alerts grouped by severity (high → elevated → watch).
- * @param {{ grouped: object, canMutate: boolean, onAcknowledge: Function, onDismiss: Function }} props
+ * @param {{ grouped: object, canMutate: boolean, onAcknowledge: Function }} props
  */
-function AlertFeed({ grouped, canMutate, onAcknowledge, onDismiss }) {
+function AlertFeed({ grouped, canMutate, onAcknowledge }) {
   const sections = SECTION_ORDER.filter((s) => (grouped?.[s.key]?.length ?? 0) > 0);
 
   if (sections.length === 0) {
@@ -40,7 +40,6 @@ function AlertFeed({ grouped, canMutate, onAcknowledge, onDismiss }) {
                 alert={alert}
                 canMutate={canMutate}
                 onAcknowledge={onAcknowledge}
-                onDismiss={onDismiss}
               />
             ))}
           </div>
