@@ -14,7 +14,7 @@
 
 .barangay-dash-row-main {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
   gap: var(--dash-gap, 20px);
   align-items: start;
 }
@@ -24,14 +24,57 @@
   flex-direction: column;
   gap: var(--dash-gap, 20px);
   min-width: 0;
+  width: 100%;
 }
 
 .barangay-weather-embed.weather-container {
   margin-bottom: 0;
+  width: 100%;
+  justify-content: stretch;
 }
 
 .barangay-weather-embed .weather-card {
-  height: 100%;
+  height: auto;
+  min-width: 0;
+}
+
+/* Sidebar-friendly weather layout — avoid cramped 3-across stats */
+.barangay-weather-embed .weather-header {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.barangay-weather-embed .weather-scope {
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.barangay-weather-embed .weather-main.weather-main--pro {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.barangay-weather-embed .weather-icon {
+  width: 48px;
+  height: 48px;
+  font-size: 24px;
+}
+
+.barangay-weather-embed .weather-primary {
+  min-width: 0;
+}
+
+.barangay-weather-embed .weather-stats.weather-stats--pro {
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.barangay-weather-embed .weather-stat--primary {
+  grid-column: 1 / -1;
+}
+
+.barangay-weather-embed .weather-stat-value {
+  word-break: break-word;
 }
 
 .barangay-dash-chart-wrap {
@@ -65,5 +108,27 @@
 @media (max-width: 1024px) {
   .barangay-dash-row-main {
     grid-template-columns: 1fr;
+  }
+
+  .barangay-weather-embed .weather-scope {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .barangay-weather-embed .weather-main.weather-main--pro {
+    grid-template-columns: 54px 1fr;
+  }
+
+  .barangay-weather-embed .weather-icon {
+    width: 54px;
+    height: 54px;
+    font-size: 26px;
+  }
+
+  .barangay-weather-embed .weather-stats.weather-stats--pro {
+    grid-template-columns: 1.2fr 1fr 1fr;
+  }
+
+  .barangay-weather-embed .weather-stat--primary {
+    grid-column: auto;
   }
 }

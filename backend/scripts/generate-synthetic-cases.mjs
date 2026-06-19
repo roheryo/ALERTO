@@ -72,6 +72,12 @@ function parseArgs(argv) {
     seed: 42,
     start: null,
     end: null,
+    // Per-disease synthesis windows (thesis synthetic-data spec):
+    //   ILI    -> from the day after the last real ILI entry through `end`
+    //   DENGUE -> `start`..`end` EXCEPT calendar year 2025 (real data exists)
+    //   AWD    -> full `start`..`end`
+    iliStart: null,            // YYYY-MM-DD; defaults to `start` if omitted
+    dengueSkipYears: [2025],   // calendar years Dengue synthesis must NOT cover
     purge: false,
     dryRun: false,
     batchSize: 500
@@ -96,6 +102,15 @@ function parseArgs(argv) {
       i += 1;
     } else if (arg === "--end" && next) {
       opts.end = next;
+      i += 1;
+    } else if (arg === "--ili-start" && next) {
+      opts.iliStart = next;
+      i += 1;
+    } else if (arg === "--dengue-skip-years" && next) {
+      opts.dengueSkipYears = next
+        .split(",")
+        .map((s) => Number(s.trim()))
+        .filter((n) => Number.isFinite(n));
       i += 1;
     } else if (arg === "--batch" && next) {
       opts.batchSize = Math.max(50, Number(next) || 500);
@@ -238,6 +253,60 @@ function* eachMonday(start, end) {
 function num(value) {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+// --------------------------------------------------------------------------- //
+// Per-disease synthesis windows                                               //
+// --------------------------------------------------------------------------- //
+
+/**
+ * A window is an inclusive [start, end] pair of Dates. A disease may have one
+ * or more windows; a week (its Monday) is eligible if it falls inside ANY of
+ * the disease's windows.
+ */
+function inAnyWindow(windows, monday) {
+  if (!windows || !windows.length) return true; // no restriction
+  for (const [s, e] of windows) {
+    if (monday >= s && monday <= e) return true;
+  }
+  return false;
+}
+
+/**
+ * Subtract one or more full calendar years from a single [start, end] range,
+ * returning the surviving sub-ranges (so Dengue can skip the real-data year(s)
+ * while still covering everything before and after).
+ */
+function subtractYears(start, end, years) {
+  let ranges = [[new Date(start), new Date(end)]];
+  for (const year of years) {
+    const yStart = new Date(Date.UTC(year, 0, 1));
+    const yEnd = new Date(Date.UTC(year, 11, 31));
+    const next = [];
+    for (const [s, e] of ranges) {
+      if (yEnd < s || yStart > e) {
+        next.push([s, e]); // no overlap
+        continue;
+      }
+      if (s < yStart) next.push([s, addDays(yStart, -1)]); // segment before the skipped year
+      if (e > yEnd) next.push([addDays(yEnd, 1), e]);       // segment after the skipped year
+    }
+    ranges = next;
+  }
+  return ranges;
+}
+
+/**
+ * Build the per-disease window map from the resolved global synthesis range and
+ * the CLI options. See parseArgs() for the thesis spec these encode.
+ */
+function buildDiseaseWindows(opts, startMonday, endMonday) {
+  const iliStart = parseYmd(opts.iliStart) ?? startMonday;
+  return {
+    ILI: [[weekStart(iliStart), endMonday]],
+    AWD: [[startMonday, endMonday]],
+    DENGUE: subtractYears(startMonday, endMonday, opts.dengueSkipYears ?? [])
+  };
 }
 
 // --------------------------------------------------------------------------- //
@@ -640,6 +709,12 @@ function planCases(opts, ctx, rng) {
       const sizeFactor = sizeFactors.get(m.id) ?? 1;
       const perDisease = {};
       for (const d of DISEASES) {
+        // Skip weeks outside this disease's synthesis window (e.g. real-data
+        // year 2025 for Dengue, pre-2023-12-09 for ILI). λ=0 → no cases.
+        if (!inAnyWindow(ctx.diseaseWindows?.[d], monday)) {
+          perDisease[d] = 0;
+          continue;
+        }
         perDisease[d] = lambdaFor(d, {
           z, zLag2, zLag4, zLag6, zRoll4,
           season: seasonality(d, monthIdx),
@@ -866,8 +941,18 @@ async function main() {
     `rain μ=${zStats.rain.mu.toFixed(1)} σ=${zStats.rain.sigma.toFixed(1)}`
   );
 
+  // Resolve per-disease synthesis windows from the spec + CLI options.
+  const diseaseWindows = buildDiseaseWindows(opts, startMonday, endMonday);
+  console.log("[synth] Per-disease synthesis windows:");
+  for (const d of DISEASES) {
+    const w = diseaseWindows[d] ?? [];
+    console.log(
+      `[synth]   ${d.padEnd(6)} ${w.map(([s, e]) => `${ymd(s)}..${ymd(e)}`).join("  ") || "(all)"}`
+    );
+  }
+
   console.log(`[synth] Planning DENGUE, ILI, AWD @ ~${opts.targetPerDisease} cases/disease…`);
-  const buckets = planCases(opts, { munis, weatherByMuniWeek, zStats, weeks }, rng);
+  const buckets = planCases(opts, { munis, weatherByMuniWeek, zStats, weeks, diseaseWindows }, rng);
 
   // --- Plan summary ---
   const planTotals = { DENGUE: 0, ILI: 0, AWD: 0 };

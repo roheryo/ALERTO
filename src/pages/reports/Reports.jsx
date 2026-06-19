@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "./Reports.css";
 import DashboardPageHeader from "@/layout/DashboardPageHeader";
+import FormDateInput from "@/components/report/FormDateInput";
 import { barangaysForMunicipality, listProvinceMunicipalities } from "@/data/davaoDeOroGeography";
 import { useAuth } from "../../context/AuthContext";
 import { sessionUserFromAuth } from "../../lib/authUser";
@@ -44,6 +45,106 @@ function matchesScopeKeys(row, municipalityKey, barangayKey) {
   if (municipalityKey && row.municipalityKey !== municipalityKey) return false;
   if (barangayKey && row.barangayKey !== barangayKey) return false;
   return true;
+}
+
+const CHART_DAILY_MAX = 45;
+
+function spanDaysFromChartRows(rows) {
+  if (rows.length < 2) return rows.length;
+  const start = safeDate(`${rows[0].date}T12:00:00`);
+  const end = safeDate(`${rows[rows.length - 1].date}T12:00:00`);
+  if (!start || !end) return rows.length;
+  return Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000) + 1);
+}
+
+function weekBucketKey(isoYmd) {
+  const d = safeDate(`${isoYmd}T12:00:00`);
+  if (!d) return isoYmd;
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return dateKey(d);
+}
+
+function formatMonthLabel(key) {
+  const d = safeDate(`${key}-01T12:00:00`);
+  if (!d) return key;
+  try {
+    return new Intl.DateTimeFormat("en-PH", { month: "short", year: "numeric" }).format(d);
+  } catch {
+    return key;
+  }
+}
+
+function formatWeekLabel(key) {
+  const d = safeDate(`${key}T12:00:00`);
+  if (!d) return key;
+  return `Week of ${formatLongDate(d)}`;
+}
+
+function chooseChartGranularity(rowCount, spanDays) {
+  if (rowCount <= CHART_DAILY_MAX) return "day";
+  if (spanDays > 365 || rowCount > 120) return "month";
+  return "week";
+}
+
+function bucketChartRows(dailyRows) {
+  if (!dailyRows.length) {
+    return { granularity: "day", bars: [], scrollable: false };
+  }
+
+  const spanDays = spanDaysFromChartRows(dailyRows);
+  const granularity = chooseChartGranularity(dailyRows.length, spanDays);
+
+  if (granularity === "day") {
+    return {
+      granularity,
+      scrollable: false,
+      bars: dailyRows.map((r) => ({
+        key: r.date,
+        title: `${r.date}: ${r.total}`,
+        total: r.total
+      }))
+    };
+  }
+
+  const map = new Map();
+  for (const r of dailyRows) {
+    const bucketKey = granularity === "month" ? r.date.slice(0, 7) : weekBucketKey(r.date);
+    const cur = map.get(bucketKey) || { key: bucketKey, total: 0 };
+    cur.total += r.total;
+    map.set(bucketKey, cur);
+  }
+
+  const bars = Array.from(map.values())
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .map((r) => ({
+      key: r.key,
+      total: r.total,
+      title:
+        granularity === "month"
+          ? `${formatMonthLabel(r.key)}: ${r.total}`
+          : `${formatWeekLabel(r.key)}: ${r.total}`
+    }));
+
+  return {
+    granularity,
+    scrollable: bars.length > CHART_DAILY_MAX,
+    bars
+  };
+}
+
+const CHART_GRANULARITY_LABEL = {
+  day: "Daily total cases (scaled)",
+  week: "Weekly total cases (scaled)",
+  month: "Monthly total cases (scaled)"
+};
+
+const SPARKBAR_HEIGHT_PX = 80;
+
+function barHeightPx(total, peak) {
+  if (!peak) return 3;
+  return Math.max(3, Math.round((total / peak) * SPARKBAR_HEIGHT_PX));
 }
 
 function Reports() {
@@ -194,6 +295,20 @@ function Reports() {
     return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
   }, [filtered, range, dateMode]);
 
+  const chartSeries = useMemo(() => bucketChartRows(chartData), [chartData]);
+
+  const chartPeak = useMemo(
+    () => Math.max(1, ...chartSeries.bars.map((r) => r.total)),
+    [chartSeries.bars]
+  );
+
+  const chartAriaLabel =
+    chartSeries.granularity === "month"
+      ? "Bar chart of monthly totals"
+      : chartSeries.granularity === "week"
+        ? "Bar chart of weekly totals"
+        : "Bar chart of daily totals";
+
   const remarks = useMemo(() => {
     if (dateMode === "CUSTOM" && !range) return "Invalid date range selected.";
     if (!filtered.length) return "No cases recorded within the selected reporting period.";
@@ -202,9 +317,10 @@ function Reports() {
     const hotspot = top ? `${top.municipality} (${top.total} cases)` : "—";
 
     // Trend: compare first half vs second half totals
-    const midIdx = Math.floor(chartData.length / 2);
-    const firstHalf = chartData.slice(0, Math.max(1, midIdx)).reduce((s, r) => s + r.total, 0);
-    const secondHalf = chartData.slice(Math.max(1, midIdx)).reduce((s, r) => s + r.total, 0);
+    const trendRows = chartSeries.bars.length ? chartSeries.bars : chartData;
+    const midIdx = Math.floor(trendRows.length / 2);
+    const firstHalf = trendRows.slice(0, Math.max(1, midIdx)).reduce((s, r) => s + r.total, 0);
+    const secondHalf = trendRows.slice(Math.max(1, midIdx)).reduce((s, r) => s + r.total, 0);
     const trend =
       secondHalf > firstHalf
         ? "Cases increased toward the latter half of the period."
@@ -216,7 +332,7 @@ function Reports() {
       reportType === "ALL" ? "Dengue, ILI, and AWD" : `${reportType} cases`;
 
     return `${trend} Current hotspot area: ${hotspot}. Continue intensified surveillance and timely reporting for ${scope}.`;
-  }, [range, filtered.length, municipalityRows, chartData, reportType, dateMode]);
+  }, [range, filtered.length, municipalityRows, chartData, chartSeries.bars, reportType, dateMode]);
 
   const titleRange = useMemo(() => {
     if (dateMode === "ALL") return "All dates";
@@ -233,6 +349,8 @@ function Reports() {
     if (municipalityScope) return municipalityScope;
     return "Province-wide";
   }, [municipalityScope, barangayScope]);
+
+  const customRange = dateMode === "CUSTOM";
 
   const excelDisabled =
     loading || exportingExcel || isReportPending || (dateMode === "CUSTOM" && !range);
@@ -263,10 +381,11 @@ function Reports() {
 
   return (
     <div className="report-page">
-      <div className="report-page-chrome no-print">
-        <DashboardPageHeader pageTitle="Reports" />
-      </div>
-      <div className="report-toolbar no-print">
+      <div className="report-page-controls no-print">
+        <div className="report-page-chrome">
+          <DashboardPageHeader pageTitle="Reports" />
+        </div>
+        <div className="report-toolbar">
         <div className="toolbar-left">
           <div className="toolbar-title">{reportTitle}</div>
           <div className="toolbar-subtitle">
@@ -276,7 +395,8 @@ function Reports() {
         </div>
 
         <div className="toolbar-right">
-          <div className="toolbar-group">
+          <div className="toolbar-row">
+            <div className="toolbar-group">
             <button
               type="button"
               className={`toolbar-chip ${reportType === "Dengue" ? "active" : ""}`}
@@ -306,8 +426,10 @@ function Reports() {
               All Diseases
             </button>
           </div>
+          </div>
 
-          <div className="toolbar-scope">
+          <div className="toolbar-row">
+            <div className="toolbar-scope">
             <label className="toolbar-field">
               <span>Municipality</span>
               <select
@@ -361,28 +483,32 @@ function Reports() {
               </select>
             </label>
 
-            <label className="toolbar-field">
+            <label className="toolbar-field toolbar-field--date">
               <span>From</span>
-              <input
-                type="date"
+              <FormDateInput
+                id="report-start-date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                disabled={dateMode === "ALL"}
+                onChange={setStartDate}
+                disabled={!customRange}
+                max={endDate || undefined}
               />
             </label>
 
-            <label className="toolbar-field">
+            <label className="toolbar-field toolbar-field--date">
               <span>To</span>
-              <input
-                type="date"
+              <FormDateInput
+                id="report-end-date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                disabled={dateMode === "ALL"}
+                onChange={setEndDate}
+                disabled={!customRange}
+                min={startDate || undefined}
               />
             </label>
           </div>
+          </div>
 
-          <div className="toolbar-export">
+          <div className="toolbar-row toolbar-row--export">
+            <div className="toolbar-export">
             <button type="button" className="toolbar-btn" onClick={() => window.print()}>
               Export to PDF
             </button>
@@ -395,6 +521,8 @@ function Reports() {
               {exportingExcel ? "Exporting…" : "Export to Excel"}
             </button>
           </div>
+          </div>
+        </div>
         </div>
       </div>
 
@@ -449,12 +577,29 @@ function Reports() {
 
         <section className="report-section">
           <div className="section-title">Cases Over Time</div>
-          <div className="chart-wrap" aria-label="Cases over time chart">
-            {range && chartData.length ? (
-              <div className="sparkbar" role="img" aria-label="Bar chart of daily totals">
-                {chartData.map((r) => (
-                  <div key={r.date} className="bar-col" title={`${r.date}: ${r.total}`}>
-                    <div className="bar" style={{ height: `${Math.min(100, r.total * 12)}%` }} />
+          <div
+            className={`chart-wrap${chartSeries.scrollable ? " chart-wrap--scroll" : ""}`}
+            aria-label="Cases over time chart"
+          >
+            {chartSeries.bars.length ? (
+              <div
+                className={`sparkbar${chartSeries.scrollable ? " sparkbar--scroll" : " sparkbar--fit"}`}
+                style={
+                  chartSeries.scrollable
+                    ? { minWidth: `${Math.max(chartSeries.bars.length * 5, 320)}px` }
+                    : undefined
+                }
+                role="img"
+                aria-label={chartAriaLabel}
+              >
+                {chartSeries.bars.map((r) => (
+                  <div key={r.key} className="bar-col" title={r.title}>
+                    <div
+                      className="bar"
+                      style={{
+                        height: `${barHeightPx(r.total, chartPeak)}px`
+                      }}
+                    />
                   </div>
                 ))}
               </div>
@@ -464,12 +609,19 @@ function Reports() {
                   ? "Loading…"
                   : error
                     ? error
-                    : "Select a valid date range to display chart."}
+                    : dateMode === "CUSTOM" && !range
+                      ? "Select a valid date range to display chart."
+                      : "No cases recorded for the selected filters."}
               </div>
             )}
           </div>
           <div className="chart-legend">
-            <span className="legend-dot" /> Daily total cases (scaled)
+            <span className="legend-dot" /> {CHART_GRANULARITY_LABEL[chartSeries.granularity]}
+            {chartSeries.granularity !== "day" ? (
+              <span className="chart-legend-note">
+                Long date range — grouped by {chartSeries.granularity} for readability.
+              </span>
+            ) : null}
           </div>
         </section>
 
@@ -509,10 +661,18 @@ function Reports() {
           </div>
         </section>
 
-        <section className="report-section">
+        <section className="report-section report-section--detail">
           <div className="section-title">Detailed Case Table</div>
-          <div className="table-wrap">
+          <div className="table-wrap table-wrap--flow">
             <table className="report-table dense">
+              <colgroup>
+                <col className="col-date" />
+                <col className="col-name" />
+                <col className="col-disease" />
+                <col className="col-muni" />
+                <col className="col-brgy" />
+                <col className="col-status" />
+              </colgroup>
               <thead>
                 <tr>
                   <th>Date</th>

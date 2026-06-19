@@ -97,7 +97,11 @@ function BarangayMunicipalDashboard({ user, roleKey, token }) {
       <div
         className={[
           "content-area",
-          roleKey === "municipal" ? "content-area--municipal" : ""
+          roleKey === "municipal"
+            ? "content-area--municipal"
+            : roleKey === "barangay"
+              ? "content-area--barangay"
+              : ""
         ]
           .filter(Boolean)
           .join(" ")}

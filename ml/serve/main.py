@@ -140,7 +140,15 @@ def _predict(municipality_id: int, disease: str) -> dict:
     if feats.shape != (lookback, len(feature_cols)) or np.isnan(feats).any():
         raise HTTPException(status_code=500, detail="Invalid feature window")
 
-    scaled = bundle["scaler"].transform(feats.reshape(-1, len(feature_cols)))
+    scaler = bundle["scaler"]
+    # Per-municipality scaling (Phase 2) stores a dict of scalers keyed by
+    # municipality id, with a "__global__" fallback for unseen ids. A plain
+    # StandardScaler (global scaling) is used directly.
+    if isinstance(scaler, dict):
+        scaler = scaler.get(int(municipality_id)) or scaler.get("__global__")
+        if scaler is None:
+            raise HTTPException(status_code=500, detail="No usable scaler in bundle")
+    scaled = scaler.transform(feats.reshape(-1, len(feature_cols)))
     scaled = scaled.reshape(1, lookback, len(feature_cols)).astype(np.float32)
 
     with torch.no_grad():

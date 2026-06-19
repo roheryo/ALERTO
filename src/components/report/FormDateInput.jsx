@@ -1,5 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
+import "./FormDateInput.css";
+
 const ISO_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 const MDY_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
 
@@ -111,11 +113,26 @@ function IconCalendar() {
   );
 }
 
+function isWithinBounds(iso, min, max) {
+  if (!iso) return true;
+  if (min && iso < min) return false;
+  if (max && iso > max) return false;
+  return true;
+}
+
 /**
  * Date field: type YYYY-MM-DD (or MM/DD/YYYY on blur) or pick from calendar popover.
- * @param {{ id: string, value?: string, onChange: (isoYmd: string) => void, error?: boolean }} props
+ * @param {{ id: string, value?: string, onChange: (isoYmd: string) => void, error?: boolean, disabled?: boolean, min?: string, max?: string }} props
  */
-export default function FormDateInput({ id, value = "", onChange, error = false }) {
+export default function FormDateInput({
+  id,
+  value = "",
+  onChange,
+  error = false,
+  disabled = false,
+  min = "",
+  max = ""
+}) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const [open, setOpen] = useState(false);
@@ -126,7 +143,7 @@ export default function FormDateInput({ id, value = "", onChange, error = false 
   const displayText = editing ? draft : value || "";
 
   useEffect(() => {
-    if (!open) return undefined;
+    if (!open || disabled) return undefined;
     const onPointerDown = (e) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
     };
@@ -139,7 +156,7 @@ export default function FormDateInput({ id, value = "", onChange, error = false 
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [open]);
+  }, [open, disabled]);
 
   const cells = useMemo(() => buildCalendarCells(view.year, view.month), [view.year, view.month]);
 
@@ -150,7 +167,7 @@ export default function FormDateInput({ id, value = "", onChange, error = false 
       return;
     }
     const iso = parseDateInput(draft);
-    if (iso != null) {
+    if (iso != null && isWithinBounds(iso, min, max)) {
       onChange(iso);
       setView(viewFromIso(iso));
     }
@@ -164,6 +181,7 @@ export default function FormDateInput({ id, value = "", onChange, error = false 
   };
 
   const selectDay = (iso) => {
+    if (!isWithinBounds(iso, min, max)) return;
     setEditing(false);
     onChange(iso);
     setView(viewFromIso(iso));
@@ -171,9 +189,14 @@ export default function FormDateInput({ id, value = "", onChange, error = false 
   };
 
   const openCalendar = () => {
+    if (disabled) return;
     setView(viewFromIso(value));
     setOpen((o) => !o);
   };
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
 
   return (
     <div className="form-date-field" ref={wrapRef}>
@@ -183,9 +206,11 @@ export default function FormDateInput({ id, value = "", onChange, error = false 
         inputMode="numeric"
         autoComplete="off"
         className={`form-input form-date-text${error ? " error" : ""}`}
-        placeholder="YYYY-MM-DD"
+        placeholder="YYYY-MM-DD or MM/DD/YYYY"
         value={displayText}
+        disabled={disabled}
         onFocus={() => {
+          if (disabled) return;
           setEditing(true);
           setDraft(value || "");
         }}
@@ -206,6 +231,7 @@ export default function FormDateInput({ id, value = "", onChange, error = false 
         aria-label="Open calendar"
         aria-expanded={open}
         aria-controls={popoverId}
+        disabled={disabled}
         onClick={openCalendar}
       >
         <IconCalendar />
@@ -231,17 +257,21 @@ export default function FormDateInput({ id, value = "", onChange, error = false 
             ))}
           </div>
           <div className="form-date-grid" role="grid">
-            {cells.map((cell) => (
+            {cells.map((cell) => {
+              const outOfRange = !isWithinBounds(cell.iso, min, max);
+              return (
               <button
                 key={cell.iso}
                 type="button"
                 role="gridcell"
+                disabled={outOfRange}
                 className={`form-date-day${cell.outside ? " outside" : ""}${cell.iso === value ? " selected" : ""}`}
                 onClick={() => selectDay(cell.iso)}
               >
                 {cell.day}
               </button>
-            ))}
+            );
+            })}
           </div>
         </div>
       ) : null}

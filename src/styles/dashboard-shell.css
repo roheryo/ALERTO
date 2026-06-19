@@ -237,13 +237,16 @@ body {
   margin: 0 auto;
 }
 
-.main-content--municipal {
+.main-content--municipal,
+.main-content--barangay {
   max-width: none;
   padding: 20px 16px;
 }
 
 .main-content--municipal .content-area,
-.content-area--municipal {
+.main-content--barangay .content-area,
+.content-area--municipal,
+.content-area--barangay {
   box-sizing: border-box;
   width: 100%;
   max-width: none;
@@ -251,12 +254,14 @@ body {
   padding: 12px 0 20px;
 }
 
-.main-content--municipal .dashboard-container {
+.main-content--municipal .dashboard-container,
+.main-content--barangay .dashboard-container {
   width: 100%;
   max-width: none;
 }
 
-.content-area--municipal .dashboard-data-status {
+.content-area--municipal .dashboard-data-status,
+.content-area--barangay .dashboard-data-status {
   margin: 0 0 12px;
   padding: 10px 14px;
   border-radius: var(--dash-radius-sm);
@@ -795,7 +800,8 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .main-content--municipal {
+  .main-content--municipal,
+  .main-content--barangay {
     padding: 16px 12px;
   }
 

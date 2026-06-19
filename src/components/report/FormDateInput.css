@@ -1,0 +1,170 @@
+.form-date-field {
+  position: relative;
+  width: 100%;
+}
+
+.form-date-field .form-date-text {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0 40px 0 12px;
+  min-height: 40px;
+  border: 1px solid var(--form-date-border, #cbd5e1);
+  border-radius: 8px;
+  background: var(--form-date-bg, #fff);
+  color: var(--form-date-text, #111);
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.form-date-field .form-date-text::placeholder {
+  color: var(--form-date-muted, #94a3b8);
+}
+
+.form-date-field .form-date-text:focus {
+  border-color: var(--form-date-accent, #0d9488);
+  box-shadow: 0 0 0 3px var(--form-date-accent-soft, rgba(13, 148, 136, 0.15));
+}
+
+.form-date-field .form-date-text:disabled {
+  background: var(--form-date-disabled-bg, #f3f4f6);
+  color: var(--form-date-muted, #64748b);
+  cursor: not-allowed;
+}
+
+.form-date-field .form-date-text.error {
+  border-color: #dc2626;
+}
+
+.form-date-field .form-date-text.error:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+.form-date-field .form-date-trigger {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--form-date-muted, #64748b);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.form-date-field .form-date-trigger:hover:not(:disabled) {
+  background: var(--form-date-accent-soft, rgba(13, 148, 136, 0.12));
+  color: var(--form-date-accent, #0d9488);
+}
+
+.form-date-field .form-date-trigger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.form-date-field .form-date-trigger svg {
+  width: 18px;
+  height: 18px;
+}
+
+.form-date-field .form-date-popover {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(100%, 280px);
+  padding: 12px;
+  background: var(--form-date-bg, #fff);
+  border: 1px solid var(--form-date-border, #cbd5e1);
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+}
+
+.form-date-field .form-date-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.form-date-field .form-date-popover-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--form-date-text, #111);
+}
+
+.form-date-field .form-date-nav {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--form-date-border, #cbd5e1);
+  border-radius: 6px;
+  background: var(--form-date-disabled-bg, #f8fafc);
+  color: var(--form-date-text, #111);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.form-date-field .form-date-nav:hover {
+  border-color: var(--form-date-accent, #0d9488);
+  color: var(--form-date-accent, #0d9488);
+}
+
+.form-date-field .form-date-weekdays,
+.form-date-field .form-date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.form-date-field .form-date-weekday {
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--form-date-muted, #64748b);
+  padding: 4px 0;
+}
+
+.form-date-field .form-date-day {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--form-date-text, #111);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.form-date-field .form-date-day:hover:not(:disabled) {
+  background: var(--form-date-accent-soft, rgba(13, 148, 136, 0.12));
+  color: var(--form-date-accent, #0d9488);
+}
+
+.form-date-field .form-date-day.outside {
+  color: var(--form-date-muted, #94a3b8);
+  opacity: 0.65;
+}
+
+.form-date-field .form-date-day.selected {
+  background: var(--form-date-accent, #0d9488);
+  color: #fff;
+}
+
+.form-date-field .form-date-day.selected:hover:not(:disabled) {
+  background: var(--form-date-accent, #0d9488);
+  color: #fff;
+}
+
+.form-date-field .form-date-day:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

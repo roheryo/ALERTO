@@ -10,12 +10,20 @@ function DashboardLayout() {
   const isMunicipalSurveillanceMap =
     pathname === "/dashboard/surveillance-map" ||
     pathname.startsWith("/dashboard/surveillance-map/");
+  const isAccountManagement =
+    pathname === "/dashboard/account-management" ||
+    pathname.startsWith("/dashboard/account-management/");
+  const isReports =
+    pathname === "/dashboard/reports" || pathname.startsWith("/dashboard/reports/");
   const isMunicipalWide =
-    user?.role === "municipality" && (isDashboardHome || isMunicipalSurveillanceMap);
+    user?.role === "municipality" &&
+    (isDashboardHome || isMunicipalSurveillanceMap || isAccountManagement || isReports);
+
+  const isBarangayWide = user?.role === "barangay" && isDashboardHome;
 
   const isProvincialWide =
     user?.role === "province" &&
-    (isDashboardHome || pathname.startsWith("/dashboard/province-"));
+    (isDashboardHome || pathname.startsWith("/dashboard/province-") || isAccountManagement || isReports);
 
   const layoutClass = [
     "dashboard-layout",
@@ -28,7 +36,9 @@ function DashboardLayout() {
   const mainContentClass = [
     "main-content",
     isMunicipalWide ? "main-content--municipal" : "",
-    isProvincialWide ? "main-content--provincial" : ""
+    isBarangayWide ? "main-content--barangay" : "",
+    isProvincialWide ? "main-content--provincial" : "",
+    isAccountManagement ? "main-content--account" : ""
   ]
     .filter(Boolean)
     .join(" ");
