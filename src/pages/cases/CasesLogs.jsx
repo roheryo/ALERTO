@@ -8,20 +8,7 @@ import { sessionUserFromAuth } from "@/lib/authUser";
 import { usePatients, PATIENTS_CHANGED_EVENT } from "@/hooks/usePatients";
 import { normalizeDisease } from "@/lib/disease";
 import { apiFetch } from "@/lib/api";
-
-const MUNICIPALITY_DATA = {
-  Nabunturan: ["Basak", "Bayabas", "Bukal", "Cabidianan", "Katipunan", "Magsaysay", "San Isidro", "San Vicente"],
-  Monkayo: ["Awao", "Babag", "Banlag", "Haguimitan", "Union", "Oro", "Poblacion"],
-  Compostela: ["Bagongon", "Gabi", "Lagab", "Mangayon", "Osmena", "Poblacion"],
-  Mawab: ["Andap", "Concepcion", "Nuevo Iloco", "Poblacion", "Salvacion"],
-  Maco: ["Anibongan", "Anislagan", "Bucana", "Calabcab", "Concepcion", "Dumlan", "Hijo", "Lapu-lapu", "Poblacion", "San Juan", "Taglawig"],
-  Maragusan: ["Bagong Silang", "Coronobe", "Katipunan", "Mahayahay", "New Albay", "Poblacion"],
-  Montevista: ["Banagbanag", "Banglasan", "Camansi", "Canidkid", "Concepcion", "Poblacion"],
-  Pantukan: ["Kingking", "Magnaga", "Napnapan", "Poblacion", "Tagdanua"],
-  NewBataan: ["Andap", "Cabinuangan", "Camanlangan", "Poblacion", "San Roque"],
-  Laak: ["Amorcruz", "Anitap", "Datu Ampunan", "Longanapan", "Poblacion"],
-  Mabini: ["Cadunan", "Golden Valley", "Pindasan", "San Antonio", "Tagnanan"]
-};
+import { barangaysForMunicipality, listProvinceMunicipalities } from "@/data/davaoDeOroGeography";
 
 const PAGE_SIZE = 100;
 
@@ -98,6 +85,33 @@ function caseStatusBadgeClass(raw) {
 function displayValue(value) {
   const text = String(value ?? "").trim();
   return text || "—";
+}
+
+function hasLegacyDemographics(patient) {
+  if (!patient) return false;
+  return (
+    displayValue(patient.age) !== "—" ||
+    displayValue(patient.sex) !== "—" ||
+    displayValue(patient.birthdate) !== "—" ||
+    displayValue(patient.civilStatus) !== "—" ||
+    displayValue(patient.birthplace) !== "—"
+  );
+}
+
+function formatReportDate(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) return "—";
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return s;
+  try {
+    return new Intl.DateTimeFormat("en-PH", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit"
+    }).format(d);
+  } catch {
+    return s;
+  }
 }
 
 function dateSortTime(raw) {
@@ -188,7 +202,7 @@ function CasesLogs() {
     if (roleKey === "municipal" || roleKey === "barangay") {
       if (lockedMunicipality) {
         setSelectedMunicipality(lockedMunicipality);
-        setBarangayOptions(MUNICIPALITY_DATA[lockedMunicipality] || []);
+        setBarangayOptions(barangaysForMunicipality(lockedMunicipality));
       }
     } else {
       setSelectedMunicipality("");
@@ -357,7 +371,7 @@ function CasesLogs() {
     startTransition(() => {
       setSelectedMunicipality(municipality);
       setSelectedBarangay("");
-      setBarangayOptions(municipality && MUNICIPALITY_DATA[municipality] ? MUNICIPALITY_DATA[municipality] : []);
+      setBarangayOptions(municipality ? barangaysForMunicipality(municipality) : []);
     });
   }, []);
 
@@ -526,7 +540,7 @@ function CasesLogs() {
                 value={selectedMunicipality}
               >
                 <option value="">All municipalities</option>
-                {Object.keys(MUNICIPALITY_DATA).map((m) => (
+                {listProvinceMunicipalities().map((m) => (
                   <option key={m} value={m}>
                     {m}
                   </option>
@@ -772,7 +786,7 @@ function CasesLogs() {
               <section className="caseslogs-modal-section" aria-labelledby="cases-view-identification">
                 <h4 id="cases-view-identification">
                   <FaUser aria-hidden />
-                  Identification
+                  Case record
                 </h4>
                 <div className="caseslogs-field-grid">
                   <div className="caseslogs-field">
@@ -780,36 +794,53 @@ function CasesLogs() {
                     <strong>{displayPatientId(selectedPatient)}</strong>
                   </div>
                   <div className="caseslogs-field">
-                    <span>Full name</span>
+                    <span>Record label</span>
                     <strong>{displayValue(selectedPatient.name)}</strong>
                   </div>
-                  <div className="caseslogs-field">
-                    <span>Age</span>
-                    <strong>{displayValue(selectedPatient.age)}</strong>
-                  </div>
-                  <div className="caseslogs-field">
-                    <span>Sex</span>
-                    <strong>{displayValue(selectedPatient.sex)}</strong>
-                  </div>
-                  <div className="caseslogs-field">
-                    <span>Birthdate</span>
-                    <strong>{displayValue(selectedPatient.birthdate)}</strong>
-                  </div>
-                  <div className="caseslogs-field">
-                    <span>Civil status</span>
-                    <strong>{displayValue(selectedPatient.civilStatus)}</strong>
-                  </div>
-                  <div className="caseslogs-field caseslogs-field--wide">
-                    <span>Birthplace</span>
-                    <strong>{displayValue(selectedPatient.birthplace)}</strong>
-                  </div>
                 </div>
+                {hasLegacyDemographics(selectedPatient) ? (
+                  <div className="caseslogs-legacy-note">
+                    <p>Legacy demographics (not collected on new ML-aligned reports):</p>
+                    <div className="caseslogs-field-grid caseslogs-field-grid--legacy">
+                      {displayValue(selectedPatient.age) !== "—" ? (
+                        <div className="caseslogs-field">
+                          <span>Age</span>
+                          <strong>{displayValue(selectedPatient.age)}</strong>
+                        </div>
+                      ) : null}
+                      {displayValue(selectedPatient.sex) !== "—" ? (
+                        <div className="caseslogs-field">
+                          <span>Sex</span>
+                          <strong>{displayValue(selectedPatient.sex)}</strong>
+                        </div>
+                      ) : null}
+                      {displayValue(selectedPatient.birthdate) !== "—" ? (
+                        <div className="caseslogs-field">
+                          <span>Birthdate</span>
+                          <strong>{displayValue(selectedPatient.birthdate)}</strong>
+                        </div>
+                      ) : null}
+                      {displayValue(selectedPatient.civilStatus) !== "—" ? (
+                        <div className="caseslogs-field">
+                          <span>Civil status</span>
+                          <strong>{displayValue(selectedPatient.civilStatus)}</strong>
+                        </div>
+                      ) : null}
+                      {displayValue(selectedPatient.birthplace) !== "—" ? (
+                        <div className="caseslogs-field caseslogs-field--wide">
+                          <span>Birthplace</span>
+                          <strong>{displayValue(selectedPatient.birthplace)}</strong>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
               </section>
 
               <section className="caseslogs-modal-section" aria-labelledby="cases-view-case">
                 <h4 id="cases-view-case">
                   <FaClipboardList aria-hidden />
-                  Case details
+                  Surveillance (model inputs)
                 </h4>
                 <div className="caseslogs-field-grid">
                   <div className="caseslogs-field">
@@ -823,6 +854,10 @@ function CasesLogs() {
                   <div className="caseslogs-field">
                     <span>Date of onset</span>
                     <strong>{displayValue(selectedPatient.dateStarted)}</strong>
+                  </div>
+                  <div className="caseslogs-field">
+                    <span>Date reported</span>
+                    <strong>{formatReportDate(selectedPatient.createdAt ?? selectedPatient.created_at)}</strong>
                   </div>
                 </div>
               </section>
@@ -841,10 +876,12 @@ function CasesLogs() {
                     <span>Barangay</span>
                     <strong>{displayValue(selectedPatient.barangay)}</strong>
                   </div>
-                  <div className="caseslogs-field">
-                    <span>Purok</span>
-                    <strong>{displayValue(selectedPatient.purok)}</strong>
-                  </div>
+                  {displayValue(selectedPatient.purok) !== "—" ? (
+                    <div className="caseslogs-field">
+                      <span>Purok (legacy)</span>
+                      <strong>{displayValue(selectedPatient.purok)}</strong>
+                    </div>
+                  ) : null}
                 </div>
               </section>
             </div>
