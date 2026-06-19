@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -34,6 +35,7 @@ sys.path.insert(0, str(ROOT / "ml"))
 from model_lstm import CaseLSTM  # noqa: E402
 from train import (  # noqa: E402
     build_dataset,
+    build_dataset_grouped,
     inverse_targets,
     load_config,
     mae,
@@ -169,13 +171,26 @@ def load_trained_lstm(disease: str, cfg) -> Tuple[CaseLSTM, object, dict]:
     return model, scaler, bundle
 
 
+def _apply_scaler(scaler, X: np.ndarray, groups: np.ndarray | None = None) -> np.ndarray:
+    """Apply either a single StandardScaler or a per-municipality dict bundle."""
+    n_features = X.shape[-1]
+    if isinstance(scaler, dict):
+        global_scaler = scaler.get("__global__")
+        out = np.empty_like(X, dtype=np.float32)
+        for i in range(X.shape[0]):
+            sc = scaler.get(int(groups[i]), global_scaler) if groups is not None else global_scaler
+            out[i] = sc.transform(X[i].reshape(-1, n_features)).reshape(X[i].shape)
+        return out
+    return scaler.transform(X.reshape(-1, n_features)).reshape(X.shape).astype(np.float32)
+
+
 def predict_lstm(
-    model: CaseLSTM, scaler, X_test: np.ndarray, transform: str
+    model: CaseLSTM, scaler, X_test: np.ndarray, transform: str,
+    groups: np.ndarray | None = None,
 ) -> np.ndarray:
     if X_test.shape[0] == 0:
         return np.empty((0, 0))
-    n_features = X_test.shape[-1]
-    scaled = scaler.transform(X_test.reshape(-1, n_features)).reshape(X_test.shape)
+    scaled = _apply_scaler(scaler, X_test, groups)
     with torch.no_grad():
         out = model(torch.from_numpy(scaled.astype(np.float32))).cpu().numpy()
     out = inverse_targets(out, transform)
@@ -200,6 +215,19 @@ def per_horizon_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> List[dict]:
 
 def evaluate_disease(disease: str, df: pd.DataFrame, cfg) -> dict:
     sub = df[df["disease_code"] == disease].copy()
+
+    # Phase 2: mirror train.py so the LSTM (trained on disease-specific features)
+    # and the baselines are all evaluated on the same feature windows.
+    disease_features = cfg.disease_feature_columns.get(disease.upper())
+    if disease_features:
+        cfg = replace(cfg, feature_columns=list(disease_features))
+
+    # Track municipality ids only when per-municipality scaling is active so the
+    # right scaler is applied to each LSTM test window.
+    g_te = None
+    if cfg.scaling == "per_municipality":
+        _, _, _, _, _, _, X_te_grp, _, g_te = build_dataset_grouped(sub, cfg)
+        del X_te_grp
     X_tr, y_tr, X_va, y_va, X_te, y_te = build_dataset(sub, cfg)
     if X_te.shape[0] == 0:
         return {"disease": disease, "test_rows": 0}
@@ -256,7 +284,9 @@ def evaluate_disease(disease: str, df: pd.DataFrame, cfg) -> dict:
     # LSTM ---------------------------------------------------------------
     try:
         model, scaler, bundle = load_trained_lstm(disease, cfg)
-        lstm_pred = predict_lstm(model, scaler, X_te, bundle.get("target_transform", "log1p"))
+        lstm_pred = predict_lstm(
+            model, scaler, X_te, bundle.get("target_transform", "log1p"), groups=g_te
+        )
         summary["lstm"] = {
             "mape": mape(y_te, lstm_pred),
             "rmse": rmse(y_te, lstm_pred),
