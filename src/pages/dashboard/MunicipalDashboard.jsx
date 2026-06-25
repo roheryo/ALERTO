@@ -61,12 +61,9 @@ function formatRelativeTime(value) {
   return `${days} day${days === 1 ? "" : "s"} ago`;
 }
 
-function KpiCard({ title, kpi, variant, icon }) {
+function KpiCard({ title, kpi, variant }) {
   return (
     <article className={`summary-card muni-kpi-card ${variant}`}>
-      <span className="summary-card-icon" aria-hidden="true">
-        {icon}
-      </span>
       <h4>{title}</h4>
       <h2>{kpi.windowCount.toLocaleString()}</h2>
       <p className="muni-kpi-window">{kpi.windowLabel}</p>
@@ -243,9 +240,9 @@ function MunicipalDashboard({ patients = [], municipalityName = "", weather = nu
           windowLabel={kpis.awd.windowLabel}
           totalDelta={totalDelta}
         />
-        <KpiCard title="Acute Watery Diarrhea" kpi={kpis.awd} variant="blue" icon="💧" />
-        <KpiCard title="Influenza-Like-Illness" kpi={kpis.ili} variant="red" icon="🤧" />
-        <KpiCard title="Dengue" kpi={kpis.dengue} variant="orange" icon="🦟" />
+        <KpiCard title="Acute Watery Diarrhea" kpi={kpis.awd} variant="blue" />
+        <KpiCard title="Influenza-Like-Illness" kpi={kpis.ili} variant="red" />
+        <KpiCard title="Dengue" kpi={kpis.dengue} variant="orange" />
       </section>
 
       <section className="muni-dash-row-filters" aria-label="Time and disease filters">

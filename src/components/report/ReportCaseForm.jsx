@@ -429,7 +429,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                   </div>
                   <div className="panel-body lg">
                     <div className="alert-banner info">
-                      <div className="alert-icon">ℹ️</div>
                       <div>
                         <div className="alert-title">Diseases we monitor</div>
                         <div className="alert-body">
@@ -441,7 +440,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
 
                     <div className="form-section">
                       <div className="form-section-head">
-                        <div className="form-section-icon form-section-icon--dengue">🦟</div>
                         <div>
                           <div className="form-section-title form-section-title--dengue">Which disease?</div>
                           <div className="form-section-desc">Select the illness for this patient</div>
@@ -449,9 +447,9 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                       </div>
                       <div className="radio-cards">
                         {[
-                          { v: "dengue", cls: "dengue", icon: "🦟", t: "Dengue", s: "Spread by mosquitoes" },
-                          { v: "ili", cls: "ili", icon: "🤧", t: "ILI", s: "Flu-like illness" },
-                          { v: "awd", cls: "awd", icon: "💧", t: "AWD", s: "Acute watery diarrhea" }
+                          { v: "dengue", cls: "dengue", t: "Dengue", s: "Spread by mosquitoes" },
+                          { v: "ili", cls: "ili", t: "ILI", s: "Flu-like illness" },
+                          { v: "awd", cls: "awd", t: "AWD", s: "Acute watery diarrhea" }
                         ].map((d) => (
                           <label key={d.v} className={`radio-card ${d.cls}`}>
                             <input
@@ -464,7 +462,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                                 setDiseaseErr(false);
                               }}
                             />
-                            <div className="radio-card-icon">{d.icon}</div>
                             <div className="radio-card-label">{d.t}</div>
                             <div className="radio-card-sub">{d.s}</div>
                           </label>
@@ -479,7 +476,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
 
                     <div className="form-section">
                       <div className="form-section-head">
-                        <div className="form-section-icon form-section-icon--warning">📅</div>
                         <div>
                           <div className="form-section-title form-section-title--warning">Important dates</div>
                           <div className="form-section-desc">
@@ -544,7 +540,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
 
                     <div className="form-section">
                       <div className="form-section-head">
-                        <div className="form-section-icon form-section-icon--primary">📋</div>
                         <div>
                           <div className="form-section-title">Case classification</div>
                           <div className="form-section-desc">
@@ -602,7 +597,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                   </div>
                   <div className="panel-body lg">
                     <div className="alert-banner info">
-                      <div className="alert-icon">📍</div>
                       <div>
                         <div className="alert-title">Where the patient lives</div>
                         <div className="alert-body">
@@ -715,7 +709,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                   </div>
                   <div className="panel-body lg">
                     <div className="alert-banner warning">
-                      <div className="alert-icon">🌧</div>
                       <div>
                         <div className="alert-title">Conditions around the patient</div>
                         <div className="alert-body">
@@ -727,7 +720,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
 
                     <div className="form-section">
                       <div className="form-section-head">
-                        <div className="form-section-icon form-section-icon--dengue">🦟</div>
                         <div>
                           <div className="form-section-title form-section-title--dengue">Mosquitoes & spread of illness</div>
                         </div>
@@ -781,7 +773,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
 
                     <div className="form-section">
                       <div className="form-section-head">
-                        <div className="form-section-icon form-section-icon--awd">🚿</div>
                         <div>
                           <div className="form-section-title form-section-title--awd">Water & sanitation</div>
                         </div>
@@ -880,7 +871,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
                   </div>
                   <div className="panel-body lg">
                     <div className="alert-banner success">
-                      <div className="alert-icon">✅</div>
                       <div>
                         <div className="alert-title">Ready to submit</div>
                         <div className="alert-body">
@@ -1002,9 +992,6 @@ export default function ReportCaseForm({ user, onSubmitted }) {
 
               <div className="alert-banner info alert-banner--sidebar">
                 <div className="alert-banner-sidehead">
-                  <span className="alert-icon" aria-hidden>
-                    🤖
-                  </span>
                   <div className="alert-title">Which fields matter most?</div>
                 </div>
                 <div className="alert-body">

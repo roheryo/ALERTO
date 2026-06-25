@@ -152,25 +152,16 @@ function BarangayDashboard({
           <p className="muni-kpi-window">All diseases · barangay scope</p>
         </article>
         <article className="summary-card muni-kpi-card orange barangay-kpi" role="listitem">
-          <span className="summary-card-icon" aria-hidden="true">
-            🦟
-          </span>
           <h4>Dengue</h4>
           <h2>{kpis.dengue.toLocaleString()}</h2>
           <p className="muni-kpi-window">Confirmed cases</p>
         </article>
         <article className="summary-card muni-kpi-card red barangay-kpi" role="listitem">
-          <span className="summary-card-icon" aria-hidden="true">
-            🤧
-          </span>
           <h4>ILI</h4>
           <h2>{kpis.ili.toLocaleString()}</h2>
           <p className="muni-kpi-window">Confirmed cases</p>
         </article>
         <article className="summary-card muni-kpi-card blue barangay-kpi" role="listitem">
-          <span className="summary-card-icon" aria-hidden="true">
-            💧
-          </span>
           <h4>AWD</h4>
           <h2>{kpis.awd.toLocaleString()}</h2>
           <p className="muni-kpi-window">Confirmed cases</p>

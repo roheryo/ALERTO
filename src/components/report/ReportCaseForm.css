@@ -521,8 +521,7 @@
 }
 .report-case-form .form-section-head {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
   margin-bottom: 18px;
 }
 .report-case-form .form-section-icon {
@@ -603,12 +602,12 @@
   min-width: 120px;
   border: 1.5px solid var(--border2);
   border-radius: 12px;
-  padding: 16px 18px;
+  padding: 14px 16px;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   position: relative;
 }
 .report-case-form .radio-card input[type="radio"] {

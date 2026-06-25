@@ -24,9 +24,6 @@ export default function ProvincialKpiCards({ kpis }) {
         <span className="summary-card-delta-pill">{formatDeltaLabel(totalDelta)}</span>
       </article>
       <article className="summary-card blue prov-kpi-card">
-        <span className="summary-card-icon" aria-hidden="true">
-          💧
-        </span>
         <h4>Acute Watery Diarrhea</h4>
         <h2>{kpis.awd.windowCount.toLocaleString()}</h2>
         <p className="prov-kpi-window">{kpis.awd.windowLabel}</p>
@@ -35,9 +32,6 @@ export default function ProvincialKpiCards({ kpis }) {
         </p>
       </article>
       <article className="summary-card red prov-kpi-card">
-        <span className="summary-card-icon" aria-hidden="true">
-          🤧
-        </span>
         <h4>Influenza-Like-Illness</h4>
         <h2>{kpis.ili.windowCount.toLocaleString()}</h2>
         <p className="prov-kpi-window">{kpis.ili.windowLabel}</p>
@@ -46,9 +40,6 @@ export default function ProvincialKpiCards({ kpis }) {
         </p>
       </article>
       <article className="summary-card orange prov-kpi-card">
-        <span className="summary-card-icon" aria-hidden="true">
-          🦟
-        </span>
         <h4>Dengue</h4>
         <h2>{kpis.dengue.windowCount.toLocaleString()}</h2>
         <p className="prov-kpi-window">{kpis.dengue.windowLabel}</p>
